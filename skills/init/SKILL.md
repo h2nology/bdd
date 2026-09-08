@@ -1,7 +1,6 @@
 ---
 name: init
 description: This skill should be used when a project needs a cucumber BDD test harness set up or repaired - for example "set up cucumber in this project", "initialize BDD testing", "add Playwright to our cucumber suite", "set up Appium for our mobile app", "scaffold step definitions", "configure the test environment for feature files", "test our Android/iOS app with cucumber", or when feature files exist but nothing can execute them. Web runs on Playwright, mobile runs on Appium; covers TypeScript/JavaScript, Java, Python and C#/.NET stacks.
-version: 0.1.0
 ---
 
 # Initialize a cucumber harness

@@ -1,7 +1,6 @@
 ---
 name: run
 description: This skill should be used when a cucumber suite must be executed and measured - for example "run the BDD tests", "run the cucumber scenarios", "run the mobile app tests", "what is our requirement coverage", "which requirements are not covered by tests", "why is this scenario undefined", "generate the coverage report", "gate CI on BDD coverage", or when the user asks how much of the specified behaviour is actually verified. Covers both the Playwright web lane and the Appium mobile lane.
-version: 0.1.0
 ---
 
 # Run the cucumber suite and measure requirement coverage
@@ -84,7 +83,7 @@ coverage numbers - a filtered run makes everything else look "not executed".
 node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs features/ \
   --results bdd-artifacts/cucumber.ndjson \
   --results bdd-artifacts/cucumber-mobile.ndjson \
-  --requirements bdd-artifacts/requirements.md \
+  --requirements docs/requirements.md \
   --out bdd-artifacts/coverage.html \
   --json bdd-artifacts/coverage.json \
   --labels zh-CN

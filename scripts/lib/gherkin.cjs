@@ -409,7 +409,98 @@ function parseFeature(text, uri) {
       child.children.forEach(joinDesc);
     }
   }
+  if (feature.name !== null) validateFeature(feature, errors);
   return feature;
+}
+
+/** `<placeholder>` names used in a step's text, data table and doc string. */
+function stepPlaceholders(step) {
+  const found = new Set();
+  const scan = (text) => {
+    if (!text) return;
+    const re = /<([^<>]+)>/g;
+    let m;
+    while ((m = re.exec(String(text)))) found.add(m[1].trim());
+  };
+  scan(step.text);
+  if (step.dataTable) for (const row of step.dataTable.rows) row.cells.forEach((c) => scan(c));
+  if (step.docString) scan(step.docString.content);
+  return found;
+}
+
+/**
+ * Defects that are legal Gherkin but verify nothing. They matter because the
+ * reports still count them as specified behaviour: an outline with no Examples
+ * expands to one unsubstituted case, and a Background that asserts turns every
+ * scenario in the file red for a reason none of them owns. Reported as warnings
+ * so one bad file never stops a batch.
+ */
+function validateFeature(feature, errors) {
+  const backgrounds = [];
+  const scenarios = [];
+  const collect = (container) => {
+    if (container.background) backgrounds.push(container.background);
+    for (const child of container.children) {
+      if (child.type === 'rule') collect(child);
+      else scenarios.push(child);
+    }
+  };
+  collect(feature);
+
+  for (const bg of backgrounds) {
+    let effective = null;
+    for (const step of bg.steps) {
+      const kind = step.keywordType === 'and' || step.keywordType === 'but' ? effective : step.keywordType;
+      if (kind) effective = kind;
+      if (kind === 'then') {
+        errors.push({
+          line: step.line,
+          message: `Background asserts ("${String(step.keyword).trim()} ${step.text}"); a Background is setup only - move the assertion into a scenario`,
+        });
+      }
+    }
+  }
+
+  for (const sc of scenarios) {
+    if (sc.type !== 'scenarioOutline') continue;
+    const label = sc.name || '(unnamed)';
+    const used = new Set();
+    for (const name of stepPlaceholders({ text: sc.name })) used.add(name);
+    for (const step of sc.steps) for (const name of stepPlaceholders(step)) used.add(name);
+
+    if (!sc.examples.length) {
+      errors.push({
+        line: sc.line,
+        message: `Scenario Outline "${label}" has no Examples block; it expands to one case with the placeholders left unsubstituted`,
+      });
+      continue;
+    }
+    const tables = sc.examples.filter((ex) => ex.header);
+    if (!tables.length) {
+      errors.push({ line: sc.examples[0].line, message: `Examples block for "${label}" has no header row` });
+      continue;
+    }
+    const columns = new Set();
+    for (const ex of tables) {
+      for (const cell of ex.header.cells) columns.add(cell.trim());
+      if (!ex.rows.length) {
+        errors.push({ line: ex.line, message: `Examples table for "${label}" has a header but no data rows` });
+      }
+    }
+    for (const name of used) {
+      if (!columns.has(name)) {
+        errors.push({ line: sc.line, message: `Scenario Outline "${label}" uses <${name}>, which no Examples table provides` });
+      }
+    }
+    for (const col of columns) {
+      if (!used.has(col)) {
+        errors.push({
+          line: sc.line,
+          message: `Examples column "${col}" of "${label}" is never used by a step or the scenario name; if it documents the row rather than feeding it, a comment says so more clearly`,
+        });
+      }
+    }
+  }
 }
 
 /** Flatten feature -> scenarios, carrying inherited tags, rule and background. */

@@ -1,7 +1,6 @@
 ---
 name: spec-report
 description: This skill should be used when Gherkin feature files must be turned into a human-readable HTML document for review or sign-off - for example "generate an HTML report from the feature files", "make a spec document for the manager", "export the scenarios for review", "show the requirement traceability matrix", "which requirements have no scenarios", or when a stakeholder who does not read code needs to approve the specified behaviour.
-version: 0.1.0
 ---
 
 # Gherkin to reviewable HTML specification report
@@ -46,6 +45,10 @@ Options:
 
 The output is a single HTML file with no external assets: it opens offline, and
 prints cleanly to PDF (`Cmd/Ctrl+P`) for stakeholders who want a document.
+
+Exit codes: `0` report written (parse warnings do not change this - they are
+printed on stderr and listed in the report), `2` no feature files found at the
+given paths.
 
 ## What the report contains
 

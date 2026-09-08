@@ -196,7 +196,16 @@ function main() {
 
   console.log(`spec-report: ${model.stats.features} features, ${model.stats.scenarios} scenarios, ` +
     `${model.stats.cases} cases, ${model.stats.steps} steps, ${model.stats.requirements} requirement ids`);
-  if (model.untagged.length) console.log(`spec-report: ${model.untagged.length} scenario(s) have no requirement tag`);
+  if (model.untagged.length) {
+    // Naming them matters: the caller's next action is to tag these scenarios, and
+    // a bare count sends them back to grep for something this run already knows.
+    console.log(`spec-report: ${model.untagged.length} scenario(s) have no requirement tag`);
+    const shown = model.untagged.slice(0, 20);
+    for (const sc of shown) console.log(`  untagged  ${sc.uri}:${sc.line}  ${sc.name || '(unnamed)'}`);
+    if (model.untagged.length > shown.length) {
+      console.log(`  ... and ${model.untagged.length - shown.length} more; the full list is in the report and the --json model`);
+    }
+  }
   for (const w of model.warnings) console.error(`warning: ${w.uri}:${w.line} ${w.message}`);
   console.log(`spec-report: wrote ${written}`);
 }

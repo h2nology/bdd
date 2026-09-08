@@ -1,0 +1,30 @@
+{
+  "skill_name": "discover",
+  "fixture": "a small TypeScript cucumber project (shopfront) with two existing feature files, existing step definitions, and a requirement backlog",
+  "evals": [
+    {
+      "id": 1,
+      "name": "normal-requirement-with-boundary",
+      "prompt": "我们要给结账加个功能：VIP 会员单笔满 500 免运费，非会员照旧收 30 块运费。帮我写成 feature 文件",
+      "expected_output": "Example mapping (story/rules/examples/questions) presented before any file is written; boundary examples at 499.99 and 500.00; new scenarios reuse the existing step phrasings from features/step_definitions/checkout.steps.ts; every scenario carries a requirement tag; Gherkin in English; spec-report.cjs run for validation and counts reported.",
+      "files": ["fixture/"],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "name": "bug-report-becomes-example",
+      "prompt": "线上报了个 bug，BUG-2317：用户先用折扣码 WELCOME10 打完折，再从购物车里删掉一件商品，折扣金额没有重算，还是按删之前的小计打的折。QA 已经复现两次了。帮我把这个纳入 BDD",
+      "expected_output": "The failing example is added to the existing features/discount.feature (which owns the discount rule) rather than a new feature file; it keeps the rule's requirement tag @REQ-1051 and adds the defect tag @BUG-2317 plus @regression; the scenario states the recalculation behaviour, not the code fix.",
+      "files": ["fixture/"],
+      "assertions": []
+    },
+    {
+      "id": 3,
+      "name": "vague-requirement-should-ask",
+      "prompt": "加个搜索功能",
+      "expected_output": "The assistant does not invent a specification. It surfaces the blocking unknowns (what is searched, who can search, ranking, empty results, permissions, scale) as questions to the user and stops for answers, rather than writing feature files from assumptions.",
+      "files": ["fixture/"],
+      "assertions": []
+    }
+  ]
+}

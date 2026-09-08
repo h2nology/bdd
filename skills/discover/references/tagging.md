@@ -34,8 +34,10 @@ Rules:
 ## Requirement backlog file (recommended)
 
 Coverage can only report "a requirement with no scenario at all" when it knows
-the full backlog. Keep a file - `bdd-artifacts/requirements.md` or wherever the
-team already keeps it - listing every requirement:
+the full backlog. Keep a file - `docs/requirements.md` or wherever the team
+already keeps it - listing every requirement. It belongs in version control next
+to the specs: it is a source document, not a generated one, so never put it in
+`bdd-artifacts/`, which is git-ignored and cleared between runs.
 
 ```markdown
 - REQ-1042 | Shopper can pay with a credit card

@@ -1,7 +1,6 @@
 ---
 name: flow-map
 description: This skill should be used when screenshots taken during a cucumber run must be turned into a page or screen transition overview - for example "capture screenshots during the BDD run", "generate a page flow diagram", "show me the screen transitions our tests cover", "which pages do our scenarios visit", "draw the app's screen flow", "make a screenshot gallery of the test run", or when a stakeholder wants to see the user journeys the suite exercises. Works for both the Playwright web lane and the Appium mobile lane.
-version: 0.1.0
 ---
 
 # Page / screen flow map from a cucumber run
@@ -79,6 +78,11 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/flow-map.cjs \
 
 Outputs: the HTML report, the `.mmd` Mermaid source (paste into a PR, a wiki, or
 a Markdown viewer), and optionally the JSON model.
+
+Exit codes: `0` map written, `2` no capture records found. A `2` almost always
+means the run was not captured rather than that the app has no pages - check
+`BDD_FLOW_CAPTURE` and the `--input` path before concluding anything about
+coverage.
 
 ## 3. How pages and transitions are derived
 

@@ -1,7 +1,6 @@
 ---
 name: discover
 description: This skill should be used when the user wants to turn a requirement, user story, feature idea, change request, or bug report into Gherkin - for example "write a feature file for this", "break this requirement into scenarios", "do BDD on this requirement", "run example mapping", "refine these acceptance criteria", "turn this ticket into cucumber scenarios", or when a one-line requirement must be mined into rules, examples and open questions before any code is written.
-version: 0.1.0
 ---
 
 # Requirement discovery to Gherkin
@@ -42,22 +41,33 @@ Rules for this step:
 
 - Derive rules from the requirement text, the existing feature files, and the
   code if it already exists. Search the repo for related features before
-  inventing new vocabulary (`node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --json /tmp/spec.json`
+  inventing new vocabulary (`node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --json bdd-artifacts/spec.json`
   gives the current inventory of features, scenarios, tags and requirement ids).
 - Use realistic data, not `foo`/`bar`. Money, dates, ids and names should look
   like the domain's real values.
 - Cover the unhappy paths: boundary values, permissions, empty and maximal
   states, concurrency, and error recovery. Ask `references/discovery-questions.md`
   for the checklist.
-- Every red question is a **blocking unknown**. Put them to the user in one
-  batch (use `AskUserQuestion` when the answers change the scenarios), then
-  proceed with explicitly stated assumptions for anything left unanswered.
+- Every red question is a **blocking unknown**. Collect them in one batch (use
+  `AskUserQuestion` when the answers change the scenarios). Step 2 decides what
+  becomes of the ones nobody answers - do not resolve them by guessing here.
 
-### 2. Confirm the breakdown with the user
+### 2. Put the breakdown in front of the user before writing files
 
-Show the story / rules / examples / questions list in the user's language
-before writing any file. Ask the user to correct wrong rules and add missing
-examples. Do not write feature files while a rule is still disputed.
+Show the story / rules / examples / questions list in the user's language and
+ask for corrections. This is cheap now and expensive later: once a rule is in a
+`.feature` file it also lives in the step definitions, in the coverage report,
+and in whatever the team builds against it. A wrong rule caught at this stage
+costs one line; the same rule caught after implementation costs three files and
+an argument about which one is right.
+
+What matters is the **order**, not the waiting. If the user is there and a rule
+is disputed, settle it before writing. If nobody can answer - a batch run, an
+explicit "just do it", questions that came back unanswered - that does not
+cancel this step, it changes its ending: still show the breakdown first, then
+write the files with every unanswered question restated as an assumption at the
+**top** of what you hand back. An assumption the reader meets only after they
+have already accepted the scenarios has disclosed nothing.
 
 ### 3. Write the feature files
 

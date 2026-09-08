@@ -15,6 +15,7 @@ map from the run's screenshots, and generate database DDL from the same specs.
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
+| `openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
 
 Each is invocable as `/bdd:<name>` and triggers automatically from a matching
 request. Use the namespaced form: the plugin's `init` and `run` share their bare
@@ -31,6 +32,7 @@ requirement
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
   -> /bdd:ddl           migrations/                       (schema implied by the specs)
+  -> /bdd:openapi       openapi.yaml                      (HTTP contract implied by the specs)
 ```
 
 ## Bundled scripts
@@ -43,6 +45,7 @@ inside Java, Python and .NET projects too. Node 14+.
 | `scripts/spec-report.cjs` | Gherkin -> HTML specification report + JSON model |
 | `scripts/coverage.cjs` | Feature files + test results -> requirement coverage report, with CI gating |
 | `scripts/flow-map.cjs` | Step captures -> Mermaid page flow diagram, transition table, gallery |
+| `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |
 | `scripts/lib/gherkin.cjs` | Gherkin parser (dialects: `en`, `zh-CN`, `zh-TW`, `ja`) |
 | `scripts/lib/results.cjs` | Reads cucumber messages ndjson, legacy cucumber JSON, or JUnit XML |
 | `scripts/lib/labels.cjs` | Localized report chrome |
@@ -54,6 +57,8 @@ Run any of them directly:
 node scripts/spec-report.cjs features/ --out out.html --labels zh-CN
 node scripts/coverage.cjs features/ --results bdd-artifacts/cucumber.ndjson --requirements docs/requirements.md
 node scripts/flow-map.cjs --input bdd-artifacts/flow --out out.html
+node scripts/openapi.cjs extract features/ --json extract.json
+node scripts/openapi.cjs coverage features/ --spec openapi.yaml --out cov.html
 ```
 
 ## Conventions the whole plugin shares
