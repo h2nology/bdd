@@ -1,0 +1,20 @@
+{
+  "name": "bdd",
+  "version": "0.1.0",
+  "description": "Behaviour-Driven Development toolkit: turn a one-line requirement into Gherkin, review it as an HTML spec report, scaffold cucumber with Playwright for web and Appium for mobile, run the suite with requirement coverage, derive page and screen flow maps from run screenshots, and generate database DDL from Gherkin.",
+  "author": {
+    "name": "hushukang"
+  },
+  "license": "MIT",
+  "keywords": [
+    "bdd",
+    "cucumber",
+    "gherkin",
+    "playwright",
+    "appium",
+    "e2e-testing",
+    "mobile-testing",
+    "requirements",
+    "traceability"
+  ]
+}

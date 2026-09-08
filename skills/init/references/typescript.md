@@ -1,0 +1,346 @@
+# TypeScript / JavaScript: cucumber-js + Playwright
+
+Verified against `@cucumber/cucumber` 11.x/12.x and `playwright` 1.4x. Check the
+versions the project actually installs before copying config verbatim.
+> **Lane**: this file is the **web lane** - cucumber + Playwright against a
+> browser. Native/hybrid mobile apps and real devices are the mobile lane:
+> `appium.md`. Responsive web at a phone viewport stays here: `responsive-web.md`.
+
+
+## 1. Dependencies
+
+```bash
+npm i -D @cucumber/cucumber playwright tsx typescript @types/node
+npx playwright install chromium   # add firefox webkit if BDD_BROWSER will use them
+```
+
+JavaScript-only project: drop `tsx`, `typescript`, `@types/node`, write the
+support files as `.mjs`, and remove the `tsx-register.mjs` import from the config.
+
+## 2. Layout
+
+```
+features/
+  checkout.feature
+  step_definitions/
+    checkout.steps.ts
+  support/
+    env.ts             # environment contract
+    world.ts           # Playwright-backed World
+    hooks.ts           # Before / AfterStep / After
+    flow-capture.ts    # writes bdd-artifacts/flow/flow.ndjson
+cucumber.mjs
+tsx-register.mjs
+```
+
+## 3. `tsx-register.mjs`
+
+cucumber-js does not transpile TypeScript itself; register a loader first.
+This exact pattern is what the cucumber-js transpiling docs prescribe for ESM.
+
+```javascript
+import { register } from 'tsx/esm/api';
+register();
+```
+
+## 4. `cucumber.mjs`
+
+```javascript
+export default {
+  paths: ['features/**/*.feature'],
+  import: [
+    './tsx-register.mjs',
+    'features/support/**/*.ts',
+    'features/step_definitions/**/*.ts',
+  ],
+  format: [
+    'summary',
+    'message:bdd-artifacts/cucumber.ndjson',
+    'html:bdd-artifacts/cucumber.html',
+  ],
+  formatOptions: { snippetInterface: 'async-await' },
+  tags: 'not @wip and not @manual',
+  retry: 0,
+  parallel: 0,
+  worldParameters: {},
+};
+```
+
+- `message:` ndjson is the input `coverage.cjs` prefers - always keep it.
+- Raise `parallel` only after the suite is stable; the flow capture appends to a
+  single ndjson file, which is append-safe per line but interleaves scenarios
+  (flow-map re-groups them by scenario, so this is fine).
+- `retry` > 0 produces several executions of one scenario; coverage aggregates
+  them worst-wins, so a flaky-passing scenario still shows its failure.
+
+## 5. `features/support/env.ts`
+
+```typescript
+export interface BddEnv {
+  baseUrl: string;
+  browserName: 'chromium' | 'firefox' | 'webkit';
+  headed: boolean;
+  slowMo: number;
+  device?: string;
+  timeout: number;
+  flowCapture: boolean;
+  flowDir: string;
+  trace: 'off' | 'on' | 'retain-on-failure';
+}
+
+export const env: BddEnv = {
+  baseUrl: process.env.BDD_BASE_URL ?? 'http://localhost:3000',
+  browserName: (process.env.BDD_BROWSER as BddEnv['browserName']) ?? 'chromium',
+  headed: process.env.BDD_HEADED === '1',
+  slowMo: Number(process.env.BDD_SLOWMO ?? 0),
+  device: process.env.BDD_DEVICE || undefined,
+  timeout: Number(process.env.BDD_TIMEOUT ?? 30000),
+  flowCapture: process.env.BDD_FLOW_CAPTURE === '1',
+  flowDir: process.env.BDD_FLOW_DIR ?? 'bdd-artifacts/flow',
+  trace: (process.env.BDD_TRACE as BddEnv['trace']) ?? 'off',
+};
+```
+
+## 6. `features/support/world.ts`
+
+```typescript
+import { setWorldConstructor, World, IWorldOptions } from '@cucumber/cucumber';
+import type { Browser, BrowserContext, Page } from 'playwright';
+
+export class BddWorld extends World {
+  browser!: Browser;
+  context!: BrowserContext;
+  page!: Page;
+  /** Incremented by the AfterStep hook so capture filenames stay ordered. */
+  stepIndex = 0;
+  /** Slug of the running scenario; set by the Before hook. */
+  scenarioSlug = '';
+
+  constructor(options: IWorldOptions) {
+    super(options);
+  }
+}
+
+setWorldConstructor(BddWorld);
+```
+
+## 7. `features/support/flow-capture.ts`
+
+Writes the records `flow-map.cjs` consumes. Keep the field names exactly as
+specified in the capture contract.
+
+```typescript
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import type { Page } from 'playwright';
+import { env } from './env';
+
+export function slugify(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'x';
+}
+
+export interface CaptureInput {
+  page: Page;
+  scenario: string;
+  scenarioUri?: string;
+  tags: string[];
+  stepIndex: number;
+  keyword: string;
+  step: string;
+  status: string;
+  scenarioSlug: string;
+}
+
+export async function captureStep(input: CaptureInput): Promise<void> {
+  if (!env.flowCapture) return;
+  try {
+    const file = join(env.flowDir, 'flow.ndjson');
+    const shot = join(env.flowDir, input.scenarioSlug,
+      `${String(input.stepIndex).padStart(3, '0')}-${slugify(input.step)}.png`);
+    mkdirSync(dirname(shot), { recursive: true });
+    mkdirSync(dirname(file), { recursive: true });
+    await input.page.screenshot({ path: shot, fullPage: false });
+    appendFileSync(file, JSON.stringify({
+      scenario: input.scenario,
+      scenarioUri: input.scenarioUri ?? null,
+      tags: input.tags,
+      stepIndex: input.stepIndex,
+      keyword: input.keyword,
+      step: input.step,
+      status: input.status,
+      url: input.page.url(),
+      title: await input.page.title().catch(() => ''),
+      screenshot: shot,
+      timestamp: new Date().toISOString(),
+      device: env.device ?? 'desktop',
+    }) + '\n');
+  } catch (error) {
+    // Capture is diagnostics, never a reason to fail a scenario.
+    console.warn('[bdd] flow capture failed:', (error as Error).message);
+  }
+}
+```
+
+## 8. `features/support/hooks.ts`
+
+```typescript
+import {
+  After, AfterAll, AfterStep, Before, BeforeAll, Status, setDefaultTimeout,
+} from '@cucumber/cucumber';
+import { chromium, firefox, webkit, devices, Browser } from 'playwright';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { env } from './env';
+import { BddWorld } from './world';
+import { captureStep, slugify } from './flow-capture';
+
+setDefaultTimeout(env.timeout);
+
+let browser: Browser;
+
+const launcher = () => ({ chromium, firefox, webkit }[env.browserName] ?? chromium);
+
+BeforeAll(async function () {
+  browser = await launcher().launch({ headless: !env.headed, slowMo: env.slowMo });
+});
+
+AfterAll(async function () {
+  await browser?.close();
+});
+
+Before(async function (this: BddWorld, { pickle }) {
+  // A device profile emulates a phone viewport (UA, touch, scale factor).
+  // Real devices are the Appium lane - see appium.md.
+  const profile = env.device ? devices[env.device] : undefined;
+  if (env.device && !profile) throw new Error(`Unknown BDD_DEVICE "${env.device}"`);
+
+  this.browser = browser;
+  this.context = await browser.newContext({ baseURL: env.baseUrl, ...(profile ?? {}) });
+  if (env.trace !== 'off') {
+    await this.context.tracing.start({ screenshots: true, snapshots: true, sources: true });
+  }
+  this.page = await this.context.newPage();
+  this.stepIndex = 0;
+  this.scenarioSlug = slugify(pickle.name);
+});
+
+AfterStep(async function (this: BddWorld, { pickle, pickleStep, result }) {
+  await captureStep({
+    page: this.page,
+    scenario: pickle.name,
+    scenarioUri: pickle.uri,
+    tags: (pickle.tags ?? []).map((t) => t.name),
+    stepIndex: this.stepIndex++,
+    keyword: String(pickleStep?.type ?? ''),
+    step: pickleStep?.text ?? '',
+    status: String(result.status).toLowerCase(),
+    scenarioSlug: this.scenarioSlug,
+  });
+});
+
+After(async function (this: BddWorld, { pickle, result }) {
+  const failed = result?.status === Status.FAILED;
+  if (failed && this.page) {
+    const buffer = await this.page.screenshot({ fullPage: true }).catch(() => null);
+    if (buffer) this.attach(buffer, 'image/png');
+  }
+  if (env.trace === 'on' || (env.trace === 'retain-on-failure' && failed)) {
+    mkdirSync('bdd-artifacts/traces', { recursive: true });
+    await this.context?.tracing.stop({ path: join('bdd-artifacts/traces', `${slugify(pickle.name)}.zip`) });
+  } else if (env.trace !== 'off') {
+    await this.context?.tracing.stop();
+  }
+  await this.context?.close();
+});
+```
+
+`pickleStep.type` carries `Context` / `Action` / `Outcome` (the pickle has no raw
+Gherkin keyword). That is enough to label a flow edge; use the step text as the
+primary label.
+
+## 9. Step definitions
+
+Keep them thin: they translate domain language into page interactions, and hold
+no assertions about implementation detail.
+
+```typescript
+import { Given, When, Then } from '@cucumber/cucumber';
+import { expect } from '@playwright/test';
+import type { BddWorld } from '../support/world';
+
+Given('I am on the {string} page', async function (this: BddWorld, name: string) {
+  const routes: Record<string, string> = { cart: '/cart', checkout: '/checkout', home: '/' };
+  const route = routes[name];
+  if (!route) throw new Error(`Unknown page "${name}" - add it to the route map`);
+  await this.page.goto(route);
+});
+
+When('I sign in as {string}', async function (this: BddWorld, email: string) {
+  await this.page.goto('/login');
+  await this.page.getByLabel('Email').fill(email);
+  await this.page.getByLabel('Password').fill(process.env.BDD_TEST_PASSWORD ?? 'test-password');
+  await this.page.getByRole('button', { name: 'Sign in' }).click();
+});
+
+Then('I see the error {string}', async function (this: BddWorld, message: string) {
+  await expect(this.page.getByRole('alert')).toContainText(message);
+});
+```
+
+Notes:
+
+- `expect` from `@playwright/test` gives auto-retrying web assertions; add
+  `@playwright/test` as a dev dependency if the project does not already have it,
+  otherwise use `expect` from `node:assert` and Playwright's own waiting APIs.
+- Prefer role/label locators over CSS: they survive redesigns and encode accessibility.
+- Never `page.waitForTimeout` in a step definition; wait for the state the step
+  is about.
+
+## 10. `package.json` scripts
+
+```json
+{
+  "scripts": {
+    "test:bdd": "cucumber-js",
+    "test:bdd:headed": "BDD_HEADED=1 BDD_SLOWMO=250 cucumber-js",
+    "test:bdd:responsive": "BDD_DEVICE='iPhone 15' cucumber-js",
+    "test:bdd:mobile": "BDD_DRIVER=appium cucumber-js -p mobile",
+    "test:bdd:flow": "BDD_FLOW_CAPTURE=1 cucumber-js",
+    "test:bdd:smoke": "cucumber-js --tags '@smoke'"
+  }
+}
+```
+
+On Windows, prefix env vars with `cross-env` (`npm i -D cross-env`).
+
+## 11. `tsconfig.json` additions
+
+cucumber-js config files written in TypeScript do **not** honour `tsconfig.json`
+(they use Node's built-in TS support), so keep `cucumber.mjs` in JavaScript. For
+the support code:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["features/**/*.ts"]
+}
+```
+
+## 12. Smoke check
+
+```bash
+mkdir -p bdd-artifacts
+npx cucumber-js --tags '@smoke' || true
+node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" features/ --results bdd-artifacts/cucumber.ndjson
+```
+
+The second command must report a non-zero number of executed cases. If it
+reports orphan cases, the scenario names in the results do not match the specs -
+usually a stale ndjson from a previous run; delete `bdd-artifacts/` and re-run.
