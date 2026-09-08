@@ -11,15 +11,25 @@ can report on, execute and trace.
 
 ## Communication policy
 
-- Think, plan and write every artifact in **English**: feature files, tags,
-  step text, commit messages, and any prompt sent to a model or subagent.
-- Talk to the **user in the language they use** (their own message language, or
-  the language configured in their `CLAUDE.md`). Translate findings and
-  questions; never translate the Gherkin itself unless the user asks for a
-  localized feature file (then use `# language:` and keep it consistent).
-- Exception: if the user's team authors Gherkin in their own language, honour
-  that and add the `# language:` header. Supported dialects in this plugin's
-  tooling: `en`, `zh-CN`, `zh-TW`, `ja`.
+The line is drawn at **who reads it**, not who wrote it.
+
+- **Feature files follow the user's language.** Feature, rule and scenario
+  names, descriptions, step text and `Examples` headers are written in the
+  language the team speaks, with a `# language:` header when it is not English
+  (`en`, `zh-CN`, `zh-TW`, `ja` are parsed by this plugin's tooling). This is
+  the whole point of the format: the people who own the requirement have to be
+  able to read it back and say "no, that rule is wrong". A specification in a
+  language its reviewers do not read cannot do that job.
+- **Tags stay English.** `@REQ-1042`, `@web`, `@wip`, `@regression` are keys the
+  reports match on; they must not shift with the prose.
+- **Code and config stay English**: step definition bodies, file and directory
+  names, commit messages, and any prompt sent to a model or subagent.
+- **Talk to the user in the language they use** - their message language, or the
+  language configured in their `CLAUDE.md`.
+- **The repo wins when it disagrees.** If the project's existing feature files
+  are in English, keep writing English and say why - a half-translated suite is
+  worse than either language. If the existing files are inconsistent, ask which
+  way the team wants to settle it.
 
 ## Workflow
 

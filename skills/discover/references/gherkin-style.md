@@ -116,7 +116,10 @@ Rule: A cart may hold at most 20 items
 
 ## Localized feature files
 
-Add the dialect header as the first line and keep one dialect per file:
+This is the default, not a special case: feature files are written in the
+language the team speaks, because the people who sign off the rules have to be
+able to read them. Add the dialect header as the first line and keep one dialect
+per file:
 
 ```gherkin
 # language: ja
@@ -128,6 +131,11 @@ Add the dialect header as the first line and keep one dialect per file:
 ```
 
 Dialects supported by this plugin's parser and reports: `en`, `zh-CN`, `zh-TW`, `ja`.
+
+Tags stay English whatever the dialect - `@REQ-1042`, `@web`, `@wip` are keys the
+coverage and spec reports match on, and they must not change with the prose. Step
+definitions have to match the localized step text character for character; the
+`init` skill's language references have a section on writing them.
 
 ## Size limits that keep suites maintainable
 

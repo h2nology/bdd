@@ -522,3 +522,53 @@ cucumber.execution.parallel.config.fixed.parallelism=4
 The `ThreadLocal` design above is what makes this safe. `flow.ndjson` receives
 interleaved lines from several threads; each line is written in one
 `Files.writeString` append call, and `flow-map.cjs` re-groups by scenario.
+
+## 13. Non-English step text
+
+A `# language: zh-CN` feature file needs step definitions that match its text.
+Three things make this work, and one of them is a trap.
+
+**The text is matched literally.** A cucumber expression is compiled to a regular
+expression, and CJK characters in it are ordinary literals. Nothing special is
+needed to match them.
+
+**Parameter names stay English.** `{string}` and `{float}` match by position, not
+by name, so the handler's parameters keep their English names while the step text
+is not English. Only the text between the parameters has to match.
+
+**The trap: ASCII punctuation is syntax.** In a cucumber expression, `(` `)` marks
+optional text, `{` `}` marks a parameter, `/` marks alternatives and `\` escapes.
+Full-width CJK punctuation - `，` `。` `（` `）` `：` - carries none of that meaning
+and is safe. So write `单价 {float} 元` freely, but escape a half-width `(` as
+`\(` if the step text really contains one. Mixing the two is where this bites:
+`我的购物车中有 "ESP-100" (含税)` needs the parentheses escaped, `（含税）` does not.
+
+```java
+@Given("我的购物车中有 {string}，单价 {float} 元")
+public void 购物车中有商品(String sku, float price) {
+    api.seedCart(sku, price);
+}
+```
+
+Method names may be CJK (Java identifiers allow it) but English names are easier
+to search and to stack-trace; the annotation is what matters.
+
+**Set the source encoding explicitly** - this is the one that actually breaks.
+Without it the compiler uses the platform default, and on a Windows build agent
+the annotation text becomes mojibake that silently matches nothing:
+
+```xml
+<properties>
+  <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+</properties>
+```
+
+Gradle:
+
+```kotlin
+tasks.withType<JavaCompile> { options.encoding = "UTF-8" }
+tasks.withType<Test> { systemProperty("file.encoding", "UTF-8") }
+```
+
+Add `-Dfile.encoding=UTF-8` to the test JVM as well, or the cucumber HTML report
+and the console output will mangle the step text even when matching works.

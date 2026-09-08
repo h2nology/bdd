@@ -14,7 +14,10 @@ results and coverage percentages use the `run` skill / `coverage.cjs` instead.
 
 ## Communication policy
 
-- Run the tooling and write commit messages in English.
+- Run the tooling and write commit messages in English. The Gherkin content is
+  reproduced verbatim, so the report speaks whatever language the feature files
+  do - which, per the plugin's language policy, should already be the
+  reviewer's.
 - Report progress and findings to the user in the language they use.
 - The report chrome (headings, table headers) is localized with `--labels`; pick
   the **reviewer's** language, which is often not the developer's. Ask if unclear.

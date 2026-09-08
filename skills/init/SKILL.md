@@ -22,7 +22,11 @@ through Appium.
 
 ## Communication policy
 
-- All generated code, config, step text and comments in **English**.
+- All generated code, config, file names and comments in **English**.
+- **Step text follows the feature files**, which follow the team's language. When
+  they carry a `# language:` header, the step definitions must match that text
+  character for character - see the "non-English step text" section of the
+  language reference before writing the glue.
 - Explain choices and report results to the user in **their** language.
 
 ## Procedure

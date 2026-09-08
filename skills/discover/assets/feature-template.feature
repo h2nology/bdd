@@ -1,3 +1,6 @@
+# This template is English so the placeholders read clearly. Write the real file
+# in the team's language: put `# language: zh-CN` (or zh-TW / ja) on the first
+# line and use that dialect's keywords throughout. Tags stay English either way.
 @<capability-tag> @REQ-<id>
 Feature: <Capability, not a screen>
   As a <role>

@@ -472,3 +472,42 @@ Gherkin tags become NUnit/xUnit categories, so `@smoke` filters as
 
 On Windows PowerShell, set env vars with `$env:BDD_DEVICE="iPhone 15"` before
 `dotnet test`.
+
+## 11. Non-English step text
+
+A `# language: zh-CN` feature file needs step definitions that match its text.
+Three things make this work, and one of them is a trap.
+
+**The text is matched literally.** A cucumber expression is compiled to a regular
+expression, and CJK characters in it are ordinary literals. Nothing special is
+needed to match them.
+
+**Parameter names stay English.** `{string}` and `{float}` match by position, not
+by name, so the handler's parameters keep their English names while the step text
+is not English. Only the text between the parameters has to match.
+
+**The trap: ASCII punctuation is syntax.** In a cucumber expression, `(` `)` marks
+optional text, `{` `}` marks a parameter, `/` marks alternatives and `\` escapes.
+Full-width CJK punctuation - `，` `。` `（` `）` `：` - carries none of that meaning
+and is safe. So write `单价 {float} 元` freely, but escape a half-width `(` as
+`\(` if the step text really contains one. Mixing the two is where this bites:
+`我的购物车中有 "ESP-100" (含税)` needs the parentheses escaped, `（含税）` does not.
+
+```csharp
+[Given(@"我的购物车中有 ""(.*)""，单价 (.*) 元")]
+public async Task 购物车中有商品(string sku, decimal price) =>
+    await _api.SeedCartAsync(sku, price);
+
+[Then(@"订单总额为 (.*) 元")]
+public async Task 订单总额为(decimal total) =>
+    await Expect(_page.GetByTestId("order-total")).ToHaveTextAsync(total.ToString("F2"));
+```
+
+Reqnroll accepts both regular expressions and cucumber expressions; with regex the
+escaping rules are the regex ones, so `(` and `)` always need escaping regardless
+of language.
+
+**Save the binding files as UTF-8 with BOM.** Without the BOM, `csc` may read them
+as the system codepage on a non-UTF-8 machine and the attribute strings will not
+match. Setting `<EnableDefaultItems>` or an `.editorconfig` `charset = utf-8-bom`
+for `*.cs` keeps this stable across contributors.

@@ -344,3 +344,54 @@ node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" features/ --results bdd-artifa
 The second command must report a non-zero number of executed cases. If it
 reports orphan cases, the scenario names in the results do not match the specs -
 usually a stale ndjson from a previous run; delete `bdd-artifacts/` and re-run.
+
+## 13. Non-English step text
+
+A `# language: zh-CN` feature file needs step definitions that match its text.
+Three things make this work, and one of them is a trap.
+
+**The text is matched literally.** A cucumber expression is compiled to a regular
+expression, and CJK characters in it are ordinary literals. Nothing special is
+needed to match them.
+
+**Parameter names stay English.** `{string}` and `{float}` match by position, not
+by name, so the handler's parameters keep their English names while the step text
+is not English. Only the text between the parameters has to match.
+
+**The trap: ASCII punctuation is syntax.** In a cucumber expression, `(` `)` marks
+optional text, `{` `}` marks a parameter, `/` marks alternatives and `\` escapes.
+Full-width CJK punctuation - `，` `。` `（` `）` `：` - carries none of that meaning
+and is safe. So write `单价 {float} 元` freely, but escape a half-width `(` as
+`\(` if the step text really contains one. Mixing the two is where this bites:
+`我的购物车中有 "ESP-100" (含税)` needs the parentheses escaped, `（含税）` does not.
+
+```gherkin
+# language: zh-CN
+功能: 购物车结账
+
+  @REQ-1042 @web
+  场景: 为单件商品下单
+    假如 我已作为注册顾客登录
+    并且 我的购物车中有 "ESP-100 浓缩咖啡杯"，单价 12.50 元
+    当 我提交订单
+    那么 订单总额为 42.50 元
+```
+
+```typescript
+Given('我已作为注册顾客登录', async function (this: BddWorld) {
+  await this.page.goto(`${this.baseUrl}/login`);
+  // ...
+});
+
+Given('我的购物车中有 {string}，单价 {float} 元', async function (this: BddWorld, sku: string, price: number) {
+  await this.api.seedCart({ sku, price });
+});
+
+Then('订单总额为 {float} 元', async function (this: BddWorld, total: number) {
+  await expect(this.page.getByTestId('order-total')).toHaveText(total.toFixed(2));
+});
+```
+
+Node reads and writes UTF-8 by default, so no extra configuration is needed. Keep
+file and directory names ASCII even when their contents are not - `cucumber.js`
+glob patterns and npm scripts are easier to keep portable that way.

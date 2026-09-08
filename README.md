@@ -77,9 +77,26 @@ coverage report detect requirements that have **no** scenario at all.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 
-**Language policy**: everything the tooling produces - feature files, step text,
-config, commit messages - is English. Conversation with the user, and the report
-chrome (`--labels en|zh-CN|zh-TW|ja`), follow the user's language.
+**Language policy**: the line is drawn at *who reads it*, not who wrote it.
+
+**Follows the user's language** - the `.feature` files (feature, rule and
+scenario names, descriptions, step text, `Examples` headers), the conversation,
+and the report chrome (`--labels en|zh-CN|zh-TW|ja`). A non-English feature file
+carries a `# language:` header; the bundled parser handles `en`, `zh-CN`,
+`zh-TW`, `ja`.
+
+**Stays English** - tags (`@REQ-1042`, `@web`), step definition code and config,
+DDL identifiers, OpenAPI paths and schema names, file and directory names, and
+commit messages.
+
+The reason for the split: Gherkin exists so the people who own the requirement
+can read their specification back. Written in a language its reviewers do not
+read, it stops being a specification and becomes test code with extra ceremony.
+Tags and identifiers go the other way - they are keys the tooling matches on, so
+they stay stable whatever language the prose is in.
+
+When a project's existing feature files are already in English, keep writing
+English: a half-translated suite is worse than either language.
 
 ## Requirements
 

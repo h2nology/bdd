@@ -19,7 +19,10 @@ does - so establish it first, before promising the user a spec.
 ## Communication policy
 
 - The spec, paths, schema names, `summary` / `description` text and any
-  generated code in **English**.
+  generated code in **English** - even when the feature files are not. An API
+  contract is read by callers outside the team, often outside the company, and
+  a path or schema name is an identifier before it is prose. Say this if the
+  user expects the spec to match their localized scenarios.
 - Discuss the design, its inferences and its open questions with the user in
   **their** language; localize the coverage report with `--labels`.
 

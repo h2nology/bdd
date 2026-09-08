@@ -298,3 +298,42 @@ If the project uses `behave`, the equivalents are:
 | Step text | `context.` carries the world; the step is `step.keyword` / `step.name` in `after_step(context, step)` |
 
 The environment contract and the flow-capture record schema stay identical.
+
+## 7. Non-English step text
+
+A `# language: zh-CN` feature file needs step definitions that match its text.
+Three things make this work, and one of them is a trap.
+
+**The text is matched literally.** A cucumber expression is compiled to a regular
+expression, and CJK characters in it are ordinary literals. Nothing special is
+needed to match them.
+
+**Parameter names stay English.** `{string}` and `{float}` match by position, not
+by name, so the handler's parameters keep their English names while the step text
+is not English. Only the text between the parameters has to match.
+
+**The trap: ASCII punctuation is syntax.** In a cucumber expression, `(` `)` marks
+optional text, `{` `}` marks a parameter, `/` marks alternatives and `\` escapes.
+Full-width CJK punctuation - `，` `。` `（` `）` `：` - carries none of that meaning
+and is safe. So write `单价 {float} 元` freely, but escape a half-width `(` as
+`\(` if the step text really contains one. Mixing the two is where this bites:
+`我的购物车中有 "ESP-100" (含税)` needs the parentheses escaped, `（含税）` does not.
+
+```python
+@given(parsers.parse('我的购物车中有 "{sku}"，单价 {price:f} 元'))
+def cart_contains(api, sku: str, price: float):
+    api.seed_cart(sku=sku, price=price)
+
+
+@then(parsers.parse('订单总额为 {total:f} 元'))
+def order_total_is(page, total: float):
+    expect(page.get_by_test_id('order-total')).to_have_text(f'{total:.2f}')
+```
+
+Note that pytest-bdd uses `parsers.parse` / `parsers.cfparse` rather than cucumber
+expressions, so the placeholder syntax is `{name:f}`, not `{float}` - the escaping
+trap above applies to `{` and `}` here too.
+
+Python 3 source is UTF-8 by default and `scenarios()` opens feature files as
+UTF-8, so no encoding declaration is needed. Function names should stay ASCII:
+pytest node ids end up in CI output and command-line `-k` filters.
