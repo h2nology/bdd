@@ -475,7 +475,9 @@ On Windows PowerShell, set env vars with `$env:BDD_DEVICE="iPhone 15"` before
 
 ## 11. Non-English step text
 
-A `# language: zh-CN` feature file needs step definitions that match its text.
+A feature file whose step text is not English needs step definitions that match
+it. The keywords stay English, so nothing changes about how the glue is wired up
+- only the text being matched.
 Three things make this work, and one of them is a trap.
 
 **The text is matched literally.** A cucumber expression is compiled to a regular

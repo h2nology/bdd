@@ -347,7 +347,9 @@ usually a stale ndjson from a previous run; delete `bdd-artifacts/` and re-run.
 
 ## 13. Non-English step text
 
-A `# language: zh-CN` feature file needs step definitions that match its text.
+A feature file whose step text is not English needs step definitions that match
+it. The keywords stay English, so nothing changes about how the glue is wired up
+- only the text being matched.
 Three things make this work, and one of them is a trap.
 
 **The text is matched literally.** A cucumber expression is compiled to a regular
@@ -366,15 +368,14 @@ and is safe. So write `单价 {float} 元` freely, but escape a half-width `(` a
 `我的购物车中有 "ESP-100" (含税)` needs the parentheses escaped, `（含税）` does not.
 
 ```gherkin
-# language: zh-CN
-功能: 购物车结账
+Feature: 购物车结账
 
   @REQ-1042 @web
-  场景: 为单件商品下单
-    假如 我已作为注册顾客登录
-    并且 我的购物车中有 "ESP-100 浓缩咖啡杯"，单价 12.50 元
-    当 我提交订单
-    那么 订单总额为 42.50 元
+  Scenario: 为单件商品下单
+    Given 我已作为注册顾客登录
+    And 我的购物车中有 "ESP-100 浓缩咖啡杯"，单价 12.50 元
+    When 我提交订单
+    Then 订单总额为 42.50 元
 ```
 
 ```typescript

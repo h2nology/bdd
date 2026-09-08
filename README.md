@@ -79,21 +79,41 @@ coverage report detect requirements that have **no** scenario at all.
 
 **Language policy**: the line is drawn at *who reads it*, not who wrote it.
 
-**Follows the user's language** - the `.feature` files (feature, rule and
-scenario names, descriptions, step text, `Examples` headers), the conversation,
-and the report chrome (`--labels en|zh-CN|zh-TW|ja`). A non-English feature file
-carries a `# language:` header; the bundled parser handles `en`, `zh-CN`,
-`zh-TW`, `ja`.
+**Follows the user's language** - everything inside a `.feature` file that a
+person reads as prose: feature, rule and scenario names, descriptions, step
+text, `Examples` headers. Also the conversation and the report chrome
+(`--labels en|zh-CN|zh-TW|ja`).
 
-**Stays English** - tags (`@REQ-1042`, `@web`), step definition code and config,
-DDL identifiers, OpenAPI paths and schema names, file and directory names, and
-commit messages.
+**Stays English** - the Gherkin keywords themselves (`Feature:`, `Rule:`,
+`Background:`, `Scenario:`, `Scenario Outline:`, `Examples:`, `Given`, `When`,
+`Then`, `And`, `But`), tags (`@REQ-1042`, `@web`), step definition code and
+config, DDL identifiers, OpenAPI paths and schema names, file and directory
+names, and commit messages.
+
+So a Chinese feature file looks like this, and needs no `# language:` header
+because the keywords are the default English ones:
+
+```gherkin
+Feature: 购物车结账
+
+  @REQ-1042 @web
+  Scenario: 为单件商品下单
+    Given 我的购物车中有 "ESP-100 浓缩咖啡杯"，单价 12.50 元
+    When 我提交订单
+    Then 订单总额为 42.50 元
+```
 
 The reason for the split: Gherkin exists so the people who own the requirement
 can read their specification back. Written in a language its reviewers do not
 read, it stops being a specification and becomes test code with extra ceremony.
-Tags and identifiers go the other way - they are keys the tooling matches on, so
-they stay stable whatever language the prose is in.
+Keywords, tags and identifiers go the other way - they are syntax and keys the
+tooling matches on, not prose, so they stay stable whatever language the
+sentences are in. Keeping them English also keeps editor highlighting, IDE
+completion and every cucumber implementation on their best-supported path.
+
+Localized keywords (`功能:` / `場景:` / `機能:`) are still parsed - `en`, `zh-CN`,
+`zh-TW` and `ja` - so an existing localized suite keeps working. Follow it rather
+than converting it, but do not start a new suite that way.
 
 When a project's existing feature files are already in English, keep writing
 English: a half-translated suite is worse than either language.

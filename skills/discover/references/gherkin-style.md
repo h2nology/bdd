@@ -114,28 +114,36 @@ Rule: A cart may hold at most 20 items
 
 `Rule:` may carry its own `Background:` which applies only inside the rule.
 
-## Localized feature files
+## Feature files in other languages
 
-This is the default, not a special case: feature files are written in the
-language the team speaks, because the people who sign off the rules have to be
-able to read them. Add the dialect header as the first line and keep one dialect
-per file:
+This is the default, not a special case: the prose is written in the language the
+team speaks, because the people who sign off the rules have to be able to read
+them. The **keywords stay English**, so no `# language:` header is needed:
 
 ```gherkin
-# language: ja
-機能: ログイン
-  シナリオ: 正しいパスワードでログインする
-    前提 ログイン画面を開いている
-    もし ユーザー名とパスワードを入力する
-    ならば ホーム画面が表示される
+Feature: 購入手続き
+
+  @REQ-1042 @web
+  Scenario: 商品を1点購入する
+    Given 登録済みの顧客としてログインしている
+    And カートに "ESP-100 エスプレッソカップ" が 12.50 円で入っている
+    When 注文を確定する
+    Then 注文合計は 42.50 円になる
 ```
 
-Dialects supported by this plugin's parser and reports: `en`, `zh-CN`, `zh-TW`, `ja`.
+Keywords are syntax rather than prose, which is why they sit on the English side
+with the tags: editor highlighting and IDE completion key off them, and every
+cucumber implementation supports the English set best.
 
-Tags stay English whatever the dialect - `@REQ-1042`, `@web`, `@wip` are keys the
-coverage and spec reports match on, and they must not change with the prose. Step
-definitions have to match the localized step text character for character; the
-`init` skill's language references have a section on writing them.
+Tags stay English too - `@REQ-1042`, `@web`, `@wip` are keys the coverage and
+spec reports match on, and they must not change with the prose. Step definitions
+have to match the localized step text character for character; the `init` skill's
+language references have a section on writing them.
+
+**Localized keywords** (`機能:` / `功能:` / `場景:`) are still parsed - dialects
+`en`, `zh-CN`, `zh-TW`, `ja`, selected with a `# language:` header on the first
+line. Follow that style when a repo already uses it, but do not start a new suite
+with it.
 
 ## Size limits that keep suites maintainable
 

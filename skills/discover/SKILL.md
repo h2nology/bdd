@@ -13,13 +13,31 @@ can report on, execute and trace.
 
 The line is drawn at **who reads it**, not who wrote it.
 
-- **Feature files follow the user's language.** Feature, rule and scenario
-  names, descriptions, step text and `Examples` headers are written in the
-  language the team speaks, with a `# language:` header when it is not English
-  (`en`, `zh-CN`, `zh-TW`, `ja` are parsed by this plugin's tooling). This is
-  the whole point of the format: the people who own the requirement have to be
-  able to read it back and say "no, that rule is wrong". A specification in a
-  language its reviewers do not read cannot do that job.
+- **The prose in a feature file follows the user's language.** Feature, rule
+  and scenario names, descriptions, step text and `Examples` headers are written
+  in the language the team speaks. This is the whole point of the format: the
+  people who own the requirement have to be able to read it back and say "no,
+  that rule is wrong". A specification in a language its reviewers do not read
+  cannot do that job.
+- **Keywords stay English.** `Feature:`, `Rule:`, `Background:`, `Scenario:`,
+  `Scenario Outline:`, `Examples:`, `Given`, `When`, `Then`, `And`, `But`. They
+  are syntax, not prose - and keeping them English means no `# language:` header
+  is needed, editor highlighting works, and every cucumber implementation is on
+  its best-supported path:
+
+  ```gherkin
+  Feature: 购物车结账
+
+    @REQ-1042 @web
+    Scenario: 为单件商品下单
+      Given 我的购物车中有 "ESP-100 浓缩咖啡杯"，单价 12.50 元
+      When 我提交订单
+      Then 订单总额为 42.50 元
+  ```
+
+  Localized keywords are still parsed (`en`, `zh-CN`, `zh-TW`, `ja`). If the repo
+  already uses them, follow it and keep the `# language:` header; do not start a
+  new suite that way.
 - **Tags stay English.** `@REQ-1042`, `@web`, `@wip`, `@regression` are keys the
   reports match on; they must not shift with the prose.
 - **Code and config stay English**: step definition bodies, file and directory

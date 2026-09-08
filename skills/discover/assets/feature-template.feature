@@ -1,6 +1,7 @@
-# This template is English so the placeholders read clearly. Write the real file
-# in the team's language: put `# language: zh-CN` (or zh-TW / ja) on the first
-# line and use that dialect's keywords throughout. Tags stay English either way.
+# Placeholders are English here for legibility. In the real file, write the prose
+# - names, descriptions and step text - in the team's language, and keep the
+# keywords (Feature/Rule/Background/Scenario/Given/When/Then) and tags English.
+# No `# language:` header is needed when the keywords stay English.
 @<capability-tag> @REQ-<id>
 Feature: <Capability, not a screen>
   As a <role>
