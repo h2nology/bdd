@@ -90,7 +90,54 @@ Confidence values, used consistently:
 
 Also put the questions Gherkin cannot answer to the user (they change the DDL):
 primary key strategy, soft vs hard deletion, audit columns, multi-tenancy,
-retention, and whether money needs a currency column.
+retention, whether money needs a currency column, and **who wins when two people
+save the same row at once** (see below).
+
+### 4b. Decide the concurrent-update policy
+
+Two users open the same order, both save. Someone's work is about to disappear,
+and the schema decides whether anyone notices. This is not a performance detail -
+it is a business rule, and it is the one schema decision that is invisible until
+it costs someone an afternoon.
+
+Three answers, and only one of them needs a column:
+
+| Policy | What happens to the second save | Schema cost |
+|---|---|---|
+| **Last write wins** | It overwrites, silently | None - but see the caveat below |
+| **First write wins** (optimistic locking) | It is **rejected**; the user is told to reload and retry | A version column, or the dialect's native row version |
+| **Pessimistic locking** | The second user cannot start editing until the first finishes | None; `SELECT ... FOR UPDATE` at runtime |
+
+"First write wins" is the one people usually mean when they say a save should not
+be lost. Note what it actually does: it does not merge, and it does not queue - it
+*refuses* the stale write. That refusal has to reach the user, so the specs need a
+scenario for it:
+
+```gherkin
+@REQ-1088
+Scenario: Saving an order someone else has already changed
+  Given a colleague has saved changes to order "SO-4471" since I opened it
+  When I save my changes
+  Then my changes are not applied
+  And I see the message "This order was changed by someone else. Reload to continue."
+```
+
+**When this is `derived`**: a scenario like the one above exists, or the specs
+mention two actors touching one record. Then the version column is not a
+suggestion - the behaviour cannot be implemented without it.
+
+**When this is `assumed`**: the specs are silent. Ask; do not quietly pick last
+write wins because it needs no column. Silence in a specification is not consent
+to lose data.
+
+**The caveat on last write wins.** It is genuinely free only when a save writes
+the whole row and losing the other person's copy is acceptable. If two users edit
+*different fields* of the same row - one the address, one the phone number - a
+whole-row `UPDATE` throws away the field it never touched, and nobody finds out.
+If that is unacceptable, the write must set only the changed columns. Say this
+out loud when the user picks this policy; most people have not pictured it.
+
+Each dialect reference gives the concrete column or native mechanism.
 
 ### 5. Emit the DDL in the project's migration tool
 

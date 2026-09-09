@@ -156,3 +156,25 @@ CREATE TABLE order_items (
   such columns can exceed the index limit.
 - MariaDB is not MySQL for JSON (`JSON` is an alias for `LONGTEXT`) or for some
   window functions. If the project uses MariaDB, say which features you avoided.
+
+## Optimistic locking
+
+MySQL has no native row version, so the column is explicit:
+
+```sql
+ALTER TABLE orders ADD COLUMN version BIGINT NOT NULL DEFAULT 1;
+
+UPDATE orders SET status = 'confirmed', version = version + 1
+WHERE id = ? AND version = ?;
+-- affected rows = 0 -> the row changed under us; report the conflict
+```
+
+Check the **affected-row count, not the error state** - a mismatched version is a
+successful statement that updated nothing.
+
+Do not use `updated_at` as the version. MySQL `TIMESTAMP`/`DATETIME` default to
+second precision, so two saves inside the same second compare equal and the
+conflict goes undetected. `DATETIME(6)` narrows the window but does not close it;
+a counter has no window at all.
+
+`ON UPDATE CURRENT_TIMESTAMP` is for audit columns, not for locking.

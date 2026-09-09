@@ -138,3 +138,26 @@ The rollback script removes the tables in reverse dependency order; Oracle needs
   wrapped in one transaction. Keep each migration one logical change.
 - Case-insensitive uniqueness needs a function-based unique index on
   `LOWER(email)`, or the session parameters `NLS_COMP`/`NLS_SORT`.
+
+## Optimistic locking
+
+Oracle exposes `ORA_ROWSCN`, the system change number of the row's last commit:
+
+```sql
+SELECT ORA_ROWSCN, o.* FROM orders o WHERE id = :id;
+UPDATE orders SET status = 'confirmed'
+WHERE id = :id AND ORA_ROWSCN = :scn;
+```
+
+By default this is tracked per *block*, not per row, so an unrelated row in the
+same block moves it and you get false conflicts. It is only row-accurate when the
+table was created `ROWDEPENDENCIES`, which cannot be turned on afterwards - the
+table has to be rebuilt. Decide at creation time or do not rely on it.
+
+The portable choice, and what ORMs expect:
+
+```sql
+ALTER TABLE orders ADD version NUMBER(19) DEFAULT 1 NOT NULL;
+UPDATE orders SET status = 'confirmed', version = version + 1
+WHERE id = :id AND version = :version;
+```

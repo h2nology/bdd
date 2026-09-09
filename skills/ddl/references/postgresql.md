@@ -148,3 +148,31 @@ The migration's reverse operation removes the four tables in the opposite order
   cart") need a trigger or application logic - say so rather than pretending.
 - `ON DELETE CASCADE` on a wide graph removes more than the user expects. Default
   to `RESTRICT`; use `CASCADE` only for true composition.
+
+## Optimistic locking
+
+PostgreSQL already tracks a row version: the system column `xmin` changes on every
+update. It costs no schema at all.
+
+```sql
+UPDATE orders SET status = 'confirmed'
+WHERE id = $1 AND xmin = $2;      -- $2 read with: SELECT xmin, * FROM orders ...
+-- 0 rows affected -> somebody else got there first
+```
+
+Use it when the application can carry an opaque token. Its limits are real: the
+value is not stable across a `VACUUM FULL`, a dump/restore, or logical
+replication, so never persist it beyond the edit session, and never expose it as
+an API-level ETag that outlives a deploy.
+
+When the token must survive those, add an explicit column instead:
+
+```sql
+ALTER TABLE orders ADD COLUMN version BIGINT NOT NULL DEFAULT 1;
+UPDATE orders SET status = 'confirmed', version = version + 1
+WHERE id = $1 AND version = $2;
+```
+
+Most ORMs (Hibernate `@Version`, Django, SQLAlchemy, EF Core) expect the explicit
+column and increment it themselves - check before adding a trigger that would
+double-increment it.

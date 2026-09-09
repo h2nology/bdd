@@ -146,3 +146,26 @@ CREATE TABLE order_items (
   migration rolls back cleanly.
 - `NVARCHAR(MAX)` columns cannot be index keys; index a computed hash or a
   truncated prefix column instead.
+
+## Optimistic locking
+
+SQL Server has the best native support of the five: `ROWVERSION` is maintained by
+the engine, unique within the database, and cannot be written by the application.
+
+```sql
+ALTER TABLE orders ADD row_version ROWVERSION;   -- no NOT NULL, no DEFAULT: the engine owns it
+
+UPDATE orders SET status = 'confirmed'
+WHERE id = @id AND row_version = @rowVersion;
+IF @@ROWCOUNT = 0 -- somebody else committed first
+```
+
+Two cautions, one of them already noted in the pitfalls above:
+
+- `ROWVERSION` is **not a timestamp**. It carries no time, and the deprecated
+  `TIMESTAMP` spelling means the same thing - never use either as an audit column.
+- It changes on *every* update, including one that writes the same values back. A
+  no-op save still bumps it and will conflict with a concurrent editor.
+
+EF Core maps it with `.IsRowVersion()`. If the project is ORM-free or needs a
+value it can serialize into an API, an explicit `BIGINT` counter travels better.

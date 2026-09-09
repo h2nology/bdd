@@ -136,3 +136,24 @@ CREATE TABLE order_items (
 - A schema that works in SQLite may not port to the production engine. When
   SQLite is only the test database, generate the production dialect's DDL as the
   source of truth and keep this one derived from it.
+
+## Optimistic locking
+
+SQLite has no native row version. Use an explicit counter:
+
+```sql
+ALTER TABLE orders ADD COLUMN version INTEGER NOT NULL DEFAULT 1;
+UPDATE orders SET status = 'confirmed', version = version + 1
+WHERE id = ? AND version = ?;
+-- changes() = 0 -> conflict
+```
+
+In practice this matters less here than elsewhere: SQLite serializes writers, so
+two transactions cannot interleave their writes. What it does not prevent is the
+lost update across *user* sessions - read at 10:00, save at 10:05, having missed
+the change someone committed at 10:02. That is the case the version column exists
+for, and it is unaffected by SQLite's write locking.
+
+Per the note at the end of this file: if SQLite is only the test database,
+generate the production dialect's mechanism and keep the column definition
+compatible with it.

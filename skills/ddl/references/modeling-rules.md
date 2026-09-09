@@ -18,6 +18,8 @@
 | `the total is 25.00` | Either a stored derived column or a computed value - ask which |
 | Time words: `expires`, `valid until`, `scheduled` | A timestamp column, plus a question about timezone |
 | `history of`, `previously`, `audit` | A separate history table, not columns |
+| `changed by someone else`, `has been modified`, two actors saving one record | Optimistic locking: a version column (or the dialect's native row version) plus a conflict response |
+| `locked`, `is being edited by`, `checked out` | Pessimistic locking at runtime, or an explicit lock-holder column if the lock outlives a transaction |
 
 ## Naming
 
