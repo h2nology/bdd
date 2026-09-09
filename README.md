@@ -14,6 +14,7 @@ generate database DDL from the same specs.
 | `init` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
 | `implement` | Drive a feature to green one scenario at a time - failing scenario outside, failing unit tests inside - keeping the plan, the evidence and the decisions on disk |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
+| `sketch` | Derive the screens a feature implies - every data state of each page - and render them as a read-only pan/zoom wireframe board whose arrows run from each button to the page it opens; before any code exists |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
 | `openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
@@ -43,6 +44,7 @@ requirement
   -> /bdd:discover      features/*.feature
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
   -> /bdd:init          harness + step definitions        (once per project)
+  -> /bdd:sketch        bdd-artifacts/sketch.html        (what it would look like)
   -> /bdd:implement     docs/planning/<date>-<feature>/   (scenario by scenario, to green)
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
@@ -58,6 +60,7 @@ inside Java, Python and .NET projects too. Node 14+.
 | Script | Purpose |
 |---|---|
 | `scripts/spec-report.cjs` | Gherkin -> HTML specification report + JSON model |
+| `scripts/sketch.cjs` | Sketch spec JSON -> wireframe canvas (pan/zoom board, state-variant groups, elkjs orthogonal routing, Mermaid) |
 | `scripts/coverage.cjs` | Feature files + test results -> requirement coverage report, with CI gating |
 | `scripts/flow-map.cjs` | Step captures -> Mermaid page flow diagram, transition table, gallery |
 | `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |
