@@ -126,7 +126,7 @@ Map the model onto the template slots:
 | `{{#requirements}}` | `requirements` | One row per id, sorted naturally (`REQ-2` before `REQ-10`). `covered_by` from each entry's `featureName › name` + `uri:line` |
 | `{{#untagged}}` | `untagged` | Scenarios with no requirement tag — the review gap list |
 | `{{#nav_features}}` | `features` | The sticky index. One group per feature; the feature name and every scenario under it are links |
-| `{{#features}}` | `features` + the feature files themselves | Read the Gherkin for step text, data tables, doc strings and Examples; the JSON carries the inventory, not the prose |
+| `{{#features}}` | `features` + the feature files themselves | Read the Gherkin for step text, data tables, doc strings and the outline's `Examples` table; the JSON carries the inventory, not the prose |
 | `{{#warnings}}` | `warnings` | Never hand over a report that still lists these — fix the Gherkin and re-run |
 
 **Anchors must agree.** Every `.feature-block` and every `.scenario-card` carries

@@ -331,7 +331,7 @@ function parseFeature(text, uri) {
           descTarget = sc;
         } else if (token.kind === 'examples') {
           if (!currentScenario) {
-            errors.push({ line: token.line, message: 'Examples block outside of a Scenario Outline; ignored' });
+            errors.push({ line: token.line, message: `${token.keyword} block outside of a Scenario Outline; ignored` });
             break;
           }
           currentExamples = {
@@ -372,7 +372,7 @@ function parseFeature(text, uri) {
           if (!lastStep.dataTable) lastStep.dataTable = { rows: [] };
           lastStep.dataTable.rows.push({ cells: token.cells, line: token.line });
         } else {
-          errors.push({ line: token.line, message: 'Table row without an owning step or Examples block; ignored' });
+          errors.push({ line: token.line, message: 'Table row without an owning step or Examples/Scenarios block; ignored' });
         }
         break;
 
@@ -471,32 +471,34 @@ function validateFeature(feature, errors) {
     if (!sc.examples.length) {
       errors.push({
         line: sc.line,
-        message: `Scenario Outline "${label}" has no Examples block; it expands to one case with the placeholders left unsubstituted`,
+        message: `Scenario Outline "${label}" has no Examples/Scenarios block; it expands to one case with the placeholders left unsubstituted`,
       });
       continue;
     }
     const tables = sc.examples.filter((ex) => ex.header);
     if (!tables.length) {
-      errors.push({ line: sc.examples[0].line, message: `Examples block for "${label}" has no header row` });
+      errors.push({ line: sc.examples[0].line, message: `${sc.examples[0].keyword} block for "${label}" has no header row` });
       continue;
     }
     const columns = new Set();
+    // Report back whichever synonym the author wrote (`Examples` / `Scenarios`).
+    const tableKeyword = tables[0].keyword;
     for (const ex of tables) {
       for (const cell of ex.header.cells) columns.add(cell.trim());
       if (!ex.rows.length) {
-        errors.push({ line: ex.line, message: `Examples table for "${label}" has a header but no data rows` });
+        errors.push({ line: ex.line, message: `${ex.keyword} table for "${label}" has a header but no data rows` });
       }
     }
     for (const name of used) {
       if (!columns.has(name)) {
-        errors.push({ line: sc.line, message: `Scenario Outline "${label}" uses <${name}>, which no Examples table provides` });
+        errors.push({ line: sc.line, message: `Scenario Outline "${label}" uses <${name}>, which no ${tableKeyword} table provides` });
       }
     }
     for (const col of columns) {
       if (!used.has(col)) {
         errors.push({
           line: sc.line,
-          message: `Examples column "${col}" of "${label}" is never used by a step or the scenario name; if it documents the row rather than feeding it, a comment says so more clearly`,
+          message: `${tableKeyword} column "${col}" of "${label}" is never used by a step or the scenario name; if it documents the row rather than feeding it, a comment says so more clearly`,
         });
       }
     }

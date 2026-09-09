@@ -24,7 +24,7 @@ Feature: <Capability, not a screen>
   Rule: <A business rule that constrains this capability>
 
     @REQ-<id>
-    Example: <Case that illustrates the rule>
+    Scenario: <Case that illustrates the rule>
       Given <state>
       When <behaviour>
       Then <outcome>

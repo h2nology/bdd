@@ -13,12 +13,12 @@ can report on, execute and trace.
 
 The line is drawn at **who reads it**, not who wrote it.
 
-- **The prose in a feature file follows the user's language.** Feature, rule
-  and scenario names, descriptions, step text and `Examples` headers are written
-  in the language the team speaks. This is the whole point of the format: the
-  people who own the requirement have to be able to read it back and say "no,
-  that rule is wrong". A specification in a language its reviewers do not read
-  cannot do that job.
+- **The prose in a feature file follows the user's language.** Feature, rule and
+  scenario names, descriptions, step text and `Examples` table headers are
+  written in the language the team speaks. This is the whole point of the
+  format: the people who own the requirement have to be able to read it back and
+  say "no, that rule is wrong". A specification in a language its reviewers do
+  not read cannot do that job.
 - **Keywords stay English.** `Feature:`, `Rule:`, `Background:`, `Scenario:`,
   `Scenario Outline:`, `Examples:`, `Given`, `When`, `Then`, `And`, `But`. They
   are syntax, not prose - and keeping them English means no `# language:` header
@@ -34,6 +34,11 @@ The line is drawn at **who reads it**, not who wrote it.
       When 我提交订单
       Then 订单总额为 42.50 元
   ```
+
+  Some of these have synonyms - `Example:` for `Scenario:`, `Scenarios:` for
+  `Examples:` - and the suite uses neither: always `Scenario:`, including inside
+  a `Rule:`, and always `Examples:` for an outline's data table.
+  `references/gherkin-style.md` has the table.
 
   Localized keywords are still parsed (`en`, `zh-CN`, `zh-TW`, `ja`). If the repo
   already uses them, follow it and keep the `# language:` header; do not start a

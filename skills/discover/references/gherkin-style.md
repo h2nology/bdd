@@ -13,6 +13,40 @@
 A scenario with two `When`s separated by `Then`s is two scenarios, unless the
 requirement is genuinely about a sequence (then say so in the scenario name).
 
+## Block keywords, and their synonyms
+
+The table above covers step keywords. The block keywords have synonyms, and
+picking between them is a readability decision, not a behavioural one - the
+parser produces an identical AST either way, keeping only the word you wrote so
+reports can echo it back.
+
+| Keyword | Synonyms | Use |
+|---|---|---|
+| `Scenario` | `Example` | **Always `Scenario`**, including inside a `Rule` |
+| `Scenario Outline` | `Scenario Template` | Prefer `Scenario Outline`; there is no `Example Outline` |
+| `Examples` | `Scenarios` | **Always `Examples`** for an outline's data table |
+| `Rule` | - | No synonym |
+| `Background` | - | No synonym |
+
+Pick one of each pair and hold to it across the suite. A file that mixes
+`Scenario Outline` with `Scenario Template` costs a reader a double-take for
+nothing.
+
+This pairing is chosen for a reason worth stating, because the other one is
+tempting. Each pair holds a singular that names a scenario and a plural that
+names an outline's data table, one `s` apart: `Example:` / `Examples:` and
+`Scenario:` / `Scenarios:`. Taking `Scenario` and `Examples` splits the pairs,
+so the two words this suite actually writes are not a near-miss of each other -
+`Example:` and `Scenarios:` are simply never written, and there is nothing left
+to confuse. Keeping a pair together - `Scenario` with `Scenarios`, or `Example`
+with `Examples` - puts two nearly identical keywords a few lines apart inside
+every outline.
+
+`Examples` is also what Cucumber's own documentation, most tutorials and most
+editor snippets use, so nobody arriving from outside has to adjust.
+
+What must not happen is a suite that mixes both members of a pair.
+
 ## Declarative, not imperative
 
 Write what the user achieves, not which widget they touch:
@@ -104,15 +138,25 @@ reports: `Scenario Outline: "<password>" is <result>`.
 
 ## Rule blocks
 
-Group scenarios that illustrate the same business rule:
+Group scenarios that illustrate the same business rule. Write `Scenario:`
+inside a `Rule` exactly as at feature top level - `Example:` parses identically
+and reads well next to `Rule:`, but one keyword for one concept costs a reader
+less than a rule about which synonym goes where. Indentation already says
+whether a scenario belongs to a rule.
 
 ```gherkin
 Rule: A cart may hold at most 20 items
-  Example: Adding the 20th item succeeds
-  Example: Adding the 21st item is rejected with a limit message
+  Scenario: Adding the 20th item succeeds
+  Scenario: Adding the 21st item is rejected with a limit message
 ```
 
-`Rule:` may carry its own `Background:` which applies only inside the rule.
+The scenarios under a `Rule` are still the green cards of the Example Mapping
+session they came from (`example-mapping.md`); the keyword just does not need to
+restate it.
+
+`Rule:` may carry its own `Background:` which applies only inside the rule. Note
+that a `Rule` `Background` runs **in addition to** the feature's `Background`,
+not instead of it.
 
 ## Feature files in other languages
 
