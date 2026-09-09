@@ -239,12 +239,39 @@ started.
 plan whose next step still describes finished work cannot be resumed; whoever
 picks it up has to re-read everything to find out where it actually is.
 
+### The checkboxes are the phase's real content
+
+Each phase lists its checks as `- [ ]`. Tick each one to `- [x]` **as it is
+observed**, one at a time, while the phase is `in_progress` - not in a batch
+when the status changes. The reason is the same one that orders the status
+transitions: a run of boxes ticked together at the end records an intention,
+and nobody can tell afterwards whether each check actually happened.
+
+Ticking as you go also makes a half-finished phase readable. `in_progress`
+with four of six ticked says which check is next; `in_progress` with none says
+only that somebody started.
+
+`complete` means every box in that phase is ticked. A `complete` phase with an
+open box is a contradiction, and it is worth stopping over rather than tidying
+up: either the check was never made - so the phase is not complete and the
+status is wrong - or it was made and never written down, in which case the plan
+is claiming an observation it cannot show. Both are the failure these files
+exist to catch, and the second is the dangerous one, because it looks like
+bookkeeping.
+
+The script does not touch the boxes. It writes the `**Status:**` line and
+nothing else, deliberately: whether a check was observed is a judgement, and a
+tool that ticked them on your behalf would be asserting something it never
+saw. `planning-status.cjs` does read them, and reports either contradiction -
+a `complete` phase with an open box, or a `pending` one with a box already
+ticked - as a warning it leaves for you to settle.
+
 Nothing advances a status automatically, and nothing should. Whether a phase is
 done is a judgement about evidence - the RED gate especially, where the same
 command and the same output mean opposite things in Phase 3 and Phase 5. When
 the session ends, a `Stop` hook runs `planning-status.cjs --warnings-only`: it
-reports drifted, stalled, blocked and self-contradicting plans, and stays
-silent otherwise. It reports; it never edits, and it never blocks the stop.
+reports drifted, stalled, blocked and self-contradicting plans - including a
+phase whose status and checkboxes disagree - and stays silent otherwise. It reports; it never edits, and it never blocks the stop.
 
 ## Drift
 

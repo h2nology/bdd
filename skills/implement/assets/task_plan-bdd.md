@@ -72,6 +72,11 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
 of them.
+Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
+while that phase is `in_progress` - not in a batch when its status changes. A
+`complete` phase with an open box is a contradiction: either the check was
+never made, or it was made and never written down.
+
 
 ## Outer Loop
 

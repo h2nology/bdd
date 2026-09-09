@@ -20,6 +20,8 @@
  *
  * Reads only. It never edits a plan - the numbers here are observations, and a
  * plan that disagrees with them is the finding, not a thing to quietly correct.
+ * That includes the phase checkboxes: a `complete` phase with an open box, or a
+ * `pending` one with a ticked box, is reported and left alone.
  */
 
 const fs = require('fs');
@@ -29,6 +31,9 @@ const u = require('./lib/util.cjs');
 
 const DEFAULT_ROOT = path.join('docs', 'planning');
 const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+)\s*[:.]?\s*(.*)$/;
+const CHECKBOX_RE = /^\s*- \[( |x|X)\]/;
+/** A level-2 heading ends the phase it followed, so trailing prose is not counted into it. */
+const SECTION_RE = /^##\s+(?!#)/;
 const STATUS_RE = /^\s*[-*]?\s*\*\*Status:\*\*\s*(.+?)\s*$/;
 const STATES = new Set(['undefined', 'red', 'green']);
 const PHASE_STATES = new Set(['pending', 'in_progress', 'complete']);
@@ -125,11 +130,21 @@ function parsePhases(md) {
   for (const line of md.split(/\r?\n/)) {
     const head = line.match(PHASE_RE);
     if (head) {
-      current = { number: Number(head[1]), title: clean(head[2]), status: '' };
+      current = { number: Number(head[1]), title: clean(head[2]), status: '', checked: 0, open: 0 };
       phases.push(current);
       continue;
     }
-    if (!current || current.status) continue;
+    if (!current) continue;
+    // `## Key Questions` and friends follow the last phase; their bullets are
+    // not that phase's checks.
+    if (SECTION_RE.test(line)) { current = null; continue; }
+    const box = line.match(CHECKBOX_RE);
+    if (box) {
+      if (box[1] === ' ') current.open += 1;
+      else current.checked += 1;
+      continue;
+    }
+    if (current.status) continue;
     const status = line.match(STATUS_RE);
     if (status) {
       const value = clean(status[1]).toLowerCase();
@@ -219,6 +234,22 @@ function checkPlan(plan, staleDays) {
   }
   if (plan.complete && plan.queue.some((r) => r.state !== 'green')) {
     warnings.push('every phase is complete but not every scenario is green');
+  }
+  // A phase's checks are its real content. `complete` over an open box means
+  // either the check was never made - so the status is wrong - or it was made
+  // and never written down, and the plan is claiming an observation it cannot
+  // show. Ticked boxes under `pending` are the same contradiction inverted.
+  for (const phase of plan.phases) {
+    if (phase.status === 'complete' && phase.open > 0) {
+      warnings.push('Phase ' + phase.number + ' is complete with ' + phase.open
+        + ' unticked check' + (phase.open === 1 ? '' : 's')
+        + ' - either it was not made, or it was not written down');
+    }
+    if (phase.status === 'pending' && phase.checked > 0) {
+      warnings.push('Phase ' + phase.number + ' is pending but ' + phase.checked
+        + ' check' + (phase.checked === 1 ? ' is' : 's are')
+        + ' already ticked - move it to in_progress');
+    }
   }
   return warnings;
 }

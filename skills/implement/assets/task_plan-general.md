@@ -50,6 +50,11 @@ Every phase carries a **Verifies** line: the command, check or observation that
 decides whether it is done. A phase whose Verifies line reads "looks right" is
 not a phase - work out what would actually show it, or merge it into another.
 
+Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
+while that phase is `in_progress` - not in a batch when its status changes. A
+`complete` phase with an open box is a contradiction: either the check was
+never made, or it was made and never written down.
+
 ### Phase 1: Understand and scope
 
 - [ ] State what is being asked, and what is deliberately out of scope.
