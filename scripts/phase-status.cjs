@@ -4,7 +4,10 @@
  * Set one phase's status in a plan's task_plan.md.
  *
  * Usage:
- *   node phase-status.cjs <phase-number> <pending|in_progress|complete> [options]
+ *   node phase-status.cjs <phase> <pending|in_progress|complete> [options]
+ *
+ * <phase> is a phase number, or a sub-phase like `4.2` for one capability's
+ * coding phase.
  *
  * Options:
  *   --plan <dir>   The plan directory. Required when more than one plan is open.
@@ -75,10 +78,17 @@ function withLock(planDir, work) {
 /**
  * Rewrite the first `**Status:**` line after the `### Phase <n>` heading.
  * Returns the new text, or null when the phase or its status line is missing.
+ *
+ * `<n>` may be a sub-phase like `4.2` - the capability phases expand under
+ * Phase 4, one per capability. The lookahead is what keeps them apart: asking
+ * for `4` must not match `### Phase 4.2`, or the first capability would absorb
+ * every status write meant for the parent. The dot is escaped because the
+ * number lands inside a regex.
  */
 function rewrite(md, phase, status) {
   const lines = md.split('\n');
-  const heading = new RegExp('^#{3,4}\\s+Phase\\s+' + phase + '(?:[^0-9]|$)');
+  const heading = new RegExp('^#{3,4}\\s+Phase\\s+'
+    + phase.replace(/\./g, '\\.') + '(?![0-9.])');
   let inBlock = false;
   let changed = false;
   let previous = '';
@@ -104,9 +114,11 @@ function main() {
   const [phase, status] = opts._;
 
   if (!phase || !status) {
-    fail('usage: phase-status.cjs <phase-number> <' + STATUSES.join('|') + '> [--plan <dir>]');
+    fail('usage: phase-status.cjs <phase|phase.sub> <' + STATUSES.join('|') + '> [--plan <dir>]');
   }
-  if (!/^[0-9]+$/.test(phase)) fail('phase must be a number, got "' + phase + '"');
+  if (!/^[0-9]+(?:\.[0-9]+)?$/.test(phase)) {
+    fail('phase must be a number, or a sub-phase like 4.2, got "' + phase + '"');
+  }
   if (STATUSES.indexOf(status) === -1) {
     fail('invalid status "' + status + '". Allowed: ' + STATUSES.join(', ') + '.');
   }

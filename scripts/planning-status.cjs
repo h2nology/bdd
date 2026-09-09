@@ -30,12 +30,13 @@ const crypto = require('crypto');
 const u = require('./lib/util.cjs');
 
 const DEFAULT_ROOT = path.join('docs', 'planning');
-const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+)\s*[:.]?\s*(.*)$/;
+const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+(?:\.[0-9]+)?)\s*[:.]?\s*(.*)$/;
 const CHECKBOX_RE = /^\s*- \[( |x|X)\]/;
 /** A level-2 heading ends the phase it followed, so trailing prose is not counted into it. */
 const SECTION_RE = /^##\s+(?!#)/;
 const STATUS_RE = /^\s*[-*]?\s*\*\*Status:\*\*\s*(.+?)\s*$/;
-const STATES = new Set(['undefined', 'red', 'green']);
+const STATES = new Set(['undefined', 'red', 'blocked', 'green']);
+const CAP_STATES = new Set(['todo', 'in_progress', 'done']);
 const PHASE_STATES = new Set(['pending', 'in_progress', 'complete']);
 
 /** Strip markdown emphasis and code ticks from a table cell or field value. */
@@ -107,6 +108,28 @@ function parseSource(md) {
   return out;
 }
 
+/**
+ * The Capability Queue: the feature's whole breakdown, one row per capability,
+ * each one owning a `Phase 4.x`. Absent from older per-scenario plans, which is
+ * why every caller treats an empty result as "this plan does not use it".
+ */
+function parseCapabilities(md) {
+  const rows = [];
+  for (const cells of firstTable(section(md, 'Capability Queue'))) {
+    if (cells.length < 4) continue;
+    const phase = clean(cells[1]);
+    if (phase.toLowerCase() === 'phase') continue;
+    const state = clean(cells[cells.length - 1]).toLowerCase();
+    rows.push({
+      phase,
+      name: clean(cells[2]),
+      state: CAP_STATES.has(state) ? state : 'unknown',
+      placeholder: isPlaceholder(cells[1]) || isPlaceholder(cells[2]),
+    });
+  }
+  return rows;
+}
+
 function parseQueue(md) {
   const rows = [];
   for (const cells of firstTable(section(md, 'Scenario Queue'))) {
@@ -130,7 +153,9 @@ function parsePhases(md) {
   for (const line of md.split(/\r?\n/)) {
     const head = line.match(PHASE_RE);
     if (head) {
-      current = { number: Number(head[1]), title: clean(head[2]), status: '', checked: 0, open: 0 };
+      // Kept as a string: sub-phases like `4.2` are not numbers, and the
+      // number is only ever displayed. Order comes from the document.
+      current = { number: head[1], title: clean(head[2]), status: '', checked: 0, open: 0 };
       phases.push(current);
       continue;
     }
@@ -186,6 +211,7 @@ function readPlan(dir) {
   const feature = source.feature && !/^\(none\)$/i.test(source.feature) ? source.feature : '';
   const phases = parsePhases(md);
   const queue = parseQueue(md).filter((r) => !r.placeholder);
+  const capabilities = parseCapabilities(md).filter((r) => !r.placeholder);
 
   return {
     dir,
@@ -198,6 +224,8 @@ function readPlan(dir) {
     goal: prose(md, 'Goal'),
     nextStep: prose(md, 'Next Step'),
     currentScenario: prose(md, 'Current Scenario'),
+    currentCapability: prose(md, 'Current Capability'),
+    capabilities,
     phases,
     activePhase: activePhase(phases),
     complete: phases.length > 0 && phases.every((p) => p.status === 'complete'),
@@ -251,6 +279,27 @@ function checkPlan(plan, staleDays) {
         + ' already ticked - move it to in_progress');
     }
   }
+  // The Capability Queue and the Phase 4.x statuses are two records of the same
+  // fact. When they disagree, one of them was updated and the other forgotten -
+  // and there is no way to tell which from the file, so it is reported rather
+  // than reconciled.
+  const phaseByNumber = new Map(plan.phases.map((p) => [p.number, p]));
+  for (const cap of plan.capabilities) {
+    const phase = phaseByNumber.get(cap.phase);
+    if (!phase) {
+      warnings.push('capability "' + cap.name + '" names Phase ' + cap.phase
+        + ', which the plan does not have');
+      continue;
+    }
+    if (cap.state === 'done' && phase.status !== 'complete') {
+      warnings.push('capability "' + cap.name + '" is done but Phase ' + cap.phase
+        + ' is ' + phase.status);
+    }
+    if (cap.state !== 'done' && phase.status === 'complete') {
+      warnings.push('Phase ' + cap.phase + ' is complete but capability "'
+        + cap.name + '" is still ' + cap.state);
+    }
+  }
   return warnings;
 }
 
@@ -268,7 +317,17 @@ function queueSummary(queue) {
   if (!queue.length) return '';
   const count = (state) => queue.filter((r) => r.state === state).length;
   const parts = [count('green') + '/' + queue.length + ' green'];
-  for (const state of ['red', 'undefined', 'unknown']) {
+  for (const state of ['red', 'blocked', 'undefined', 'unknown']) {
+    if (count(state)) parts.push(count(state) + ' ' + state);
+  }
+  return parts.join(', ');
+}
+
+function capabilitySummary(caps) {
+  if (!caps.length) return '';
+  const count = (state) => caps.filter((r) => r.state === state).length;
+  const parts = [count('done') + '/' + caps.length + ' done'];
+  for (const state of ['in_progress', 'todo', 'unknown']) {
     if (count(state)) parts.push(count(state) + ' ' + state);
   }
   return parts.join(', ');
@@ -289,7 +348,9 @@ function renderPlan(plan, warnings, verbose) {
   const mark = warnings.length ? '! ' : '  ';
   let out = mark + plan.name + '  [' + plan.kind + (plan.label ? ' ' + plan.label : '') + ']\n';
   out += field('phase', phaseLine(plan));
+  if (plan.currentCapability) out += field('building', plan.currentCapability);
   if (plan.currentScenario) out += field('scenario', plan.currentScenario);
+  if (plan.capabilities.length) out += field('capabs', capabilitySummary(plan.capabilities));
   if (plan.queue.length) out += field('queue', queueSummary(plan.queue));
   out += field('next', plan.nextStep);
   const idle = daysSince(plan.touched);

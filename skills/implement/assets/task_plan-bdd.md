@@ -26,26 +26,34 @@ suite is still green.
 ## Next Step
 
 <The single action that happens next. Rewrite it whenever a phase status
-changes or the current scenario moves on.>
+changes or the current capability moves on.>
 
-## Current Scenario
+## Current Capability
 
-<@REQ-id and the scenario name, copied from the queue below>
+<`Phase 3.x` and the capability name, copied from the queue below>
 
 ## Scenario Queue
 
-Every scenario in the feature, in the order they will be driven. `State`
-mirrors the last run - it is observed, not decided. Refresh it by running the
-suite, never by hand.
+Every scenario in the feature. `State` mirrors the last run - it is observed,
+not decided. Refresh it by running the suite, never by hand.
+
+This queue does not drive the loop any more; the Capability Queue does. What it
+does is say how much of the specified behaviour actually passes, which is the
+only number that closes the feature.
 
 | # | Tag | Scenario | State |
 |---|---|---|---|
 | 1 | `@REQ-<id>` | <name> | `green` |
 | 2 | `@REQ-<id>` | <name> | `red` |
-| 3 | `@REQ-<id>` | <name> | `undefined` |
+| 3 | `@REQ-<id>` | <name> | `blocked` |
+| 4 | `@REQ-<id>` | <name> | `undefined` |
 
 `undefined` - no step definition claims these sentences yet.
-`red` - the steps run and the scenario fails.
+`red` - the steps run and the scenario fails on an assertion.
+`blocked` - the steps are written, but a `Given` cannot establish its state
+because a seam it needs does not exist yet. Not RED: the assertion never ran.
+Whatever the `Given` needs becomes a capability below, and this row goes `red`
+or `green` once that capability exists.
 `green` - the scenario passes.
 
 A `Scenario Outline` is one row: it is done when every `Examples` row passes.
@@ -66,183 +74,228 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 |---|---|
 | `<cucumber>` | <run the whole suite> |
 | `<cucumber-one>` | <run one scenario by tag> |
+| `<cucumber-feature>` | <run every scenario in this feature> |
 | `<unit-test>` | <run the unit tests> |
+| `<unit-test-one>` | <run one unit test file or name> |
 | `<coverage>` | <requirement coverage report> |
 
 Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
 of them.
+
 Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
 while that phase is `in_progress` - not in a batch when its status changes. A
 `complete` phase with an open box is a contradiction: either the check was
 never made, or it was made and never written down.
 
+## The Loop
 
-## Outer Loop
-
-Two loops, nested. Phases 1-7 run once per scenario; inside them, Phases 3-5
-run once per unit in the Unit Queue:
+One pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
+Phase 3 expands into one sub-phase per capability, and those are the only thing
+that repeats:
 
 ```
-per scenario   1 outer RED -> 2 break into units -> [ 3 unit RED -> 4 write
-                              code -> 5 unit GREEN ] x units -> 6 outer GREEN
-                              -> 7 refactor
+per feature   1 outer RED (every scenario)
+           -> 2 break into capabilities + write every failing unit test
+           -> 3.1 -> 3.2 -> ... -> 3.N   (code, in dependency order)
+           -> 4 all units green
+           -> 5 outer GREEN (every scenario) -> 6 refactor -> 7 delivery
 ```
 
-Both levels reset as they go: Phases 3-5 back to `pending` for each next unit,
-Phases 1-7 for each next scenario. Their history lives in `progress.md` - this
-file only ever describes the scenario and the unit in hand.
+Nothing resets. Each capability has its own numbered phase with its own status,
+so the file shows the whole shape of the work at once and the history does not
+have to be reconstructed from `progress.md`.
 
-The reason the inner three are separate phases rather than one: they are the
-whole of TDD's rhythm, and a single phase lets them collapse into "wrote code,
-ran tests, seems fine". Split, each one has to be observed before the next
-begins.
+**What this ordering costs, stated up front.** Writing every unit test in Phase
+2 is a bigger up-front bet than writing them one at a time. A test written for
+capability 5 can turn out to be wrong once capability 2 actually exists - the
+interface it guessed at was not the interface that emerged. When that happens,
+change the test and record it in `progress.md` as a prediction that was wrong,
+with what replaced it. **Never quietly rewrite a test to match code that just
+got written**; that inverts the whole point, and nothing in the file would show
+it happened.
 
 ### Phase 1: Outer RED
 
-- [ ] Run only the current scenario: `<cucumber-one>`.
-- [ ] No step is left `undefined` - every sentence has a step definition.
+Every scenario in the feature, not one of them.
+
+- [ ] Run the whole feature: `<cucumber-feature>`.
+- [ ] No step is left `undefined` - every sentence in every scenario has a step
+      definition.
 - [ ] Each step definition asserts the outcome its sentence states. A step that
       only logs, or returns without checking anything, does not count.
-- [ ] The scenario fails **on an assertion**, and the message names what was
-      expected against what happened.
-- [ ] The failure is caused by the missing behaviour - not by a typo, a broken
-      fixture, a missing dependency, or an unrelated regression.
+- [ ] At least one scenario fails **on an assertion**, with a message naming
+      what was expected against what happened.
+- [ ] Every other scenario is classified in the Scenario Queue as `red` or
+      `blocked`, from what the run printed - never from expectation.
+- [ ] For each `blocked` scenario, name in `progress.md` which seam its `Given`
+      is missing, and add that seam to the Capability Queue.
+- [ ] No failure is a typo, a broken fixture, a missing dependency, or an
+      unrelated regression.
 - [ ] Paste the failing output into `progress.md`.
 - **Status:** `pending`
 
 An `undefined` step is not RED. It says nobody has claimed the sentence yet,
 not that the behaviour is wrong. Write the step definition with its real
-assertion first; the run counts as RED only once the failure names the expected
-outcome against the actual one.
+assertion first.
+
+A `blocked` scenario is not RED either, and it must not be counted as one. It
+is an honest state with a named cause: the fixture seam it needs is not built.
+Recording it as `blocked` and turning its cause into a capability is what keeps
+the gap visible - Phase 5 will not accept it.
 
 **Do not edit production code until this phase is `complete`.** This is the
 gate the whole loop rests on: without a red scenario, nothing proves the code
 written next was needed, or that it does what the feature says.
 
-### Phase 2: Break the scenario into units
+### Phase 2: Break the feature into capabilities, and write every failing test
 
-Only now, after the outer RED. The failure says what is missing; before seeing
-it, any breakdown is a guess about code nobody has run.
+Only now, after the outer RED. The failures say what is missing; before seeing
+them, any breakdown is a guess about code nobody has run.
 
-- [ ] List everything that has to exist for this scenario to pass.
-- [ ] Give each one a `Needs` - the units it cannot be built before.
-- [ ] Order the queue so nothing comes before what it needs.
-- [ ] Name the first unit as Current Unit.
+- [ ] List every capability the feature needs, across all its scenarios.
+- [ ] Give each one a `Needs` - the capabilities it cannot be built before.
+- [ ] Order the queue so nothing comes before what it needs, and number the
+      rows `3.1`, `3.2`, ... in that order.
+- [ ] Write one failing unit test for every capability in the queue.
+- [ ] Run `<unit-test>` and watch **all** of them fail.
+- [ ] Every failure names an expected value against an actual one - not an
+      import error, not a missing file. Where a module has to exist for the
+      assertion to be reached at all, create it as an empty skeleton and say so
+      in `progress.md`.
+- [ ] No test fails because of something in its `Needs` rather than itself. If
+      one does, the order is wrong: fix the order first.
+- [ ] Record every test and every failure in `progress.md`.
 - **Status:** `pending`
 
-#### Unit Queue
+#### Capability Queue
 
-Belongs to the current scenario only. Emptied and refilled when the scenario
-changes; each unit's history stays in `progress.md`.
+The feature's whole breakdown. One row per capability, one `Phase 3.x` each,
+ordered by dependency. This is the spine of the plan - it is filled once, in
+this phase, and rows are only marked `done` afterwards.
 
-| # | Unit | Needs | State |
-|---|---|---|---|
-| 1 | <the thing to build, small enough to test on its own> | - | `done` |
-| 2 | <thing> | 1 | `in_progress` |
-| 3 | <thing> | 1, 2 | `todo` |
+| # | Phase | Capability | Needs | Test | State |
+|---|---|---|---|---|---|
+| 1 | `3.1` | <the thing to build> | — | `<path::name>` | `done` |
+| 2 | `3.2` | <thing> | 1 | `<path::name>` | `in_progress` |
+| 3 | `3.3` | <thing> | 1, 2 | `<path::name>` | `todo` |
 
-#### Current Unit
+`todo` - its test is written and failing; no code yet.
+`in_progress` - being built.
+`done` - its test passes, and so does everything that passed before it.
 
-<the number and name of the unit being built, from the queue above>
+Order is a claim about dependency, not preference. If capability 3 needs
+capability 2, it comes after it - otherwise its test fails for a reason that
+has nothing to do with capability 3, and Phase 3.3 cannot tell a real RED from
+a missing prerequisite.
 
-Order is a claim about dependency, not preference. If unit 3 needs unit 2, it
-comes after it - otherwise its unit test fails for a reason that has nothing to
-do with unit 3, and Phase 3 cannot tell a real RED from a missing prerequisite.
+Keep capabilities small. One that cannot be driven by one failing test is two
+capabilities. A capability that no scenario in this feature needs does not
+belong in the queue at all - say so rather than building it.
 
-Keep the units small. A unit that cannot be driven by one failing test is two
-units.
+Adding a row after Phase 2 is allowed and has to be visible: append it with the
+next free `3.x` number, write its failing test, watch it fail, and record in
+`progress.md` why the Phase 2 breakdown missed it. Renumbering existing rows is
+not allowed - their phases are already on the record.
 
-### Phase 3: Unit RED
+### Phase 3: Write the code
 
-For the Current Unit.
+One sub-phase per capability, in queue order. Copy the block below once per
+row, and delete the spares.
 
-- [ ] Write one failing unit test for it.
-- [ ] Run `<unit-test>` and watch it fail.
-- [ ] The failure names an expected value against an actual one - not an import
-      error, not a missing file.
-- [ ] **The failure is about this unit**, not about something in its `Needs`. If
-      a prerequisite is what is missing, the queue is in the wrong order: fix
-      the order and start with that one instead.
-- [ ] Record the test and the failure in `progress.md`.
+Do not run the whole suite in these phases to see whether the feature works.
+That is Phase 5. What each sub-phase observes is its own capability's test, and
+nothing more.
+
 - **Status:** `pending`
 
-### Phase 4: Write the code
+#### Phase 3.1: <capability name>
 
-- [ ] Write the minimum production code that satisfies that test.
-- [ ] Stay inside the Current Unit. The next rows of the queue get their own
-      RED first - writing them now means writing code no failing test asked
-      for, and it will not be clear later which test proved which line.
-- [ ] Record which files changed in `progress.md`.
+- [ ] Write the minimum production code that satisfies this capability's test.
+- [ ] Stay inside this capability. The later rows have their own phases -
+      writing them here means writing code no failing test asked for, and it
+      will not be clear later which test proved which line.
+- [ ] Run `<unit-test>`. This capability's test passes.
+- [ ] Every unit test that passed before still passes. The ones still failing
+      are exactly the capabilities not yet built - list them, and check that
+      list against the queue.
+- [ ] Record which files changed, and both runs, in `progress.md`.
+- [ ] Mark this row `done` in the Capability Queue and move
+      `## Current Capability` to the next row whose `Needs` are all `done`.
 - **Status:** `pending`
 
-Do not run the suite here to see whether it worked. That is Phase 5, and
-keeping them apart is what makes "it passes now" a recorded observation rather
-than an impression formed while editing.
+#### Phase 3.2: <capability name>
 
-### Phase 5: Unit GREEN
-
-- [ ] Run `<unit-test>`. The new test passes.
-- [ ] Every unit test that passed before still passes.
-- [ ] Record both in `progress.md`.
+- [ ] <same six checks>
 - **Status:** `pending`
 
-Then, for the next unit:
+### Phase 4: All units green
 
-1. Mark the finished unit `done` in the Unit Queue.
-2. Move `#### Current Unit` to the next `todo` row whose `Needs` are all `done`.
-3. Reset Phases 3-5 to `pending`.
-4. Rewrite `## Next Step`.
+One run over everything, once every row in the Capability Queue is `done`.
 
-When every row in the Unit Queue is `done`, go to Phase 6 instead.
+- [ ] `<unit-test>` - every unit test passes, none skipped.
+- [ ] The count matches the Capability Queue: one passing test per row, plus
+      whatever the project had before this feature.
+- [ ] Every test written in Phase 2 still exists and still asserts what it
+      asserted then. A test that was deleted, skipped, or loosened to get here
+      is named in `progress.md` with the reason.
+- [ ] Record the run in `progress.md`.
+- **Status:** `pending`
 
-### Phase 6: Outer GREEN
+The third check is the one that matters. Everything above it can be satisfied
+by weakening a test, and nothing else in this file would notice.
 
-- [ ] `<cucumber-one>` passes.
-- [ ] `<cucumber>` - the whole suite - still passes. A new scenario that breaks
-      an old one is not done.
+### Phase 5: Outer GREEN
+
+- [ ] `<cucumber-feature>` - every scenario in this feature passes, including
+      every `Examples` row of every outline.
+- [ ] No row in the Scenario Queue is left `blocked` or `undefined`.
+- [ ] `<cucumber>` - the whole suite - still passes. A new feature that breaks
+      an old scenario is not done.
 - [ ] Paste both outputs into `progress.md`.
-- [ ] Commit. The message says which scenario turned green.
+- [ ] Commit. The message says which feature turned green.
 - **Status:** `pending`
 
-### Phase 7: Refactor
+If a scenario is still failing here, the Capability Queue was incomplete - the
+unit tests all pass and the behaviour still is not there. Append the missing
+capability rather than patching the step definition, and say in `progress.md`
+what the breakdown missed.
+
+### Phase 6: Refactor
 
 - [ ] Remove duplication in the production code and in the step definitions.
+- [ ] `<unit-test>` still green.
 - [ ] `<cucumber>` still green.
 - [ ] Commit.
 - **Status:** `pending`
 
-Then, before starting the next scenario:
-
-1. Mark the finished scenario `green` in the Scenario Queue.
-2. Move `## Current Scenario` to the next `red` or `undefined` row.
-3. Empty the Unit Queue - the next scenario gets its own, after its own RED.
-4. Reset Phases 1-7 to `pending`.
-5. Rewrite `## Next Step`.
-6. Open a new entry in `progress.md`.
-
 ## Delivery
 
-### Phase 8: Feature complete
+### Phase 7: Feature complete
 
 - [ ] Every row in the Scenario Queue is `green`.
+- [ ] Every row in the Capability Queue is `done`.
 - [ ] `<coverage>` run, and the requirement coverage report regenerated.
 - [ ] Every requirement tag in this feature shows as covered.
 - [ ] Anything deliberately left undone is named here and in `findings.md`.
       Silence is not an acceptable way to drop scope.
+- [ ] Every assumption still marked `assumed - unconfirmed` in `findings.md` is
+      repeated in the report. A passing scenario built on a guess nobody agreed
+      to is a false report, not a green one.
 - **Status:** `pending`
 
 ## Key Questions
 
-Only questions that block the current scenario. Answered ones move to
-`findings.md` with their answer; they do not stay here.
+Only questions that block the next phase. Answered ones move to `findings.md`
+with their answer; they do not stay here.
 
 1. <question>
 
 ## Blocked On
 
 Anything outside this plan that has to happen before the next step can. Empty
-when nothing is blocking.
+when nothing is blocking - write it as prose, not as a list, because every
+bullet here is reported as a live blocker.
 
 - <blocker, and who or what resolves it>
 
@@ -253,5 +306,5 @@ Where things go, so the three files do not drift into each other:
 | This file | `progress.md` | `findings.md` |
 |---|---|---|
 | Where the loop is now | What was actually run, and what it printed | What was learned and decided |
-| The scenario in hand | Every scenario's history | Technical decisions, with reasons |
+| The capability in hand | Every capability's history | Technical decisions, with reasons |
 | Blocking questions | Errors, attempts, resolutions | Answered questions |

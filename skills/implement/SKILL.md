@@ -10,8 +10,8 @@ hooks:
 
 # Drive a feature to green
 
-Turn a specified feature into working code, one scenario at a time, keeping the
-plan, the evidence and the decisions on disk so the work survives a lost
+Turn a specified feature into working code, one capability at a time, keeping
+the plan, the evidence and the decisions on disk so the work survives a lost
 context, a new session, or a different person.
 
 This is the step `discover` leaves open. `discover` produces feature files;
@@ -27,8 +27,9 @@ rest of this plugin follows.
 - **Planning prose follows the user's language.** Goals, phase titles, the next
   step, questions, decisions and findings are written in the language the team
   speaks. These files are read by the people doing the work.
-- **Structure stays English.** Headings, field names, status values
-  (`pending`, `in_progress`, `complete`, `undefined`, `red`, `green`), tags,
+- **Structure stays English.** Headings, field names, status values - phases
+  (`pending`, `in_progress`, `complete`), scenarios (`undefined`, `red`,
+  `blocked`, `green`) and capabilities (`todo`, `in_progress`, `done`) - tags,
   file and directory names, commands, and pasted tool output. The status script
   parses them, so they must not shift with the prose.
 - **Code and commits stay English**, as everywhere else in this plugin.
@@ -124,9 +125,9 @@ placeholder unfilled rather than inventing a value for it.
 Only for BDD plans; a general plan goes straight to its own Phase 1.
 
 **Harness.** Run the suite. If it cannot execute at all, stop and use `init`.
-A missing harness is not something to work around scenario by scenario.
+A missing harness is not something to work around one capability at a time.
 
-**Commands.** Resolve the four placeholders and write them into the plan's
+**Commands.** Resolve the six placeholders and write them into the plan's
 Phase 0 table. They differ per stack - this plugin supports TypeScript, Java,
 Python and .NET, so nothing may assume `npm`:
 
@@ -134,8 +135,13 @@ Python and .NET, so nothing may assume `npm`:
 |---|---|
 | `<cucumber>` | run the whole suite |
 | `<cucumber-one>` | run one scenario, selected by tag |
+| `<cucumber-feature>` | run every scenario in one feature |
 | `<unit-test>` | run the unit tests |
+| `<unit-test-one>` | run one unit test file or test name |
 | `<coverage>` | regenerate the requirement coverage report |
+
+`<cucumber-feature>` is what Phases 1 and 5 use - the loop now takes the whole
+feature at once, so a per-scenario command is not enough on its own.
 
 `skills/run/SKILL.md` has the per-stack invocations. Do not guess them; read
 the project's own config and confirm each one runs before recording it.
@@ -151,57 +157,85 @@ Fill the Scenario Queue from the JSON, and set each row's state from the run,
 not from expectation. Some scenarios may already be `green` - a feature is
 often partly built. Paste the run summary into `progress.md`.
 
-### 4. The outer loop
+### 4. The loop
 
-For each scenario in the queue, in order, run Phases 1-7 as the plan file
-describes them. Two loops, nested:
+One pass over the whole feature, not one per scenario. Phases 1, 2, 4, 5, 6 and
+7 run once each; Phase 3 expands into one sub-phase per capability, and those
+are the only thing that repeats:
 
 ```
-per scenario   1 outer RED -> 2 break into units -> [ 3 unit RED -> 4 write
-                              code -> 5 unit GREEN ] x units -> 6 outer GREEN
-                              -> 7 refactor
+per feature   1 outer RED (every scenario)
+           -> 2 break into capabilities + write every failing unit test
+           -> 3.1 -> 3.2 -> ... -> 3.N   (code, in dependency order)
+           -> 4 all units green
+           -> 5 outer GREEN (every scenario) -> 6 refactor -> 7 delivery
 ```
 
-Phase 2 comes **after** the outer RED, never before: the failure is what says
-which units are missing. A breakdown written earlier is a guess about code
-nobody has run.
+Nothing resets. Every capability keeps its own numbered phase and its own
+status, so `task_plan.md` shows the whole shape of the work at once.
 
-Each unit carries a `Needs` - what it cannot be built before - and the queue is
-ordered by it. That ordering does real work in Phase 3: if a unit's test fails
-because a prerequisite is missing rather than because the unit itself is, the
-queue is in the wrong order, and no amount of code written next will be the
-code that test was asking for.
+Phase 2 comes **after** the outer RED, never before: the failures are what say
+which capabilities are missing. A breakdown written earlier is a guess about
+code nobody has run.
 
-The plan is the authority on the steps; this skill is the authority on the two
+Each capability carries a `Needs` - what it cannot be built before - and the
+queue is numbered `3.1`, `3.2`, ... in that order. That ordering does real work:
+if a capability's test fails because a prerequisite is missing rather than
+because the capability itself is, the queue is in the wrong order, and no amount
+of code written next will be the code that test was asking for.
+
+The plan is the authority on the steps; this skill is the authority on the four
 things the plan cannot enforce on its own:
 
-**The RED gate.** Phase 1 is not complete until the scenario fails **on an
-assertion whose message names the expected outcome against the actual one**.
+**The RED gate.** Phase 1 is not complete until at least one scenario fails
+**on an assertion whose message names the expected outcome against the actual
+one**, and every other scenario is classified from what the run printed.
 
 An `undefined` step is not RED. It says nobody has claimed the sentence yet,
 not that the behaviour is wrong. A step definition that logs and returns is not
 RED either. Neither is a failure caused by a typo, a broken fixture, a missing
 dependency, or a scenario that was already failing for an unrelated reason.
 
-Until that gate is passed, **do not edit production code**. Everything the loop
+**`blocked` is not RED, and it is not a pass either.** A scenario whose `Given`
+cannot establish its state - because the seam it seeds through does not exist
+yet - never reached an assertion. Record it as `blocked`, name the missing seam
+in `progress.md`, and add that seam to the Capability Queue. Counting a blocked
+scenario as red overstates what has been proven; leaving it `undefined`
+pretends nobody has looked.
+
+Until the gate is passed, **do not edit production code**. Everything the loop
 is worth rests here: without a scenario that fails for the right reason, there
 is no evidence the code written next was needed, and none that it does what the
 feature says.
 
-**The scope rule.** Inside Phase 4, write only what a failing unit test asked
-for. Code for a later scenario belongs to that scenario. Code no scenario asks
-for should not be written without saying so and getting an answer.
+**The scope rule.** Inside a `Phase 3.x`, write only what that capability's
+failing test asked for. Code for a later capability belongs to its own phase.
+Code no capability asks for should not be written without saying so and getting
+an answer.
 
-When the scenario is green and refactored, do the handover the plan describes -
-mark the row `green`, move the pointer, empty the Unit Queue, reset Phases 1-7,
-rewrite `## Next
-Step`, open a new entry in `progress.md` - and start the next one.
+**The test-integrity rule.** Every test is written in Phase 2, before any
+production code. When one of them turns out to have guessed wrong - the
+interface it assumed is not the interface that emerged - change it and record
+it under **Predictions that were wrong** in `progress.md`, with what replaced
+it. Never quietly reshape a test to match code that was just written: that
+inverts the order the whole method depends on, and nothing in the files would
+show it happened. The same goes for deleting, skipping or loosening a test to
+reach Phase 4; that phase asks about it directly.
+
+When every row in the Capability Queue is `done`, go to Phase 4, then 5 and 6.
+There is no per-scenario handover any more - the feature is driven once, and
+`## Current Capability` is the only pointer that moves.
 
 ### 5. Delivery
 
-Phase 8 closes the feature: every row `green`, `<coverage>` regenerated, every
-requirement tag covered. Then report - and report the way `run` does: the
-numbers, then what they do not cover.
+Phase 7 closes the feature: every row in the Scenario Queue `green`, every row
+in the Capability Queue `done`, `<coverage>` regenerated, every requirement tag
+covered. Then report - and report the way `run` does: the numbers, then what
+they do not cover.
+
+A scenario still `blocked` at Phase 7 means the Capability Queue was
+incomplete. Say that, and name the seam - never report the feature as done with
+a blocked row in its queue.
 
 Name anything deliberately left undone, and name every assumption still marked
 `assumed - unconfirmed` in `findings.md`. A feature reported as done while a
@@ -225,8 +259,13 @@ prevent, and nobody can tell afterwards which way round it happened.
 Set it with the script rather than editing the markdown:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/phase-status.cjs 3 complete --plan docs/planning/<dir>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/phase-status.cjs 3.2 complete --plan docs/planning/<dir>
 ```
+
+A capability's phase is addressed by its sub-number - `3.2`, not `3`. Asking
+for `3` moves the parent Phase 3 status and leaves every capability alone;
+asking for `3.2` moves that one capability and nothing else. The difference is
+silent, so read the confirmation line the script prints rather than assuming.
 
 It rejects a status outside `pending|in_progress|complete`, rejects a phase
 number the plan does not have, holds a lock so two runs cannot interleave, and
@@ -268,7 +307,9 @@ ticked - as a warning it leaves for you to settle.
 
 Nothing advances a status automatically, and nothing should. Whether a phase is
 done is a judgement about evidence - the RED gate especially, where the same
-command and the same output mean opposite things in Phase 3 and Phase 5. When
+`<unit-test>` command and the same output mean opposite things in Phase 2
+(every test must fail) and in a `Phase 3.x` (this one must pass, the rest must
+still be exactly the capabilities not yet built). When
 the session ends, a `Stop` hook runs `planning-status.cjs --warnings-only`: it
 reports drifted, stalled, blocked and self-contradicting plans - including a
 phase whose status and checkboxes disagree - and stays silent otherwise. It reports; it never edits, and it never blocks the stop.
@@ -297,6 +338,10 @@ carry on against the old queue. Ask which it is:
   error, name what is unclear. Do not open a fourth.
 - Making the scenario pass would require a change nobody asked for -
   a schema migration, a new dependency, a change to another feature's behaviour.
+- Phase 2 cannot enumerate the capabilities because the feature's scenarios
+  disagree with each other, or because a `blocked` scenario needs a seam whose
+  shape nobody has decided. Name the decision and ask - a capability invented to
+  fill the gap is a design nobody signed off.
 
 ## Hard limits - say these out loud
 
@@ -309,7 +354,12 @@ carry on against the old queue. Ask which it is:
   It now claims a requirement is verified when nobody agreed what it means.
   Flag it every time the feature's status is reported.
 - **Skipped, quarantined and `@wip` scenarios are not covered.** Count them as
-  what they are.
+  what they are. So is a `blocked` one: its assertion never ran.
+- **A test changed after the code it checks proves nothing.** If a Phase 2 test
+  had to change during a `Phase 3.x`, it goes in **Predictions that were
+  wrong** in `progress.md`, with the reason. A test quietly reshaped to fit
+  code that was just written is worse than no test, because the file still
+  claims one.
 - **This skill does not edit feature files.** Behaviour changes go through
   `discover`, where the people who own the requirement can see them.
 
@@ -317,8 +367,8 @@ carry on against the old queue. Ask which it is:
 
 | File | What it is for |
 |---|---|
-| `assets/task_plan-bdd.md` | The outer/inner loop plan, per feature |
-| `assets/progress-bdd.md` | What was run per scenario, and what it printed |
+| `assets/task_plan-bdd.md` | The feature-wide loop, one `Phase 3.x` per capability |
+| `assets/progress-bdd.md` | What was run per capability, and what it printed |
 | `assets/findings-bdd.md` | Decisions, and the specification problems implementing exposed |
 | `assets/task_plan-general.md` | Phase plan for work with no feature file |
 | `assets/progress-general.md` | What was run per phase, and what it printed |
