@@ -118,7 +118,7 @@ it opens offline, falling back to a simpler layout.
 | **`financial`** | 4 KPI cards · income statement table (item/current/prior/change/change %) · Variance SVG horizontal bar chart · footnote panel | `moai-finance:financial-statements` |
 | **`pr`** | TL;DR · PR meta row (files · +/− · branch) · Before/After 2-column cards · file tour `<details>` · key points · test checklist · rollout steps | `moai-business:investor-relations` |
 | **`spec`** | 6 metric cards · sticky scenario index in a left column · requirement traceability matrix · untagged-scenario gap panel · feature/rule/scenario hierarchy with Gherkin steps · parse-warning panel | `bdd:spec-report` command |
-| **`sketch`** | 4 metric cards · pan/zoom wireframe board · state-variant group frames · orthogonal transition arrows anchored to buttons · selection detail panel · open-questions panel | `bdd:sketch` skill |
+| **`sketch`** | 4 metric cards · pan/zoom wireframe board · state-variant group frames · orthogonal transition arrows anchored to buttons · selection detail panel · open-questions panel | `/bdd:sketch` command |
 
 #### Per-mode input slots summary
 
@@ -184,7 +184,7 @@ node <plugin-root>/scripts/sketch.cjs \
 
 | This skill's input | Passed as | Notes |
 |---|---|---|
-| the sketch spec JSON | `--input` | Derived by the `bdd:sketch` skill from the feature files. Its contract is `skills/sketch/references/sketch-spec.md` |
+| the sketch spec JSON | `--input` | Derived by the `/bdd:sketch` command from the feature files. Its contract is `references/sketch-spec.md` at the plugin root |
 | `lang` | `--labels` | `en` \| `zh-CN` \| `zh-TW` \| `ja`. **`ko` is not supported by the board yet** — say so and fall back to `en` rather than passing it through |
 | `output_path` | `--out` | Defaults to `bdd-artifacts/sketch.html`, beside the other bdd artefacts, rather than `reports/` |
 | `title` | `--title` | Optional; the script titles the board from the spec's `app.name` otherwise |
@@ -359,9 +359,9 @@ mode=sketch, lang=zh-CN, input=bdd-artifacts/sketch.json
 - [`references/templates/spec.html.tmpl`](references/templates/spec.html.tmpl) — spec mode
 - `sketch` mode has **no template** by design — it delegates to the bdd plugin's
   `scripts/sketch.cjs`. Its input contract is
-  [`../sketch/references/sketch-spec.md`](../sketch/references/sketch-spec.md) and the
+  [`../../references/sketch-spec.md`](../../references/sketch-spec.md) and the
   element vocabulary is
-  [`../sketch/references/wireframe-vocabulary.md`](../sketch/references/wireframe-vocabulary.md)
+  [`../../references/wireframe-vocabulary.md`](../../references/wireframe-vocabulary.md)
 
 Origin essay: [Thariq Shihipar, "The Unreasonable Effectiveness of HTML"](https://thariqs.github.io/html-effectiveness/)
 
@@ -378,6 +378,6 @@ Results from integration tests that render the markdown output of four upstream 
 | `moai-business:sbiz365-analyst` | `plan` | [`references/integration-tests/sbiz365-analyst-input.md`](references/integration-tests/sbiz365-analyst-input.md) | [`references/integration-tests/sbiz365-analyst-rendered.html`](references/integration-tests/sbiz365-analyst-rendered.html) | ★★★★☆ (4/5) |
 | `moai-business:daily-briefing` | `status` (daily variant) | [`references/integration-tests/daily-briefing-input.md`](references/integration-tests/daily-briefing-input.md) | [`references/integration-tests/daily-briefing-rendered.html`](references/integration-tests/daily-briefing-rendered.html) | ★★★★☆ (4/5) |
 
-| `bdd:sketch` | `sketch` | [`../sketch/references/sketch-spec.md`](../sketch/references/sketch-spec.md) (JSON contract) | rendered by `scripts/sketch.cjs` | n/a — delegated |
+| `/bdd:sketch` command | `sketch` | [`../../references/sketch-spec.md`](../../references/sketch-spec.md) (JSON contract) | rendered by `scripts/sketch.cjs` | n/a — delegated |
 
 Detailed compatibility analysis: [`references/integration-tests/COMPATIBILITY.md`](references/integration-tests/COMPATIBILITY.md)

@@ -4,7 +4,7 @@
  * Gherkin-derived UI spec -> read-only wireframe canvas (pan/zoom board + flow arrows).
  *
  * Consumes the JSON the `sketch` skill derives from feature files (see
- * skills/sketch/references/sketch-spec.md). The model decides what is on each
+ * references/sketch-spec.md). The model decides what is on each
  * screen; this renderer decides where it goes, so regenerating the JSON cannot
  * make the board drift.
  *
@@ -1398,7 +1398,7 @@ function main() {
     : (opts._ && opts._.length ? opts._[0] : path.join('bdd-artifacts', 'sketch.json'));
   if (!fs.existsSync(inFile)) {
     console.error('sketch: no spec at ' + inFile + '. Derive one from the feature files first ' +
-      '(see skills/sketch/references/sketch-spec.md), or point --input at it.');
+      '(see references/sketch-spec.md), or point --input at it.');
     process.exit(2);
   }
   let spec;

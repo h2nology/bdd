@@ -14,7 +14,6 @@ generate database DDL from the same specs.
 | `init` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
 | `implement` | Drive a feature to green one scenario at a time - failing scenario outside, failing unit tests inside - keeping the plan, the evidence and the decisions on disk |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
-| `sketch` | Derive the screens a feature implies - every data state of each page - and render them as a read-only pan/zoom wireframe board whose arrows run from each button to the page it opens; before any code exists |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
 | `openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
@@ -30,12 +29,19 @@ names with Claude Code's built-in `/init` and `/run`, so `/bdd:init` and
 | Command | Use it for |
 |---|---|
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
+| `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page - and render it as a read-only wireframe board whose arrows run from each button to the page it opens, before any code exists |
 | `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which scenario is in hand, what happens next, and which plans need attention |
 
-A command runs only when you type it. Both of these have a fixed job -
-`spec-report` parses, confirms the reviewer's language and theme, and renders
-through `html-report`; `status` reads the plans and reports them. Neither
-decides anything, so neither needs to be a skill.
+A command runs only when you type it. `spec-report` parses, confirms the
+reviewer's language and theme, and renders through `html-report`; `status` reads
+the plans and reports them. Neither decides anything, so neither needs to be a
+skill.
+
+`sketch` is a command for a different reason: deriving a UI from Gherkin is very
+much a judgement call, but you ask for a board when you want one. The line is
+not "does it decide things" - it is whether the model should reach for it
+mid-task. It should reach for `discover` or `implement`; it should not decide on
+its own that your feature needs wireframing.
 
 ## Typical flow
 

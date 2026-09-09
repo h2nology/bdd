@@ -1,6 +1,6 @@
 ---
-name: sketch
-description: This skill should be used when finished Gherkin features must be turned into a UI sketch before any code is written - for example "sketch the UI from these features", "what would this feature look like", "show me the screens this feature implies", "draw wireframes from the feature file", "derive the UX from the Gherkin", "make a Figma-like board for this feature", "I want to see the page flow before we build it", or when a stakeholder wants to review a feature visually rather than as text. Produces a read-only pan/zoom wireframe canvas showing every data state of each page, with transition arrows drawn from the button or link that triggers them. For the flow the tests *actually* covered after a run, use the flow-map skill instead.
+description: Derive the UI a set of Gherkin features implies - every data state of every screen - and render it as a read-only pan/zoom wireframe board with the page flow between them, for review before any code is written.
+argument-hint: "[feature paths] [--lang en|zh-CN|zh-TW|ja]"
 ---
 
 # UI sketch from Gherkin
@@ -10,17 +10,19 @@ between them, and render them on a read-only Figma-style board.
 
 Where this sits in the plugin:
 
-| Skill | Question it answers | Timing |
+| Step | Question it answers | Timing |
 |---|---|---|
 | `discover` | What should the system do? | first |
-| **`sketch`** | **What would that look like?** | **after the feature file is agreed, before code** |
+| **`/bdd:sketch`** | **What would that look like?** | **after the feature file is agreed, before code** |
 | `implement` | Build it, scenario by scenario | next |
 | `flow-map` | Which screens did the tests actually visit? | after a run |
 
-`sketch` and `flow-map` both draw a transition diagram, and they are not the
-same artefact: this one is the **intended** flow inferred from the text, that one
-is the **observed** flow recorded from a real run. Never present a sketch as
+This and `flow-map` both draw a transition diagram, and they are not the same
+artefact: this one is the **intended** flow inferred from the text, that one is
+the **observed** flow recorded from a real run. Never present a sketch as
 evidence of what the app does.
+
+Arguments the user gave: `$ARGUMENTS`
 
 ## What it is for
 
@@ -39,30 +41,34 @@ things the feature file does not determine. Do not resolve those silently.
   **English** when the feature file is English - carry step text **verbatim** so a
   reviewer can grep for it.
 - Explain the board and the open questions to the user in **their** language, and
-  localize the board chrome with `--labels`.
+  localize the board chrome with `lang`.
 
 ## 1. Read the features
 
-Read every feature file in scope before writing anything:
+If the user named paths, use them. Otherwise let the parser fall back to its usual
+roots (`features/`, `src/test/resources/features/`, `Features/`, `tests/features/`).
 
 ```bash
-ls features/**/*.feature
 node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs --input features --json bdd-artifacts/spec.json
 ```
 
 The `--json` model gives the parsed scenarios, tags and `Examples:` tables, which
-is what the derivation needs. Reading the raw `.feature` text alongside it is
-still worth it: wording matters, and the derivation rules key off it.
+is what the derivation needs. Read the raw `.feature` text alongside it: wording
+matters, and the derivation rules key off it.
+
+If the project has no feature files, stop and offer `discover` (write scenarios)
+instead of sketching an empty board.
 
 Sketch one coherent slice at a time - a feature, or a `Rule` - not a whole suite.
-A board with forty screens is not reviewable.
+A board with forty screens is not reviewable. If the paths given cover more than
+that, say so and propose a slice.
 
 ## 2. Derive the spec
 
-Follow `references/wireframe-vocabulary.md`, which has the element vocabulary,
-the step-wording-to-element rules, and the do-nots. Write the result to
-`bdd-artifacts/sketch.json` in the format specified by
-`references/sketch-spec.md`.
+Follow `${CLAUDE_PLUGIN_ROOT}/references/wireframe-vocabulary.md`, which has the
+element vocabulary, the step-wording-to-element rules, and the do-nots. Write the
+result to `bdd-artifacts/sketch.json` in the format specified by
+`${CLAUDE_PLUGIN_ROOT}/references/sketch-spec.md`.
 
 The two contracts exist so the split holds:
 
@@ -76,7 +82,7 @@ Three rules worth repeating because they are what makes the artefact trustworthy
 
 - Fill `step` on every element and `trigger` on every transition, verbatim from
   the feature. An element with no `step` and no `notes` entry is a design guess.
-  Matching text also anchors each arrow to its button for free (below).
+  Matching text also anchors each arrow to its button for free.
 - **One card per data state.** A page whose UI depends on data is several cards
   sharing a `route`, each with its own `state` - "empty", "card declined", "2
   items". They are drawn stacked inside one labelled group. Collapsing them into
@@ -85,9 +91,26 @@ Three rules worth repeating because they are what makes the artefact trustworthy
 - Every gap goes in `openQuestions`, not into a confident invention. A state you
   suspect exists but no scenario describes is a question, not a card.
 
-## 3. Render the board
+## 3. Settle one thing with the user
 
-Two equivalent entry points. Call the script directly:
+Unless the request already names it:
+
+- **`lang`** - the board chrome's language. Pick the **reviewer's** language,
+  which is often not the developer's. Step text, element labels and routes are
+  reproduced verbatim whatever this is set to.
+
+`en` | `zh-CN` | `zh-TW` | `ja`. The board has no Korean chrome yet: a `ko`
+request falls back to English, so say so rather than letting the reviewer wonder.
+
+## 4. Render
+
+Invoke the `html-report` skill with `mode=sketch`, passing the spec JSON from step
+2 and the chosen `lang`. That skill's `sketch` mode section documents the argument
+mapping and why that mode delegates rather than templating.
+
+Default output path: `bdd-artifacts/sketch.html`, beside the other bdd artefacts.
+
+The renderer can also be called directly, which is the same code path:
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/sketch.cjs \
@@ -108,19 +131,11 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/sketch.cjs \
 | `--title <text>` | Override the board title |
 | `--viewport <v>` | Override `app.viewport`: `desktop` \| `tablet` \| `mobile` |
 
-…or go through the `html-report` skill with `mode=sketch`, which shells out to this
-same script — use that when the request is phrased as rendering a report, or when a
-board is produced alongside other bdd artefacts. It maps `lang` onto `--labels` and
-`output_path` onto `--out`, and ignores `theme`. Either way the renderer is this
-script, so there is only one set of layout rules to keep straight. Note that
-`html-report` accepts `ko` and the board does not (`en` \| `zh-CN` \| `zh-TW` \| `ja`);
-a `ko` request falls back to English chrome, so say so rather than letting the
-reviewer wonder.
-
 Exit codes: `0` board written, `2` the spec is missing, unparseable, has no
 screens, or has a transition pointing at a screen id or a `fromElement` that does
 not exist. A dangling reference is deliberately fatal rather than silently
-dropped - a flow diagram missing an edge is worse than no diagram.
+dropped - a flow diagram missing an edge is worse than no diagram. A `2` is a
+defect in the derivation, not in the renderer: fix the spec and re-run.
 
 ### How the board is laid out
 
@@ -150,7 +165,7 @@ what it shows is to change the feature file and regenerate. Reviewers can:
   button or link named by the step, not from the card's edge
 - press `Esc` or click the same screen again to clear the selection
 
-## 4. Read the board before showing it
+## 5. Read the board before showing it
 
 | Observation | What it usually means |
 |---|---|
@@ -165,9 +180,9 @@ what it shows is to change the feature file and regenerate. Reviewers can:
 | A screen drawn as an entry that should not be one | The spec is missing the transition that reaches it; the renderer warns about exactly this |
 | A wireframe that looks obviously wrong | Good - that is the artefact working. Take it back to the feature file |
 
-## 5. Reporting
+## 6. Report the numbers before claiming success
 
-Give the user:
+Give the user, in their language:
 
 1. Counts: pages, state variants, transitions, elements, open questions - and
    that this is derived from the text, not observed from a run.
@@ -182,13 +197,10 @@ Give the user:
 6. A reminder that the wireframes are deliberately unstyled, so "it looks plain"
    is not a finding.
 
-## 6. Limits worth stating out loud
+## Keeping it honest
 
 - **A sketch is inference, not specification.** If the team treats the board as
   the agreed design, the agreement still lives in the feature file. Say so.
-- **The final layout needs elkjs from a CDN.** Offline the board falls back to a
-  simpler layout whose arrows may cross a card. The wireframes, groups, arrows
-  and interactions are unaffected.
 - **`aside` renders below `main`, not beside it.** A 344px card cannot show two
   columns legibly. The regions are semantic slots, not a layout - do not use them
   to argue about placement.
@@ -198,9 +210,16 @@ Give the user:
 - **No screenshots, no real data.** Example values come from `Examples:` tables.
   If a value looks like a real customer's, it came from the feature file and that
   is a problem with the feature file.
-- `bdd-artifacts/` must stay git-ignored; regenerate the board, do not commit it.
+- Regenerate after every change to the feature files; a stale board is worse than
+  none, because it looks like agreement.
+- `bdd-artifacts/` must stay git-ignored. Commit the spec JSON rather than the
+  HTML when the team wants to diff how the intended UI changed across releases.
+- If an `Artifact` tool is available and the user wants a link to share with
+  reviewers, offer to publish the board. Do not publish without asking - a
+  sketch is internal content, and an unfinished one invites being mistaken for
+  a decision.
 
 ## Reference files
 
-- `references/sketch-spec.md` - the exact JSON contract the renderer consumes
-- `references/wireframe-vocabulary.md` - element types, the step-wording-to-element rules, and the do-nots
+- `${CLAUDE_PLUGIN_ROOT}/references/sketch-spec.md` - the exact JSON contract the renderer consumes
+- `${CLAUDE_PLUGIN_ROOT}/references/wireframe-vocabulary.md` - element types, the step-wording-to-element rules, and the do-nots
