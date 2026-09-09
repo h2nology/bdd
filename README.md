@@ -1,9 +1,10 @@
 # bdd - Behaviour-Driven Development plugin for Claude Code
 
-Take a one-line requirement to executable, traceable specifications: mine it into
-Gherkin, review it as an HTML document, scaffold cucumber + Playwright in the
-project's language, run the suite with requirement coverage, derive a page flow
-map from the run's screenshots, and generate database DDL from the same specs.
+Take a one-line requirement to working, traceable code: mine it into Gherkin,
+review it as an HTML document, scaffold cucumber + Playwright in the project's
+language, drive each scenario to green with outside-in TDD, run the suite with
+requirement coverage, derive a page flow map from the run's screenshots, and
+generate database DDL from the same specs.
 
 ## Skills
 
@@ -11,6 +12,7 @@ map from the run's screenshots, and generate database DDL from the same specs.
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `init` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
+| `implement` | Drive a feature to green one scenario at a time - failing scenario outside, failing unit tests inside - keeping the plan, the evidence and the decisions on disk |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
@@ -27,10 +29,12 @@ names with Claude Code's built-in `/init` and `/run`, so `/bdd:init` and
 | Command | Use it for |
 |---|---|
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
+| `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which scenario is in hand, what happens next, and which plans need attention |
 
-A command runs only when you type it. `spec-report` is one because its job is
-fixed - parse, confirm the reviewer's language and theme, render - and because
-the rendering belongs to `html-report`, which the command drives.
+A command runs only when you type it. Both of these have a fixed job -
+`spec-report` parses, confirms the reviewer's language and theme, and renders
+through `html-report`; `status` reads the plans and reports them. Neither
+decides anything, so neither needs to be a skill.
 
 ## Typical flow
 
@@ -39,6 +43,7 @@ requirement
   -> /bdd:discover      features/*.feature
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
   -> /bdd:init          harness + step definitions        (once per project)
+  -> /bdd:implement     docs/planning/<date>-<feature>/   (scenario by scenario, to green)
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
   -> /bdd:ddl           migrations/                       (schema implied by the specs)
@@ -56,6 +61,8 @@ inside Java, Python and .NET projects too. Node 14+.
 | `scripts/coverage.cjs` | Feature files + test results -> requirement coverage report, with CI gating |
 | `scripts/flow-map.cjs` | Step captures -> Mermaid page flow diagram, transition table, gallery |
 | `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |
+| `scripts/planning-status.cjs` | Planning files -> what is in progress, and which plans have drifted, stalled or blocked |
+| `scripts/phase-status.cjs` | Set one phase's status in a plan - validated, locked, atomic |
 | `scripts/lib/gherkin.cjs` | Gherkin parser (dialects: `en`, `zh-CN`, `zh-TW`, `ja`) |
 | `scripts/lib/results.cjs` | Reads cucumber messages ndjson, legacy cucumber JSON, or JUnit XML |
 | `scripts/lib/labels.cjs` | Localized report chrome |
@@ -69,6 +76,7 @@ node scripts/coverage.cjs features/ --results bdd-artifacts/cucumber.ndjson --re
 node scripts/flow-map.cjs --input bdd-artifacts/flow --out out.html
 node scripts/openapi.cjs extract features/ --json extract.json
 node scripts/openapi.cjs coverage features/ --spec openapi.yaml --out cov.html
+node scripts/planning-status.cjs --root docs/planning
 ```
 
 ## Conventions the whole plugin shares
@@ -86,6 +94,13 @@ coverage report detect requirements that have **no** scenario at all.
 `skills/init/references/appium.md`.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
+
+**Planning files** are the exception, and go in `docs/planning/<date>-<slug>/` -
+`task_plan.md`, `progress.md` and `findings.md`, one set per feature. They are
+committed, not ignored: `bdd-artifacts/` holds generated reports and is
+throwaway, while these are the record of how the code came to exist, and belong
+next to it. A second round on the same feature gets a new dated directory
+rather than reopening the finished one.
 
 **Language policy**: the line is drawn at *who reads it*, not who wrote it.
 

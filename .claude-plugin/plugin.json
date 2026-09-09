@@ -1,7 +1,7 @@
 {
   "name": "bdd",
-  "version": "0.1.0",
-  "description": "Behaviour-Driven Development toolkit: turn a one-line requirement into Gherkin, review it as an HTML spec report, scaffold cucumber with Playwright for web and Appium for mobile, run the suite with requirement coverage, derive page and screen flow maps from run screenshots, and generate database DDL from Gherkin.",
+  "version": "0.2.0",
+  "description": "Behaviour-Driven Development toolkit: turn a one-line requirement into Gherkin, review it as an HTML spec report, scaffold cucumber with Playwright for web and Appium for mobile, drive each scenario to green with outside-in TDD against per-feature planning files, run the suite with requirement coverage, derive page and screen flow maps from run screenshots, and generate database DDL from Gherkin.",
   "author": {
     "name": "hushukang"
   },
@@ -15,6 +15,8 @@
     "e2e-testing",
     "mobile-testing",
     "requirements",
-    "traceability"
+    "traceability",
+    "tdd",
+    "planning"
   ]
 }
