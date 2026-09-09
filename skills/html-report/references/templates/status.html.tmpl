@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 860px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, grid primitives, print rules.
+       Component visuals (header, cards, tables, charts, etc.)
+       live in {{{theme_components_css}}} below — see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 720px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .chart-panel svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table, figure, .chart-panel { page-break-inside: avoid; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (header, cards, tables, lists,
+       chart panel, carryover, etc.) injected by the renderer per the
+       active `theme`. See design/notion-design.md and
+       design/tesla-design.md for the two first-party variants.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+    ======================================================== -->
+    <header>
+      <p class="eyebrow">Status Report &middot; {{date_range}}</p>
+      <div class="header-top">
+        <h1>{{title}}</h1>
+        <span class="auto-pill">Auto-generated</span>
+      </div>
+      <div class="date-range">
+        {{date_range}} &nbsp;&middot;&nbsp;
+        <span class="repo">{{repository}}</span>
+      </div>
+    </header>
+
+    <!-- ========================================================
+         Metric cards
+         metrics: [{label, value, delta, delta_type, warn}]
+         delta_type: "up" | "down" | "flat"
+         warn: true -> clay left border
+    ======================================================== -->
+    <section aria-label="Key metrics">
+      <div class="metrics-grid">
+        {{#metrics}}
+        <div class="stat-card{{#warn}} warn{{/warn}}">
+          <div class="stat-num">{{value}}</div>
+          <div class="stat-label">{{label}}</div>
+          {{#delta}}<div class="stat-delta {{delta_type}}">{{delta}}</div>{{/delta}}
+        </div>
+        {{/metrics}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Highlights
+         highlights: [string]  (HTML allowed)
+    ======================================================== -->
+    <section aria-label="Key highlights">
+      <h2>Highlights</h2>
+      <hr class="rule">
+      <ul class="highlights">
+        {{#highlights}}
+        <li>{{{.}}}</li>
+        {{/highlights}}
+      </ul>
+    </section>
+
+    <!-- ========================================================
+         Shipped items table
+         shipped_table: [{id, title, author, risk}]
+         risk: "low" | "med" | "high"
+         risk_label: "Low" | "Medium" | "High"
+    ======================================================== -->
+    <section aria-label="Shipped items">
+      <h2>Shipped</h2>
+      <hr class="rule">
+      <table class="shipped">
+        <thead>
+          <tr>
+            <th style="width: 90px;">Item</th>
+            <th>Title</th>
+            <th style="width: 140px;">Owner</th>
+            <th style="width: 100px;">Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#shipped_table}}
+          <tr>
+            <td><a class="item-link" href="{{link}}">#{{id}}</a></td>
+            <td>{{title}}</td>
+            <td class="author">{{author}}</td>
+            <td>
+              <span class="risk">
+                <span class="risk-dot {{risk}}"></span>{{risk_label}}
+              </span>
+            </td>
+          </tr>
+          {{/shipped_table}}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================
+         Velocity SVG bar chart
+         velocity_chart: {
+           labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+           values: [2, 3, 1, 4, 2, 1, 1],
+           unit: "shipped",
+           caption: "Description text"
+         }
+         Rendering rules:
+         - viewBox: 640x180
+         - Bar width: 56, gap: 24, start x: 64
+         - baseline y: 140, unit height: 40px (scaled to max value)
+         - Peak bar: fill #D97757 (--clay), others: fill #E3DACC (--oat)
+    ======================================================== -->
+    <section aria-label="Velocity chart">
+      <h2>Velocity</h2>
+      <hr class="rule">
+      <div class="chart-panel">
+        <svg viewBox="0 0 640 180" role="img" aria-label="{{velocity_chart.caption}}">
+          <!-- Gridlines -->
+          <line x1="48" y1="20"  x2="620" y2="20"  stroke="#F0EEE6" stroke-width="1"/>
+          <line x1="48" y1="60"  x2="620" y2="60"  stroke="#F0EEE6" stroke-width="1"/>
+          <line x1="48" y1="100" x2="620" y2="100" stroke="#F0EEE6" stroke-width="1"/>
+          <line x1="48" y1="140" x2="620" y2="140" stroke="#D1CFC5" stroke-width="1.5"/>
+
+          <!-- Y-axis labels -->
+          <text x="40" y="144" text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">0</text>
+          <text x="40" y="104" text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">{{velocity_chart.y1}}</text>
+          <text x="40" y="64"  text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">{{velocity_chart.y2}}</text>
+          <text x="40" y="24"  text-anchor="end" font-family="system-ui" font-size="11" fill="#87867F">{{velocity_chart.y3}}</text>
+
+          <!-- Bars (7 total, position calc: x = 64 + idx*80)
+               value -> height = (value/max_value)*140
+               y = 140 - height
+               Peak bar uses fill="#D97757", others use fill="#E3DACC" -->
+          {{#velocity_chart.bars}}
+          <rect x="{{x}}" y="{{y}}" width="56" height="{{height}}" rx="6" fill="{{fill}}"/>
+          <text x="{{cx}}" y="{{label_y}}" text-anchor="middle" font-family="system-ui" font-size="11" fill="{{text_fill}}" {{#is_peak}}font-weight="600"{{/is_peak}}>{{value}}</text>
+          <text x="{{cx}}" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#87867F">{{label}}</text>
+          {{/velocity_chart.bars}}
+        </svg>
+        <div class="chart-caption">{{velocity_chart.caption}}</div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Carryover
+         carryover: {
+           in_review: [{text, who}],
+           blocked:   [{text, who}],
+           slipped:   [{text, who}]
+         }
+    ======================================================== -->
+    <section aria-label="Carryover items">
+      <h2>Carryover</h2>
+      <hr class="rule">
+      <div class="carryover">
+        {{#carryover.in_review.length}}
+        <div class="carry-group">
+          <p class="carry-group-title">In Review</p>
+          {{#carryover.in_review}}
+          <div class="carry-item">
+            <span class="carry-tag">In Review</span>
+            <div class="carry-body">
+              {{text}}
+              {{#who}}<span class="who">&middot; {{who}}</span>{{/who}}
+            </div>
+          </div>
+          {{/carryover.in_review}}
+        </div>
+        {{/carryover.in_review.length}}
+
+        {{#carryover.blocked.length}}
+        <div class="carry-group">
+          <p class="carry-group-title">Blocked</p>
+          {{#carryover.blocked}}
+          <div class="carry-item">
+            <span class="carry-tag">Blocked</span>
+            <div class="carry-body">
+              {{text}}
+              {{#who}}<span class="who">&middot; {{who}}</span>{{/who}}
+            </div>
+          </div>
+          {{/carryover.blocked}}
+        </div>
+        {{/carryover.blocked.length}}
+
+        {{#carryover.slipped.length}}
+        <div class="carry-group">
+          <p class="carry-group-title">Slipped</p>
+          {{#carryover.slipped}}
+          <div class="carry-item">
+            <span class="carry-tag">Slipped</span>
+            <div class="carry-body">
+              {{text}}
+              {{#who}}<span class="who">&middot; {{who}}</span>{{/who}}
+            </div>
+          </div>
+          {{/carryover.slipped}}
+        </div>
+        {{/carryover.slipped.length}}
+      </div>
+    </section>
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </div>
+</body>
+</html>
+                                                                                                                                      

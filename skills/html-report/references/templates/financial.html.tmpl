@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}} — {{period}}</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 920px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, grid primitives, print rules.
+       Component visuals (header, KPI cards, statement table,
+       variance chart, notes) live in {{{theme_components_css}}}
+       below — see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 720px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px) { .kpi-grid { grid-template-columns: 1fr; } }
+    .chart-panel svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 11pt; }
+      .page { max-width: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table.statement, .chart-panel { page-break-inside: avoid; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (header, KPI cards, statement
+       table, variance chart, notes) injected by the renderer per
+       the active `theme`. See design/notion-design.md and
+       design/notion-design.md for the first-party variant.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+         eyebrow: e.g. "Income Statement / Q1 2026"
+         title: company name or report title
+         period: e.g. "January 1 – March 31, 2026"
+    ======================================================== -->
+    <header>
+      <p class="eyebrow">{{eyebrow}}</p>
+      <h1>{{title}}</h1>
+      <span class="period-badge">{{period}}</span>
+    </header>
+
+    <!-- ========================================================
+         KPI cards
+         kpis: [{label, value, delta, delta_type}]
+         delta_type: "up" | "down" | "flat"
+    ======================================================== -->
+    <section aria-label="Key financial metrics">
+      <div class="kpi-grid">
+        {{#kpis}}
+        <div class="kpi-card">
+          <div class="kpi-num">{{value}}</div>
+          <div class="kpi-label">{{label}}</div>
+          {{#delta}}<div class="kpi-delta {{delta_type}}">{{delta}}</div>{{/delta}}
+        </div>
+        {{/kpis}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Income statement table
+         statement_rows: [{
+           label, current, prior, change_abs, change_pct,
+           is_header: false, is_subtotal: false, is_total: false,
+           change_cls: "num-pos" | "num-neg" | ""
+         }]
+         Numbers are right-aligned; negatives use var(--accent-warn-deep)
+    ======================================================== -->
+    <section aria-label="Income statement">
+      <h2>Income Statement</h2>
+      <hr class="rule">
+      <table class="statement">
+        <thead>
+          <tr>
+            <th style="text-align: left;">Item</th>
+            <th>Current</th>
+            <th>Prior</th>
+            <th>Change</th>
+            <th>Change %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#statement_rows}}
+          <tr class="{{#is_header}}row-header{{/is_header}}{{#is_subtotal}}row-subtotal{{/is_subtotal}}{{#is_total}}row-total{{/is_total}}">
+            <td>{{label}}</td>
+            <td>{{current}}</td>
+            <td>{{prior}}</td>
+            <td class="{{change_cls}}">{{change_abs}}</td>
+            <td class="{{change_cls}}">{{change_pct}}</td>
+          </tr>
+          {{/statement_rows}}
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ========================================================
+         Variance bar chart (inline SVG)
+         variance_bars: [
+           {label, value_str, pct_str, bar_x: 200, bar_width: 0~380,
+            positive: true|false, label_y, bar_rect_y, val_x, val_y,
+            bar_fill, val_fill}
+         ]
+         chart_height: row count * 44 + 40
+         caption: "Caption text"
+    ======================================================== -->
+    <section aria-label="Variance chart">
+      <h2>Variance vs. Prior Period</h2>
+      <hr class="rule">
+      <div class="chart-panel">
+        <svg viewBox="0 0 640 {{chart_height}}" role="img" aria-label="{{caption}}">
+          <!-- Baseline -->
+          <line x1="200" y1="20" x2="200" y2="{{chart_height_minus_20}}"
+                stroke="#D1CFC5" stroke-width="1.5"/>
+
+          {{#variance_bars}}
+          <!-- Item: {{label}} -->
+          <text x="190" y="{{label_y}}" text-anchor="end"
+                font-family="system-ui" font-size="12" fill="#3D3D3A">{{label}}</text>
+          <rect x="{{bar_x}}" y="{{bar_rect_y}}" width="{{bar_width}}" height="28" rx="4"
+                fill="{{bar_fill}}"/>
+          <text x="{{val_x}}" y="{{val_y}}"
+                font-family="ui-monospace, monospace" font-size="11.5"
+                fill="{{val_fill}}">{{value_str}} ({{pct_str}})</text>
+          {{/variance_bars}}
+        </svg>
+        <div class="chart-caption">{{caption}}</div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Notes
+         notes: [string]
+    ======================================================== -->
+    {{#notes.length}}
+    <section aria-label="Notes">
+      <h2>Notes</h2>
+      <hr class="rule">
+      <div class="notes">
+        <ul>
+          {{#notes}}
+          <li>{{.}}</li>
+          {{/notes}}
+        </ul>
+      </div>
+    </section>
+    {{/notes.length}}
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </div>
+</body>
+</html>

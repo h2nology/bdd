@@ -102,7 +102,7 @@ have already accepted the scenarios has disclosed nothing.
 - Follow `references/gherkin-style.md` (one behaviour per scenario, declarative
   step text, no UI mechanics in step text unless the requirement is about the UI).
 - Follow `references/tagging.md` for requirement ids. **The traceability in the
-  `run` and `spec-report` skills depends on these tags being right.**
+  `run` skill and the `/bdd:spec-report` command depends on these tags being right.**
 - Put files where the language stack expects them (see the `init` skill, or
   reuse the existing location in the repo):
   - TypeScript/JavaScript: `features/`
@@ -139,7 +139,7 @@ completion from the file you wrote alone.
 
 After the feature files are agreed, tell the user which next step applies:
 
-- Manager-ready HTML review document -> `spec-report`
+- Manager-ready HTML review document -> the `/bdd:spec-report` command
 - No test harness in the project yet -> `init`
 - Harness exists, run and measure -> `run`
 - Data model implied by the scenarios -> `ddl`

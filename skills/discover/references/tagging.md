@@ -1,6 +1,6 @@
 # Tag conventions
 
-Tags are the traceability backbone of this plugin. `spec-report` and
+Tags are the traceability backbone of this plugin. The `/bdd:spec-report` command and
 `run` read them to build the requirement matrix, so their shape matters.
 
 ## Requirement id tags (required)

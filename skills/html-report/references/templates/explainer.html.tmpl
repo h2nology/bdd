@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  {{{font_links}}}
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/languages/nginx.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/languages/http.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded",()=>hljs.highlightAll());</script>
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+       html-report v2.3.0 — explainer mode
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width:    1100px;
+      --content-max:  680px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, nav+content grid, print rules.
+       Component visuals (nav, steps, tabs, callout, FAQ, etc.)
+       live in {{{theme_components_css}}} below — see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--g700);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr);
+      gap: 48px;
+    }
+    @media (max-width: 920px) {
+      .page { grid-template-columns: 1fr; }
+      nav { display: none; }
+    }
+
+    /* Tab visibility toggle (skeleton, no visuals) */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; grid-template-columns: 1fr; }
+      nav { display: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      details.step, .tabs, .callout, figure { page-break-inside: avoid; }
+      details[open] { display: block; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (nav, header, steps, tabs,
+       callout, FAQ, etc.) injected by the renderer per the active
+       `theme`. See design/notion-design.md
+       for the two first-party variants.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ========================================================
+       Side navigation
+       nav_links: [{href, label, l2: false}]
+       nav_files: [string]  (list of files read, optional)
+  ======================================================== -->
+  <nav>
+    <div class="nav-label">On this page</div>
+    {{#nav_links}}
+    <a href="{{href}}"{{#l2}} class="l2"{{/l2}}>{{label}}</a>
+    {{/nav_links}}
+    {{#nav_files.length}}
+    <div class="nav-files">
+      <div class="nav-label">Referenced files</div>
+      {{#nav_files}}<code>{{.}}</code>{{/nav_files}}
+    </div>
+    {{/nav_files.length}}
+  </nav>
+
+  <!-- ========================================================
+       Main content
+  ======================================================== -->
+  <main>
+
+    <!-- Header -->
+    <header>
+      <div class="eyebrow">{{eyebrow}}</div>
+      <h1>{{title}}</h1>
+      <div class="tldr" id="tldr">
+        <b>TL;DR</b> &mdash; {{{tldr_html}}}
+      </div>
+    </header>
+
+    <!-- ========================================================
+         Walkthrough (collapsible steps)
+         steps: [{num, title, where, body_html}]
+    ======================================================== -->
+    <h2 id="walkthrough">{{walkthrough_title}}</h2>
+    <p>{{walkthrough_intro}}</p>
+    {{#steps}}
+    <details class="step"{{#open}} open{{/open}}>
+      <summary>
+        <span class="step-num">{{num}}</span>
+        {{title}}
+        {{#where}}<span class="where">{{where}}</span>{{/where}}
+      </summary>
+      <div class="step-body">{{{body_html}}}</div>
+    </details>
+    {{/steps}}
+
+    <!-- ========================================================
+         Diagram (SVG passed through)
+    ======================================================== -->
+    {{#diagram_svg}}
+    <h2 id="diagram">{{diagram_title}}</h2>
+    <figure class="diagram">{{{diagram_svg}}}</figure>
+    {{/diagram_svg}}
+
+    <!-- ========================================================
+         Configuration (tabbed code)
+         config_tabs: [{label, pane_id, code_html, first}]
+         code_html: full <pre class="code-block" data-lang="X"><code class="language-X">...</code></pre>
+    ======================================================== -->
+    <h2 id="config">{{config_title}}</h2>
+    <p>{{config_intro}}</p>
+    <div class="tabs" data-tabs="config-tabs">
+      <div class="tabbar">
+        {{#config_tabs}}
+        <button data-pane="{{pane_id}}"{{#first}} class="active"{{/first}}>{{label}}</button>
+        {{/config_tabs}}
+      </div>
+      {{#config_tabs}}
+      <div class="tab-pane{{#first}} active{{/first}}" id="{{pane_id}}">{{{code_html}}}</div>
+      {{/config_tabs}}
+    </div>
+
+    {{#callout_html}}
+    <div class="callout">
+      <span class="ico">★</span>
+      <div>{{{callout_html}}}</div>
+    </div>
+    {{/callout_html}}
+
+    <!-- ========================================================
+         FAQ (accordion)
+         faq_items: [{question, answer_html}]
+    ======================================================== -->
+    <h2 id="faq">FAQ</h2>
+    {{#faq_items}}
+    <details class="faq-item">
+      <summary>{{question}}</summary>
+      <div class="faq-body">{{{answer_html}}}</div>
+    </details>
+    {{/faq_items}}
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </main>
+
+</div>
+
+<!-- Tab switching script (vanilla JS, <=30 lines) -->
+<script>
+document.querySelectorAll("[data-tabs]").forEach(function(box) {
+  var btns = box.querySelectorAll("button");
+  var panes = box.querySelectorAll(".tab-pane");
+  btns.forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      btns.forEach(function(b) { b.classList.remove("active"); });
+      panes.forEach(function(p) { p.classList.remove("active"); });
+      btn.classList.add("active");
+      var target = document.getElementById(btn.dataset.pane);
+      if (target) target.classList.add("active");
+    });
+  });
+});
+</script>
+</body>
+</html>

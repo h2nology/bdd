@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{pr_ref}} — {{title}}</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 1040px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, grid primitives, print rules.
+       Component visuals (header, tldr, ba, file tour, focus, tests,
+       rollout, etc.) live in {{{theme_components_css}}} below —
+       see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
+    }
+    .ba {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 22px 0 4px;
+    }
+    @media (max-width: 720px) { .ba { grid-template-columns: 1fr; } }
+    .rollout {
+      display: flex;
+      gap: 0;
+    }
+    @media (max-width: 720px) { .rollout { flex-direction: column; } }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; }
+      .layout { grid-template-columns: 1fr; }
+      .toc { display: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      .file, .test, .focus .item, .rollout .step { page-break-inside: avoid; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (header, tldr, before/after,
+       file tour, focus items, tests, rollout, footer) injected by
+       the renderer per the active `theme`. See design/notion-design.md
+       for the first-party variant.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+         pr_ref: e.g. "PR #312"
+         title: PR title
+         file_count, adds, dels, branch, author
+    ======================================================== -->
+    <header class="page-head">
+      <div class="eyebrow">{{eyebrow}}</div>
+      <h1>{{pr_ref}} — {{title}}</h1>
+      <div class="pr-meta">
+        <span class="stat"><strong>{{file_count}}</strong> files</span>
+        <span class="stat"><span class="add">+{{adds}}</span> / <span class="del">&minus;{{dels}}</span></span>
+        <span class="stat">Branch <span class="branch">{{branch}}</span></span>
+        <span class="stat">Author <strong>{{author}}</strong></span>
+      </div>
+    </header>
+
+    <div class="layout">
+      <main>
+
+        <!-- ========================================================
+             TL;DR
+             tldr_html: 2–3 sentence summary
+        ======================================================== -->
+        <div class="tldr">
+          <div class="k">TL;DR</div>
+          <p>{{{tldr_html}}}</p>
+        </div>
+
+        <!-- ========================================================
+             Why (Before / After)
+             why_html: narrative HTML
+             ba_before: [{text}], ba_after: [{text}]
+        ======================================================== -->
+        <section id="why">
+          <h2>Background</h2>
+          <p class="lede">{{{why_html}}}</p>
+          <div class="ba">
+            <div class="panel before">
+              <div class="k">Before</div>
+              <ul>{{#ba_before}}<li>{{text}}</li>{{/ba_before}}</ul>
+            </div>
+            <div class="panel after">
+              <div class="k">After</div>
+              <ul>{{#ba_after}}<li>{{text}}</li>{{/ba_after}}</ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================
+             Per-file changes
+             files: [{path, badge_class, badge_label, adds, dels,
+                     why_html, diff_lines: [{op:"add"|"del", text}], open}]
+        ======================================================== -->
+        <section id="tour">
+          <h2>Per-file Changes</h2>
+          <p class="lede">{{{tour_intro}}}</p>
+          <div class="file-tour">
+            {{#files}}
+            <details class="file"{{#open}} open{{/open}}>
+              <summary>
+                <span class="chev"></span>
+                <span class="path">{{path}}</span>
+                <span class="badge {{badge_class}}">{{badge_label}}</span>
+                <span class="stat">
+                  {{#adds}}<span class="add">+{{adds}}</span>{{/adds}}
+                  {{#dels}}<span class="del">&minus;{{dels}}</span>{{/dels}}
+                </span>
+              </summary>
+              <div class="file-body">
+                <p class="why">{{{why_html}}}</p>
+                {{#diff_lines.length}}
+                <pre class="diff">{{#diff_lines}}<span class="line {{op}}">{{text}}</span>
+{{/diff_lines}}</pre>
+                {{/diff_lines.length}}
+              </div>
+            </details>
+            {{/files}}
+          </div>
+        </section>
+
+        <!-- ========================================================
+             Key points / Review focus
+             focus_items: [{num, title, desc_html}]
+        ======================================================== -->
+        <section id="focus">
+          <h2>Key Points</h2>
+          <div class="focus">
+            {{#focus_items}}
+            <div class="item">
+              <div class="n">{{num}}</div>
+              <div>
+                <div class="t">{{title}}</div>
+                <div class="d">{{{desc_html}}}</div>
+              </div>
+            </div>
+            {{/focus_items}}
+          </div>
+        </section>
+
+        <!-- ========================================================
+             Test plan
+             test_items: [{done, label, note}]
+        ======================================================== -->
+        <section id="tests">
+          <h2>Test Plan</h2>
+          <div class="tests">
+            {{#test_items}}
+            <div class="test{{#done}} done{{/done}}">
+              <span class="check"></span>
+              <div>
+                <div class="label">{{label}}</div>
+                {{#note}}<div class="note">{{note}}</div>{{/note}}
+              </div>
+            </div>
+            {{/test_items}}
+          </div>
+        </section>
+
+        <!-- ========================================================
+             Rollout
+             rollout_intro: narrative text
+             rollout_steps: [{when, step_label, desc}]
+        ======================================================== -->
+        <section id="rollout">
+          <h2>Rollout</h2>
+          <p class="lede">{{{rollout_intro}}}</p>
+          <ol class="rollout">
+            {{#rollout_steps}}
+            <li class="step">
+              <div class="step-marker">{{step_label}}</div>
+              <div class="when">{{when}}</div>
+              <div class="d">{{desc}}</div>
+            </li>
+            {{/rollout_steps}}
+          </ol>
+        </section>
+
+      </main>
+
+      <!-- TOC -->
+      <nav class="toc">
+        <div class="t-head">In this PR</div>
+        <a href="#why">Background</a>
+        <a href="#tour">Per-file Changes</a>
+        {{#files}}
+        <a href="#tour" class="sub">{{path_short}}</a>
+        {{/files}}
+        <a href="#focus">Key Points</a>
+        <a href="#tests">Test Plan</a>
+        <a href="#rollout">Rollout</a>
+      </nav>
+
+    </div><!-- .layout -->
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </div>
+</body>
+</html>

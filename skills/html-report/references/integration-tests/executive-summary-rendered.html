@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Executive Summary — Payments Platform Q1 2026</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap">
+  <style>
+    :root {
+      --ivory:  #FFFFFF;
+      --paper:  #FFFFFF;
+      --slate:  #1F1F1F;
+      --clay:   #6759E8;
+      --clay-d: #5240D4;
+      --oat:    #FDF6E2;
+      --olive:  #2EAA7E;
+      --g100: #F7F7F5;
+      --g300: #E6E6E3;
+      --g500: #6B6B6B;
+      --g700: #3E3E3C;
+      --sans:  "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --serif: "Inter", ui-serif, Georgia, serif;
+      --mono:  "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --max-width:    860px;
+      --radius-panel: 12px;
+      --border:       1.5px solid var(--g300);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 56px 24px 120px;
+      background: var(--ivory); color: var(--slate);
+      font-family: var(--sans); font-size: 15px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: var(--max-width); margin: 0 auto; }
+    header { margin-bottom: 40px; }
+    .header-top {
+      display: flex; align-items: baseline;
+      justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;
+    }
+    .eyebrow {
+      font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--g500); margin: 0 0 10px;
+    }
+    h1 {
+      font-family: var(--serif); font-weight: 600; font-size: 36px;
+      letter-spacing: -0.01em; margin: 0; color: var(--slate); line-height: 1.2;
+    }
+    .auto-pill {
+      font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--g500); background: var(--g100);
+      border: var(--border); border-radius: 999px; padding: 5px 11px; white-space: nowrap;
+    }
+    .date-range { color: var(--g500); font-size: 14px; margin-top: 6px; }
+    .date-range .repo { font-family: var(--mono); font-size: 13px; color: var(--g700); }
+    section { margin-bottom: 52px; }
+    h2 {
+      font-family: var(--serif); font-weight: 600; font-size: 22px;
+      letter-spacing: -0.01em; margin: 0 0 6px; color: var(--slate);
+    }
+    hr.rule { border: none; border-top: 1px solid var(--g300); margin: 0 0 22px; }
+    .metrics-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    @media (max-width: 720px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px) { .metrics-grid { grid-template-columns: 1fr; } }
+    .stat-card {
+      background: var(--paper); border: var(--border);
+      border-radius: var(--radius-panel); padding: 20px 22px 18px;
+    }
+    .stat-card.warn { border-left: 4px solid var(--clay); padding-left: 19px; }
+    .stat-num {
+      font-family: var(--serif); font-size: 42px; font-weight: 600;
+      line-height: 1; color: var(--slate); margin-bottom: 8px;
+    }
+    .stat-label {
+      font-family: var(--sans); font-size: 12px; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--g500);
+    }
+    .stat-delta { font-family: var(--mono); font-size: 11px; margin-top: 6px; }
+    .stat-delta.up   { color: var(--olive); }
+    .stat-delta.down { color: var(--clay-d); }
+    .stat-delta.flat { color: var(--g500); }
+    .highlights { list-style: none; margin: 0; padding: 0; }
+    .highlights li {
+      position: relative; padding: 0 0 14px 26px;
+      font-size: 15px; color: var(--g700);
+    }
+    .highlights li::before {
+      content: ""; position: absolute; left: 6px; top: 8px;
+      width: 7px; height: 7px; border-radius: 2px; background: var(--clay);
+    }
+    .highlights li strong { color: var(--slate); font-weight: 600; }
+    .decision-panel {
+      background: var(--paper); border: var(--border);
+      border-radius: var(--radius-panel); padding: 24px 28px; margin-bottom: 20px;
+    }
+    .decision-panel h3 {
+      font-family: var(--serif); font-weight: 600; font-size: 17px;
+      color: var(--slate); margin: 0 0 8px;
+    }
+    .decision-panel p { font-size: 14px; color: var(--g700); margin: 0 0 6px; }
+    .decision-panel .rec-badge {
+      display: inline-block; font-family: var(--mono); font-size: 11px;
+      background: var(--olive); color: #fff; padding: 3px 10px;
+      border-radius: 6px; margin-top: 10px;
+    }
+    .option-row {
+      display: grid; grid-template-columns: 70px 1fr; gap: 0 14px;
+      padding: 8px 0; border-top: 1px solid var(--g100);
+    }
+    .option-key {
+      font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+      color: var(--g500); padding-top: 3px;
+    }
+    .option-val { font-size: 14px; color: var(--g700); }
+    .carryover { background: var(--oat); border-radius: var(--radius-panel); padding: 20px 22px; }
+    .carry-group { margin-bottom: 18px; }
+    .carry-group:last-child { margin-bottom: 0; }
+    .carry-group-title {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--g500); margin: 0 0 8px;
+    }
+    .carry-item { display: flex; align-items: baseline; gap: 14px; padding: 8px 0; }
+    .carry-item + .carry-item { border-top: 1px solid rgba(20,20,19,0.08); }
+    .carry-tag {
+      font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--g700); background: var(--ivory);
+      border-radius: 4px; padding: 3px 7px; flex-shrink: 0;
+    }
+    .carry-body { font-size: 14px; color: var(--g700); }
+    .carry-body .who { color: var(--g500); font-size: 12px; }
+    footer {
+      margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--g300);
+      font-family: var(--mono); font-size: 12px; color: var(--g500);
+    }
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table, figure, .chart-panel { page-break-inside: avoid; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <header>
+      <p class="eyebrow">Executive Report &middot; Q1 2026</p>
+      <div class="header-top">
+        <h1>Payments Platform Q1 2026 Executive Summary</h1>
+        <span class="auto-pill">Auto-Generated</span>
+      </div>
+      <div class="date-range">
+        2026-01-01 ~ 2026-03-31 &nbsp;&middot;&nbsp;
+        <span class="repo">moai-bi:executive-summary</span>
+      </div>
+    </header>
+
+    <!-- Core metric cards -->
+    <section aria-label="Core Metrics">
+      <div class="metrics-grid">
+        <div class="stat-card">
+          <div class="stat-num">14.8B KRW</div>
+          <div class="stat-label">Q1 Revenue</div>
+          <div class="stat-delta up">+11.4% YoY</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">96.3%</div>
+          <div class="stat-label">Payment Success Rate</div>
+          <div class="stat-delta up">↑ 3.2pp (v3 effect)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">19.8%</div>
+          <div class="stat-label">Operating Margin</div>
+          <div class="stat-delta up">+2.6pp</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-num">47</div>
+          <div class="stat-label">New Partners</div>
+          <div class="stat-delta up">Target +17.5% exceeded</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlights -->
+    <section aria-label="Key Status">
+      <h2>Highlights</h2>
+      <hr class="rule">
+      <ul class="highlights">
+        <li><strong>Revenue 14.8B KRW</strong> (vs. prior quarter 13.3B KRW, +11.4%, K-IFRS basis [preliminary])</li>
+        <li>Payment success rate <strong>96.3%</strong> (previous quarter 93.1%, effect of Payments v3 rollout)</li>
+        <li>Onboarded <strong>47</strong> new partner companies (vs. target of 40, +17.5%)</li>
+        <li>Operating margin <strong>19.8%</strong> (prior quarter 17.2%, +2.6pp) — infrastructure fixed-cost stabilization</li>
+        <li>LTV/CAC <strong>4.1</strong> (vs. 3.2 same period last year) — improved cohort retention effect</li>
+      </ul>
+    </section>
+
+    <!-- Velocity chart (What / So What summary bars) -->
+    <section aria-label="Quarterly Performance Chart">
+      <h2>Quarterly Key Metric Trend</h2>
+      <hr class="rule">
+      <div style="background: var(--paper); border: var(--border); border-radius: var(--radius-panel); padding: 24px 28px 18px;">
+        <svg viewBox="0 0 640 180" role="img" aria-label="Quarterly revenue trend (100M KRW)">
+          <line x1="48" y1="20"  x2="620" y2="20"  stroke="#F7F7F5" stroke-width="1"/>
+          <line x1="48" y1="60"  x2="620" y2="60"  stroke="#F7F7F5" stroke-width="1"/>
+          <line x1="48" y1="100" x2="620" y2="100" stroke="#F7F7F5" stroke-width="1"/>
+          <line x1="48" y1="140" x2="620" y2="140" stroke="#E6E6E3" stroke-width="1.5"/>
+          <text x="40" y="144" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B6B6B">0</text>
+          <text x="40" y="104" text-anchor="end" font-family="system-ui" font-size="11" fill="#6B6B6B">50</text>
+          <text x="40" y="64"  text-anchor="end" font-family="system-ui" font-size="11" fill="#6B6B6B">100</text>
+          <text x="40" y="24"  text-anchor="end" font-family="system-ui" font-size="11" fill="#6B6B6B">150</text>
+          <!-- Q1 2025: 13.3B KRW -> height=125, y=15 -->
+          <rect x="64"  y="15"  width="56" height="125" rx="6" fill="#FDF6E2"/>
+          <text x="92"  y="10"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">13.3B</text>
+          <text x="92"  y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">Q1 '25</text>
+          <!-- Q2 2025: 12.1B KRW -> height=114, y=26 -->
+          <rect x="144" y="26"  width="56" height="114" rx="6" fill="#FDF6E2"/>
+          <text x="172" y="21"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">12.1B</text>
+          <text x="172" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">Q2 '25</text>
+          <!-- Q3 2025: 13.8B KRW -> height=130, y=10 -->
+          <rect x="224" y="10"  width="56" height="130" rx="6" fill="#FDF6E2"/>
+          <text x="252" y="6"   text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">13.8B</text>
+          <text x="252" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">Q3 '25</text>
+          <!-- Q4 2025: 13.3B KRW -> height=125, y=15 -->
+          <rect x="304" y="15"  width="56" height="125" rx="6" fill="#FDF6E2"/>
+          <text x="332" y="10"  text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">13.3B</text>
+          <text x="332" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">Q4 '25</text>
+          <!-- Q1 2026: 14.8B KRW -> height=140, y=0 (peak, clay) -->
+          <rect x="384" y="0"   width="56" height="140" rx="6" fill="#6759E8"/>
+          <text x="412" y="155" text-anchor="middle" font-family="system-ui" font-size="11" fill="#fff" font-weight="600">14.8B</text>
+          <text x="412" y="158" text-anchor="middle" font-family="system-ui" font-size="11" fill="#6B6B6B">Q1 '26</text>
+        </svg>
+        <div style="font-size: 12px; color: var(--g500); margin-top: 12px;">Quarterly revenue trend (100M KRW) — Q1 2026 reaches all-time high</div>
+      </div>
+    </section>
+
+    <!-- Now What — decision options (reusing Carryover slot) -->
+    <section aria-label="Decision Options">
+      <h2>Now What (Decision Options)</h2>
+      <hr class="rule">
+      <div class="carryover">
+        <div class="carry-group">
+          <p class="carry-group-title">P0 — Immediate Decision Needed</p>
+          <div class="carry-item">
+            <span class="carry-tag">Option A</span>
+            <div class="carry-body">
+              Outsource ISMS-P certification to external specialist firm — renewal within 8 weeks, cost 110M KRW
+              <span class="who">&middot; <strong style="color: var(--olive);">Recommended</strong></span>
+            </div>
+          </div>
+          <div class="carry-item">
+            <span class="carry-tag">Option B</span>
+            <div class="carry-body">
+              Form internal task force — renewal within 10 weeks, rotate 3 dev engineers (delays 1 feature launch)
+              <span class="who">&middot; Strengthens internal capability</span>
+            </div>
+          </div>
+        </div>
+        <div class="carry-group">
+          <p class="carry-group-title">Risks</p>
+          <div class="carry-item">
+            <span class="carry-tag">Caution</span>
+            <div class="carry-body">
+              Simple payment regulation revision scheduled to take effect in Q2 → API compatibility review needed
+              <span class="who">&middot; Owner: Engineering</span>
+            </div>
+          </div>
+          <div class="carry-item">
+            <span class="carry-tag">P1</span>
+            <div class="carry-body">
+              2 core payment engineers signaled imminent departure → secure emergency backfill
+              <span class="who">&middot; Owner: HR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Source: Finance Q1 preliminary close figures &nbsp;&mdash;&nbsp; Generated: 2026-03-31 &nbsp;

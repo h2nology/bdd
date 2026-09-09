@@ -99,7 +99,7 @@ become misleading:
 - **Not code coverage.** A passing scenario says nothing about which lines ran.
   Combine with the language's own coverage tool if the user needs that.
 - **Not assertion strength.** A scenario whose `Then` asserts nothing meaningful
-  still counts as covered. The spec report review (see `spec-report`) is
+  still counts as covered. The spec report review (`/bdd:spec-report`) is
   where that is caught.
 - **Not requirement completeness.** Coverage counts requirements that someone
   wrote down. A requirement nobody recorded is invisible to every metric here.

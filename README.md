@@ -10,17 +10,27 @@ map from the run's screenshots, and generate database DDL from the same specs.
 | Skill | Use it for |
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
-| `spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review |
 | `init` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
 | `openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
+| `html-report` | Render a report as one self-contained HTML file; its `spec` mode backs the specification report |
 
 Each is invocable as `/bdd:<name>` and triggers automatically from a matching
 request. Use the namespaced form: the plugin's `init` and `run` share their bare
 names with Claude Code's built-in `/init` and `/run`, so `/bdd:init` and
 `/bdd:run` are what reach this plugin.
+
+## Commands
+
+| Command | Use it for |
+|---|---|
+| `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
+
+A command runs only when you type it. `spec-report` is one because its job is
+fixed - parse, confirm the reviewer's language and theme, render - and because
+the rendering belongs to `html-report`, which the command drives.
 
 ## Typical flow
 

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{inc_id}} — {{title}}</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 860px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, print rules.
+       Component visuals (header, TL;DR, timeline, code panel, impact
+       table, action items, etc.) live in {{{theme_components_css}}}
+       below — see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table.impact, .actions, .code-panel { page-break-inside: avoid; }
+      .tldr { background: #f5f5f5 !important; color: black !important; border: 1px solid #ccc; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (header, TL;DR banner, meta
+       pills, timeline, code/diff panel, impact table, action items,
+       footer) injected by the renderer per the active `theme`.
+       See design/notion-design.md.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+         inc_id: e.g. INC-2026-0422
+         title: Incident title
+         severity: "SEV-1" | "SEV-2" | "SEV-3"
+         sev_class: "sev-1" | "sev-2" | "sev-3"
+         status: "Resolved" | "Active"
+         status_class: "resolved" | "active"
+         duration: e.g. 47 min
+         detected_at: e.g. 2026-04-22 . 14:02 KST
+         owner: Owner name
+    ======================================================== -->
+    <header>
+      <div class="inc-id">{{inc_id}}</div>
+      <h1>{{title}}</h1>
+      <div class="meta-row">
+        <span class="pill {{sev_class}}">{{severity}}</span>
+        <span class="pill {{status_class}}">{{status_label}}</span>
+        <span class="pill neutral"><span class="k">Duration</span> <span class="v">{{duration}}</span></span>
+        <span class="pill neutral"><span class="k">Detected</span> <span class="v">{{detected_at}}</span></span>
+        <span class="pill neutral"><span class="k">Owner</span> <span class="v">{{owner}}</span></span>
+      </div>
+    </header>
+
+    <!-- ========================================================
+         TL;DR banner
+         tldr_html: inline HTML allowed (<code>, etc.)
+    ======================================================== -->
+    <div class="tldr">
+      <div class="tldr-label">TL;DR</div>
+      <p>{{tldr_html}}</p>
+    </div>
+
+    <!-- ========================================================
+         Timeline
+         tl_entries: [
+           {
+             time: "14:02",
+             dot_class: "" | "impact" | "mitigated",
+             body_html: "...",
+             log_excerpt: "" | "log text"
+           }
+         ]
+    ======================================================== -->
+    <section id="timeline">
+      <h2>Timeline</h2>
+      <hr class="rule">
+      <div class="timeline">
+        {{#tl_entries}}
+        <div class="tl-entry">
+          <span class="tl-dot {{dot_class}}"></span>
+          <span class="tl-time">{{time}}</span>
+          <div class="tl-body">{{body_html}}</div>
+          {{#log_excerpt}}
+          <details class="tl-log">
+            <summary>Show log excerpt</summary>
+            <div class="log-block">{{log_excerpt}}</div>
+          </details>
+          {{/log_excerpt}}
+        </div>
+        {{/tl_entries}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Root cause
+         root_cause_html: narrative HTML
+         diff_path: file path (optional)
+         diff_lines: [{cls: "ctx|del|add", text: "..."}] (optional)
+    ======================================================== -->
+    <section id="root-cause">
+      <h2>Root Cause</h2>
+      <hr class="rule">
+      {{root_cause_html}}
+      {{#diff_path}}
+      <div class="code-panel">
+        <span class="path">{{diff_path}}</span>
+        {{#diff_lines}}
+        <div class="diff-line {{cls}}">{{text}}</div>
+        {{/diff_lines}}
+      </div>
+      {{/diff_path}}
+    </section>
+
+    <!-- ========================================================
+         Impact
+         impact_rows: [{label, value}]
+    ======================================================== -->
+    <section id="impact">
+      <h2>Impact</h2>
+      <hr class="rule">
+      <table class="impact">
+        {{#impact_rows}}
+        <tr>
+          <th>{{label}}</th>
+          <td>{{value}}</td>
+        </tr>
+        {{/impact_rows}}
+      </table>
+    </section>
+
+    <!-- ========================================================
+         Action items
+         actions: [
+           {
+             done: true|false,
+             initials: "AB",
+             assignee: "Name",
+             desc_html: "...",
+             deadline: "Apr 28"
+           }
+         ]
+    ======================================================== -->
+    <section id="actions">
+      <h2>Action Items</h2>
+      <hr class="rule">
+      <div class="actions">
+        {{#actions}}
+        <div class="ai-row{{#done}} done{{/done}}">
+          <span class="ai-check"></span>
+          <span class="ai-avatar" title="{{assignee}}">{{initials}}</span>
+          <span class="ai-desc">{{desc_html}}</span>
+          <span class="ai-due">{{deadline}}</span>
+        </div>
+        {{/actions}}
+      </div>
+    </section>
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </div>
+</body>
+</html>

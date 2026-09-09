@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}}</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 1240px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+    ============================================================ */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: var(--max-width); margin: 0 auto; }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 900px) { .metrics-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 480px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    /* Two columns: a scenario index that stays put, and the document itself.
+       A spec runs long, and a reviewer who has to scroll back to find where
+       they were stops reviewing and starts skimming. */
+    .layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 36px; align-items: start; }
+    .nav-card {
+      position: sticky; top: 24px; align-self: start;
+      max-height: calc(100vh - 48px); overflow-y: auto;
+      background: var(--paper); border: var(--border);
+      border-radius: var(--radius-panel); padding: 16px 14px;
+    }
+    .nav-title {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--g500); margin: 0 0 12px; padding: 0 6px;
+    }
+    .nav-group + .nav-group { margin-top: 14px; }
+    .nav-feature {
+      display: block; font-size: 12px; font-weight: 600; color: var(--slate);
+      padding: 3px 6px 6px; border-bottom: 1px solid var(--g100);
+      margin-bottom: 4px; text-decoration: none; border-radius: 4px 4px 0 0;
+    }
+    .nav-feature:hover { color: var(--clay); background: var(--g100); }
+    .nav-card ul { list-style: none; margin: 0; padding: 0; }
+    .nav-card li a {
+      display: block; padding: 5px 6px; border-radius: 5px;
+      font-size: 12.5px; line-height: 1.4; color: var(--g700);
+      text-decoration: none;
+    }
+    .nav-card li a:hover { background: var(--g100); color: var(--slate); }
+    .nav-card li a.is-outline::after { content: "⌗"; float: right; color: var(--g500); font-size: 11px; }
+    .nav-card a:focus-visible { outline: 2px solid var(--clay); outline-offset: 1px; }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; gap: 20px; }
+      .nav-card { position: static; max-height: none; }
+    }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    /* ============================================================
+       Specification components (theme-agnostic, driven by tokens)
+
+       A spec report is read in two passes: a manager scans the
+       traceability matrix and the gap lists, then drills into the
+       scenarios that matter. The two passes get different visual
+       weight — matrix and gaps up top with chart support, the Gherkin
+       itself set in mono below, indented under the feature that owns it.
+    ============================================================ */
+
+    /* -- traceability matrix ---------------------------------- */
+    .matrix { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .matrix thead th {
+      position: sticky; top: 0; z-index: 1; background: var(--paper);
+      text-align: left; font-family: var(--sans); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--g500);
+      font-weight: 600; padding: 10px 12px; border-bottom: var(--border);
+      white-space: nowrap;
+    }
+    .matrix td {
+      padding: 11px 12px; border-bottom: 1px solid var(--g100);
+      vertical-align: top; color: var(--g700);
+    }
+    .matrix tbody tr:last-child td { border-bottom: none; }
+    .matrix td.num { text-align: right; font-family: var(--mono); font-size: 13px; }
+    .matrix .covered-by div { padding: 1px 0; }
+    .matrix .covered-by .loc { font-family: var(--mono); font-size: 11.5px; color: var(--g500); }
+
+    /* -- chips ------------------------------------------------ */
+    .req-chip {
+      display: inline-block; font-family: var(--mono); font-size: 12px;
+      font-weight: 600; color: var(--clay); background: var(--g100);
+      border-radius: 5px; padding: 3px 9px; white-space: nowrap;
+    }
+    .tag-chip {
+      display: inline-block; font-family: var(--mono); font-size: 11.5px;
+      color: var(--g500); background: var(--g100); border: 1px solid var(--g300);
+      border-radius: 5px; padding: 2px 8px; margin: 0 5px 5px 0;
+    }
+    .tag-chip.req { color: var(--clay); border-color: var(--clay); font-weight: 600; }
+    .tag-chip .count { color: var(--g500); font-weight: 400; }
+
+    /* -- gap panels (the lists a reviewer must act on) --------- */
+    .gap-panel { background: var(--oat); border-radius: var(--radius-panel); padding: 20px 22px; }
+    .gap-panel ul { list-style: none; margin: 0; padding: 0; }
+    .gap-panel li { padding: 7px 0; font-size: 14px; color: var(--g700); }
+    .gap-panel li + li { border-top: 1px solid rgba(20,20,19,0.08); }
+    .gap-panel .loc { font-family: var(--mono); font-size: 11.5px; color: var(--g500); }
+    .gap-note {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--g500); margin: 0 0 10px;
+    }
+
+    /* -- feature / rule / scenario hierarchy ------------------ */
+    .feature-block { margin-bottom: 44px; scroll-margin-top: 20px; }
+    .feature-head { border-left: 3px solid var(--clay); padding-left: 16px; margin-bottom: 14px; }
+    .feature-head h3 {
+      font-family: var(--serif); font-weight: 600; font-size: 21px;
+      margin: 0 0 4px; color: var(--slate); letter-spacing: -0.01em;
+    }
+    .feature-meta { font-family: var(--mono); font-size: 11.5px; color: var(--g500); }
+    .feature-desc {
+      font-size: 14px; color: var(--g700); margin: 10px 0 0;
+      white-space: pre-wrap; max-width: 68ch;
+    }
+    .rule-head { border-left: 3px solid var(--g300); padding-left: 16px; margin: 26px 0 12px; }
+    .rule-head h4 {
+      font-family: var(--sans); font-weight: 600; font-size: 14px;
+      color: var(--g500); margin: 0; text-transform: none; letter-spacing: 0;
+    }
+    .scenario-card {
+      background: var(--paper); border: var(--border);
+      border-radius: var(--radius-panel); padding: 16px 20px; margin-bottom: 10px;
+      scroll-margin-top: 20px;
+    }
+    .scenario-card:target { border-color: var(--clay); }
+    .scenario-card.background { background: none; border-style: dashed; }
+    .scenario-head {
+      display: flex; align-items: baseline; gap: 10px;
+      flex-wrap: wrap; margin-bottom: 8px;
+    }
+    .scenario-head h5 {
+      font-family: var(--sans); font-weight: 600; font-size: 15px;
+      margin: 0; color: var(--slate);
+    }
+    .scenario-kind {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--g500); background: var(--g100);
+      border-radius: 4px; padding: 2px 7px;
+    }
+    .scenario-tags { margin-bottom: 10px; }
+
+    /* -- Gherkin steps ---------------------------------------- */
+    .steps { font-family: var(--mono); font-size: 13px; line-height: 1.7; }
+    .step { display: grid; grid-template-columns: minmax(52px, max-content) 1fr; gap: 0 12px; }
+    .step .kw { color: var(--clay); font-weight: 600; }
+    .step .txt { color: var(--g700); }
+    .step-table { margin: 8px 0 10px 64px; }
+    .step-table table { border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+    .step-table th, .step-table td {
+      text-align: left; padding: 5px 30px 5px 0; color: var(--g700);
+      border-bottom: 1px solid var(--g100); white-space: nowrap;
+    }
+    .step-table th { color: var(--g500); font-weight: 600; }
+    .docstring {
+      margin: 8px 0 10px 64px; padding: 12px 14px; background: var(--g100);
+      border-left: 2px solid var(--g300); border-radius: 0 6px 6px 0;
+    }
+    .docstring pre { margin: 0; }
+    .examples { margin: 12px 0 0 64px; }
+    .examples-title {
+      font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--g500); margin: 0 0 6px;
+    }
+    .examples table { border-collapse: collapse; font-family: var(--mono); font-size: 12.5px; }
+    .examples th, .examples td {
+      text-align: left; padding: 5px 30px 5px 0; color: var(--g700);
+      border-bottom: 1px solid var(--g100); white-space: nowrap;
+    }
+    .examples th { color: var(--g500); font-weight: 600; }
+
+    @media (max-width: 640px) {
+      .step { grid-template-columns: 1fr; }
+      .step-table, .docstring, .examples { margin-left: 0; }
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 11pt; }
+      .page { max-width: none; }
+      h1, h2, h3, h4, h5 { page-break-after: avoid; }
+      table, figure, .chart-panel, .scenario-card, .stat-card { page-break-inside: avoid; }
+      .matrix thead { display: table-header-group; }
+      .matrix thead th { position: static; }
+      .layout { display: block; }
+      .nav-card { display: none; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — injected per the active `theme`.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+    ======================================================== -->
+    <header>
+      <p class="eyebrow">{{eyebrow}}</p>
+      <div class="header-top">
+        <h1>{{title}}</h1>
+        <span class="auto-pill">{{auto_label}}</span>
+      </div>
+      <div class="date-range">
+        {{generated_at}} &nbsp;&middot;&nbsp;
+        <span class="repo">{{source_paths}}</span>
+      </div>
+    </header>
+
+    <!-- ========================================================
+         Metric cards
+         metrics: [{label, value, delta, delta_type, warn}]
+         Six slots: features, rules, scenarios, cases, steps, requirements.
+         Set warn:true on a card that represents a gap (untagged scenarios,
+         parse warnings) so it takes the accent border.
+    ======================================================== -->
+    <section aria-label="{{a11y_metrics}}">
+      <div class="metrics-grid">
+        {{#metrics}}
+        <div class="stat-card{{#warn}} warn{{/warn}}">
+          <div class="stat-num">{{value}}</div>
+          <div class="stat-label">{{label}}</div>
+          {{#delta}}<div class="stat-delta {{delta_type}}">{{delta}}</div>{{/delta}}
+        </div>
+        {{/metrics}}
+      </div>
+    </section>
+
+
+    <div class="layout">
+
+    <!-- ========================================================
+         Scenario index — sticky, one entry per scenario.
+         nav_features: [{anchor, name, scenarios:[{anchor, name, is_outline}]}]
+         Feature anchors match .feature-block ids, scenario anchors match
+         .scenario-card ids.
+    ======================================================== -->
+    <aside class="nav-card">
+      <p class="nav-title">{{nav_heading}}</p>
+      {{#nav_features}}
+      <div class="nav-group">
+        <a class="nav-feature" href="#{{anchor}}">{{name}}</a>
+        <ul>
+          {{#scenarios}}
+          <li><a href="#{{anchor}}"{{#is_outline}} class="is-outline"{{/is_outline}}>{{name}}</a></li>
+          {{/scenarios}}
+        </ul>
+      </div>
+      {{/nav_features}}
+    </aside>
+
+    <main>
+
+    <!-- ========================================================
+         Requirement traceability matrix
+         requirements: [{id, scenario_count, case_count, covered_by:[{name, loc}]}]
+    ======================================================== -->
+    {{#has_requirements}}
+    <section>
+      <h2>{{matrix_heading}}</h2>
+      <hr class="rule">
+      <div style="overflow-x:auto">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>{{th_requirement}}</th>
+              <th class="num">{{th_scenarios}}</th>
+              <th class="num">{{th_cases}}</th>
+              <th>{{th_covered_by}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#requirements}}
+            <tr>
+              <td><span class="req-chip">{{id}}</span></td>
+              <td class="num">{{scenario_count}}</td>
+              <td class="num">{{case_count}}</td>
+              <td class="covered-by">
+                {{#covered_by}}<div>{{name}} <span class="loc">{{loc}}</span></div>{{/covered_by}}
+              </td>
+            </tr>
+            {{/requirements}}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    {{/has_requirements}}
+
+    <!-- ========================================================
+         Gap: scenarios carrying no requirement tag.
+         This is a list the reviewer acts on, so it gets the oat panel
+         rather than another plain table.
+    ======================================================== -->
+    {{#has_untagged}}
+    <section>
+      <h2>{{untagged_heading}}</h2>
+      <hr class="rule">
+      <div class="gap-panel">
+        <p class="gap-note">{{untagged_note}}</p>
+        <ul>
+          {{#untagged}}
+          <li>{{feature_name}} › {{name}} <span class="loc">{{loc}}</span></li>
+          {{/untagged}}
+        </ul>
+      </div>
+    </section>
+    {{/has_untagged}}
+
+
+    <!-- ========================================================
+         The specification itself
+         features: [{name, uri, language, description, background, groups}]
+         groups:   [{rule_keyword?, rule_name?, scenarios:[...]}]
+                   a group without rule_name holds the feature's top-level scenarios
+         scenario: {name, kind, has_tags, tags:[{name,is_req}], steps, examples}
+         step:     {kw, txt, table?, docstring?, docstring_lang?}
+                   table is pre-rendered HTML; docstring_lang drives highlight.js
+    ======================================================== -->
+    <section>
+      <h2>{{spec_heading}}</h2>
+      <hr class="rule">
+
+      {{#features}}
+      <div class="feature-block" id="{{anchor}}">
+        <div class="feature-head">
+          <h3>{{name}}</h3>
+          <div class="feature-meta">{{uri}} &middot; {{language}}</div>
+          {{#description}}<p class="feature-desc">{{description}}</p>{{/description}}
+        </div>
+
+        {{#background}}
+        <div class="scenario-card background">
+          <div class="scenario-head"><h5>{{keyword}}{{#name}}: {{name}}{{/name}}</h5></div>
+          <div class="steps">
+            {{#steps}}
+            <div class="step"><span class="kw">{{kw}}</span><span class="txt">{{txt}}</span></div>
+            {{#table}}<div class="step-table">{{{table}}}</div>{{/table}}
+            {{#docstring}}<div class="docstring"><pre><code class="language-{{docstring_lang}}">{{docstring}}</code></pre></div>{{/docstring}}
+            {{/steps}}
+          </div>
+        </div>
+        {{/background}}
+
+        {{#groups}}
+        {{#rule_name}}
+        <div class="rule-head"><h4>{{rule_keyword}}: {{rule_name}}</h4></div>
+        {{/rule_name}}
+
+        {{#scenarios}}
+        <div class="scenario-card" id="{{anchor}}">
+          <div class="scenario-head">
+            <h5>{{name}}</h5>
+            <span class="scenario-kind">{{kind}}</span>
+          </div>
+          {{#has_tags}}
+          <div class="scenario-tags">
+            {{#tags}}<span class="tag-chip{{#is_req}} req{{/is_req}}">{{name}}</span>{{/tags}}
+          </div>
+          {{/has_tags}}
+          <div class="steps">
+            {{#steps}}
+            <div class="step"><span class="kw">{{kw}}</span><span class="txt">{{txt}}</span></div>
+            {{#table}}<div class="step-table">{{{table}}}</div>{{/table}}
+            {{#docstring}}<div class="docstring"><pre><code class="language-{{docstring_lang}}">{{docstring}}</code></pre></div>{{/docstring}}
+            {{/steps}}
+          </div>
+          {{#examples}}
+          <div class="examples">
+            <p class="examples-title">{{keyword}}{{#name}}: {{name}}{{/name}}</p>
+            {{{table}}}
+          </div>
+          {{/examples}}
+        </div>
+        {{/scenarios}}
+        {{/groups}}
+      </div>
+      {{/features}}
+    </section>
+
+    <!-- ========================================================
+         Parse warnings — never hand over a report that still lists these
+    ======================================================== -->
+    {{#has_warnings}}
+    <section>
+      <h2>{{warnings_heading}}</h2>
+      <hr class="rule">
+      <div class="gap-panel">
+        <p class="gap-note">{{warnings_note}}</p>
+        <ul>
+          {{#warnings}}
+          <li><span class="loc">{{loc}}</span> — {{message}}</li>
+          {{/warnings}}
+        </ul>
+      </div>
+    </section>
+    {{/has_warnings}}
+
+    </main>
+    </div>
+
+    <footer>{{footer_text}}</footer>
+  </div>
+  {{{highlight_js}}}
+</body>
+</html>

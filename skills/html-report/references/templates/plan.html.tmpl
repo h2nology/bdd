@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}} — Execution Plan</title>
+  {{{font_links}}}
+  <style>
+    /* ============================================================
+       :root tokens — see references/themes.md
+    ============================================================ */
+    :root {
+      {{{theme_tokens_css}}}
+
+      {{{font_vars_css}}}
+
+      --max-width: 1100px;
+    }
+
+    {{{code_block_css}}}
+
+    /* ============================================================
+       Skeleton (theme-agnostic)
+       Box reset, body container, grid primitives, print rules.
+       Component visuals (header, summary strip, milestones,
+       diagram, slice table, risks, metrics) live in
+       {{{theme_components_css}}} below — see references/themes.md.
+    ============================================================ */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      background: var(--ivory);
+      color: var(--slate);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    .summary-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px) { .summary-strip { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .summary-strip { grid-template-columns: 1fr; } }
+
+    .risks .row {
+      display: grid;
+      grid-template-columns: 1.6fr 90px 1.6fr;
+    }
+    @media (max-width: 780px) { .risks .row { grid-template-columns: 1fr; } }
+
+    .slices .row {
+      display: grid;
+      grid-template-columns: 1.8fr 110px 1fr 130px;
+    }
+    @media (max-width: 780px) { .slices .row { grid-template-columns: 1fr; } }
+
+    .diagram svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @media print {
+      body { background: white; color: black; padding: 0; font-size: 12pt; }
+      .page { max-width: none; }
+      a[href]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #555; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table, .risks, .slices, .diagram, .milestone { page-break-inside: avoid; }
+      .no-print { display: none !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ============================================================
+       Theme components — visual rules (header, summary strip,
+       milestones, diagram, slice table, risks, success metrics,
+       footer) injected by the renderer per the active `theme`.
+       See design/notion-design.md for
+       the two first-party variants.
+    ============================================================ */
+    {{{theme_components_css}}}
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- ========================================================
+         Header
+         eyebrow: e.g. "Execution Plan . payments-platform"
+         title: Plan title
+         period: e.g. "Apr 1 - Jun 30, 2026 (12 weeks)"
+         owner: e.g. "payments-platform team"
+    ======================================================== -->
+    <header class="page-head">
+      <div class="eyebrow">{{eyebrow}}</div>
+      <div class="header-top">
+        <h1>{{title}}</h1>
+        <span class="auto-pill">Auto-generated</span>
+      </div>
+      <div class="meta-row">
+        <span class="period">{{period}}</span>
+        &nbsp;&middot;&nbsp;
+        <span class="owner">{{owner}}</span>
+      </div>
+    </header>
+
+    <!-- ========================================================
+         Summary strip
+         summary_cells: [{label, value, accent}]
+    ======================================================== -->
+    <section aria-label="Summary">
+      <div class="summary-strip">
+        {{#summary_cells}}
+        <div class="sum-cell">
+          <div class="k">{{label}}</div>
+          <div class="v{{#accent}} accent{{/accent}}">{{value}}</div>
+        </div>
+        {{/summary_cells}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Milestones
+         milestones: [{when, title, desc, done, tags}]
+    ======================================================== -->
+    <section aria-label="Milestones">
+      <div class="sec-head"><span class="num">01</span><h2>Milestones</h2></div>
+      <p class="sec-intro">{{milestones_intro}}</p>
+      <div class="milestones">
+        {{#milestones}}
+        <div class="milestone">
+          <div class="when">{{when}}</div>
+          <div class="dot-col">
+            <span class="dot{{#done}} done{{/done}}"></span>
+            <span class="line"></span>
+          </div>
+          <div class="body">
+            <h3>{{title}}</h3>
+            <p>{{desc}}</p>
+            <div class="tag-row">
+              {{#tags}}<span class="tag">{{.}}</span>{{/tags}}
+            </div>
+          </div>
+        </div>
+        {{/milestones}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Data flow diagram
+         diagram_svg: Completed SVG code (with viewBox)
+         diagram_caption: Caption text
+    ======================================================== -->
+    <section aria-label="Data flow">
+      <div class="sec-head"><span class="num">02</span><h2>Data Flow</h2></div>
+      <p class="sec-intro">{{dataflow_intro}}</p>
+      <div class="diagram">
+        {{{diagram_svg}}}
+        <p class="caption">{{diagram_caption}}</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Slices (work-streams)
+         slices: [{name, status, status_class, owner, target}]
+         status_class: "active" | "planned" | "done" | "blocked"
+    ======================================================== -->
+    <section aria-label="Slices">
+      <div class="sec-head"><span class="num">03</span><h2>Slices</h2></div>
+      <p class="sec-intro">{{slices_intro}}</p>
+      <div class="slices">
+        <div class="row head">
+          <div class="cell">Slice</div>
+          <div class="cell">Status</div>
+          <div class="cell">Owner</div>
+          <div class="cell">Target</div>
+        </div>
+        {{#slices}}
+        <div class="row">
+          <div class="cell slice-name">{{name}}</div>
+          <div class="cell"><span class="status {{status_class}}">{{status}}</span></div>
+          <div class="cell">{{owner}}</div>
+          <div class="cell target">{{target}}</div>
+        </div>
+        {{/slices}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Risk matrix
+         risks: [{risk, severity, sev_class, mitigation}]
+         sev_class: "high" | "med" | "low"
+    ======================================================== -->
+    <section aria-label="Risks">
+      <div class="sec-head"><span class="num">04</span><h2>Risks &amp; Mitigation</h2></div>
+      <div class="risks">
+        <div class="row head">
+          <div class="cell">Risk</div>
+          <div class="cell">Severity</div>
+          <div class="cell">Mitigation</div>
+        </div>
+        {{#risks}}
+        <div class="row">
+          <div class="cell">{{risk}}</div>
+          <div class="cell"><span class="sev {{sev_class}}">{{severity}}</span></div>
+          <div class="cell">{{mitigation}}</div>
+        </div>
+        {{/risks}}
+      </div>
+    </section>
+
+    <!-- ========================================================
+         Success metrics
+         success_metrics: [{label, target, current, met}]
+    ======================================================== -->
+    <section aria-label="Success metrics">
+      <div class="sec-head"><span class="num">05</span><h2>Success Metrics</h2></div>
+      <div class="metrics-list">
+        {{#success_metrics}}
+        <div class="metric-row">
+          <div class="metric-indicator {{#met}}met{{/met}}{{^met}}unmet{{/met}}"></div>
+          <div class="metric-label">{{label}}</div>
+          <div class="metric-target">Target: {{target}}</div>
+          {{#current}}<div class="metric-current">{{current}}</div>{{/current}}
+        </div>
+        {{/success_metrics}}
+      </div>
+    </section>
+
+    <footer>
+      Sources: {{footer_sources}} &nbsp;&mdash;&nbsp; Generated: {{generated_at}}
+    </footer>
+
+  </div>
+</body>
+</html>

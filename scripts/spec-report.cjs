@@ -34,7 +34,7 @@ function stepHtml(step) {
 function scenarioHtml(sc, L, showSteps) {
   const head = [];
   const kind = sc.type === 'scenarioOutline' ? L.outline : L.scenario;
-  head.push(`<h3>${u.escapeHtml(sc.name || '(unnamed)')} <span class="sub">— ${u.escapeHtml(kind)}</span></h3>`);
+  head.push(`<h3 class="scen">${u.escapeHtml(sc.name || '(unnamed)')}<span class="kind">${u.escapeHtml(kind)}</span></h3>`);
   const tagChips = sc.allTags.map((t) => `<span class="chip${u.REQ_TAG.test(t) ? ' req' : ''}">${u.escapeHtml(t)}</span>`).join('');
   if (tagChips) head.push(`<div>${tagChips}</div>`);
   if (sc.description) head.push(`<div class="desc">${u.escapeHtml(sc.description)}</div>`);
@@ -42,8 +42,8 @@ function scenarioHtml(sc, L, showSteps) {
     head.push(sc.steps.map(stepHtml).join(''));
     for (const ex of sc.examples) {
       if (!ex.header) continue;
-      head.push(`<h4 class="sub">${u.escapeHtml(ex.keyword)}${ex.name ? ': ' + u.escapeHtml(ex.name) : ''}</h4>`);
-      head.push(u.renderTable([ex.header].concat(ex.rows)));
+      head.push(`<h4>${u.escapeHtml(ex.keyword)}${ex.name ? ': ' + u.escapeHtml(ex.name) : ''}</h4>`);
+      head.push(`<div class="ex">${u.renderTable([ex.header].concat(ex.rows))}</div>`);
     }
   } else {
     head.push(`<div class="sub">${sc.steps.length} ${u.escapeHtml(L.steps)} · ${g.caseCount(sc)} ${u.escapeHtml(L.cases)}</div>`);
@@ -54,7 +54,7 @@ function scenarioHtml(sc, L, showSteps) {
 function backgroundHtml(bg, L, showSteps) {
   if (!bg) return '';
   const body = showSteps ? bg.steps.map(stepHtml).join('') : `<div class="sub">${bg.steps.length} ${u.escapeHtml(L.steps)}</div>`;
-  return `<div class="panel"><h3>${u.escapeHtml(bg.keyword)}${bg.name ? ': ' + u.escapeHtml(bg.name) : ''}</h3>${body}</div>`;
+  return `<div class="panel bgpanel"><h3 class="scen">${u.escapeHtml(bg.keyword)}${bg.name ? ': ' + u.escapeHtml(bg.name) : ''}</h3>${body}</div>`;
 }
 
 function build(features, opts) {
@@ -155,14 +155,14 @@ function build(features, opts) {
   for (const feature of features) {
     if (feature.name === null) continue;
     const tagChips = feature.tags.map((t) => `<span class="chip${u.REQ_TAG.test(t) ? ' req' : ''}">${u.escapeHtml(t)}</span>`).join('');
-    html.push(`<h3>${u.escapeHtml(feature.name)}</h3>
+    html.push(`<h3 class="feat">${u.escapeHtml(feature.name)}</h3>
       <div class="sub">${u.escapeHtml(feature.uri)} · ${u.escapeHtml(g.DIALECTS[feature.language].name)}</div>
       ${tagChips ? `<div>${tagChips}</div>` : ''}
       ${feature.description ? `<div class="desc">${u.escapeHtml(feature.description)}</div>` : ''}`);
     html.push(backgroundHtml(feature.background, L, showSteps));
     for (const child of feature.children) {
       if (child.type === 'rule') {
-        html.push(`<h3>${u.escapeHtml(child.keyword)}: ${u.escapeHtml(child.name)}</h3>`);
+        html.push(`<h3 class="rule">${u.escapeHtml(child.keyword)}: ${u.escapeHtml(child.name)}</h3>`);
         if (child.description) html.push(`<div class="desc">${u.escapeHtml(child.description)}</div>`);
         html.push(backgroundHtml(child.background, L, showSteps));
         for (const sc of g.flattenScenarios({ ...feature, children: [child] })) html.push(scenarioHtml(sc, L, showSteps));
