@@ -87,7 +87,13 @@ RESULTS_FILE = Path(os.environ.get("BDD_RESULTS", "bdd-artifacts/cucumber.json")
 
 
 def slugify(value: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    """Filename-safe, and not ASCII-only.
+
+    ``\w`` is Unicode-aware in Python 3, so CJK, Cyrillic and accented Latin
+    survive. Stripping them instead collapses every non-Latin scenario name to
+    the same fallback, and traces and flow screenshots overwrite each other.
+    """
+    slug = re.sub(r"[^\w]+", "-", value.lower()).strip("-_")
     return (slug or "x")[:60]
 
 

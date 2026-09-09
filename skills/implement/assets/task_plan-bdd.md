@@ -83,6 +83,13 @@ Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
 of them.
 
+**Confirm each one by the count it prints, not by the fact that it ran.**
+`<cucumber-feature>` especially: a runner config that pins the feature glob
+makes a path argument silently run the whole suite. If the recorded command is a
+tag union rather than a path, say so here - it is coupled to this feature's
+scenario list, and adding a scenario without updating it under-tests the feature
+with nothing to warn you.
+
 Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
 while that phase is `in_progress` - not in a batch when its status changes. A
 `complete` phase with an open box is a contradiction: either the check was
@@ -157,14 +164,21 @@ them, any breakdown is a guess about code nobody has run.
 - [ ] Give each one a `Needs` - the capabilities it cannot be built before.
 - [ ] Order the queue so nothing comes before what it needs, and number the
       rows `3.1`, `3.2`, ... in that order.
-- [ ] Write one failing unit test for every capability in the queue.
+- [ ] Write one failing unit test for every capability in the queue - except a
+      capability the stack genuinely cannot unit-test (see below). Name each
+      exception in `progress.md` with the reason; never invent a test to fill
+      the row.
 - [ ] Run `<unit-test>` and watch **all** of them fail.
 - [ ] Every failure names an expected value against an actual one - not an
       import error, not a missing file. Where a module has to exist for the
       assertion to be reached at all, create it as an empty skeleton and say so
       in `progress.md`.
-- [ ] No test fails because of something in its `Needs` rather than itself. If
-      one does, the order is wrong: fix the order first.
+- [ ] Every test's **first failing assertion is about its own capability**, not
+      about something in its `Needs`. With the whole queue unbuilt a dependent
+      test will otherwise trip on its prerequisite, and `Phase 3.x` will not be
+      able to tell a real RED from a missing one. The fix is to open the test on
+      the surface this capability adds - reorder the queue only if the order is
+      genuinely wrong.
 - [ ] Record every test and every failure in `progress.md`.
 - **Status:** `pending`
 
@@ -180,9 +194,23 @@ this phase, and rows are only marked `done` afterwards.
 | 2 | `3.2` | <thing> | 1 | `<path::name>` | `in_progress` |
 | 3 | `3.3` | <thing> | 1, 2 | `<path::name>` | `todo` |
 
-`todo` - its test is written and failing; no code yet.
+`todo` - no code yet. Normally its failing test is already written; a row that
+Phase 1 appended for a `blocked` scenario's missing seam carries `todo` from the
+moment it is recorded and gets its failing test in Phase 2, like every other row.
 `in_progress` - being built.
 `done` - its test passes, and so does everything that passed before it.
+
+**A capability the stack cannot unit-test.** Some rows have no possible unit
+test - an `async` server component several frameworks cannot render in a unit
+runner, a wiring layer whose only observable behaviour is the page it produces.
+Write `**no unit test**` in its `Test` column, say in `progress.md` which
+framework limitation forces it and quote the source, and keep the row: its
+verification is the outer scenario in Phase 5, and until then **nothing covers
+it**. Two things this is not a licence for. Do not invent a test that asserts
+nothing to fill the column - that is worse than the empty column, because the
+row then looks covered. Do not let the row absorb logic that *could* be tested:
+push every decision into a unit-testable neighbour and leave this row as thin
+wiring, so the untestable surface is as small as you can make it.
 
 Order is a claim about dependency, not preference. If capability 3 needs
 capability 2, it comes after it - otherwise its test fails for a reason that

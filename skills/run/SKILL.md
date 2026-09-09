@@ -77,6 +77,12 @@ For both lanes:
 Add `--tags '@smoke'` for the fast loop, and run the full suite before reporting
 coverage numbers - a filtered run makes everything else look "not executed".
 
+The results file is overwritten by every run, so **the last run wins**: one
+filtered run after a full one leaves a partial file behind, and coverage read
+from it understates the suite. `coverage.cjs` warns on stderr when scenarios
+have no result and are not `@wip`/`@manual` - believe it, and re-run unfiltered
+rather than reporting the numbers underneath it.
+
 ## 2. Build the coverage report
 
 ```bash
@@ -136,6 +142,13 @@ Always report, in the user's language:
 5. Scenarios with no requirement tag (untraceable behaviour).
 6. Executed cases that matched no scenario (stale results file, or renamed scenario).
 7. The path of the HTML report.
+
+Say what the suite was pointed at. The web lane tests whatever `BDD_BASE_URL`
+serves, which in practice is a development server - so behaviour that only
+appears in a production build (caching, prerendering, minification, a different
+data path) is **not** covered by a green run, however green it is. If that
+distinction could matter, say the run was against a dev server rather than
+letting "all scenarios pass" stand for the built application.
 
 Never present a pass rate without the execution coverage next to it: 100% pass
 over 10% of the suite is not good news. If the run was filtered, say so in the

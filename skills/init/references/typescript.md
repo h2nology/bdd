@@ -47,7 +47,7 @@ register();
 
 ```javascript
 export default {
-  paths: ['features/**/*.feature'],
+  // No `paths` key on purpose - see the note below.
   import: [
     './tsx-register.mjs',
     'features/support/**/*.ts',
@@ -66,6 +66,14 @@ export default {
 };
 ```
 
+- **Do not add a `paths` key.** cucumber-js already defaults to
+  `features/**/*.feature`, and setting `paths` in the config makes it ignore a
+  path passed on the command line: `npx cucumber-js features/checkout.feature`
+  then runs the whole suite instead of that one file, silently. Without the key,
+  the positional argument filters as expected. This matters because the
+  `implement` skill needs a command that runs exactly one feature; the
+  alternative - a union of tags - has to be edited by hand every time a scenario
+  is added, and under-tests the feature when somebody forgets.
 - `message:` ndjson is the input `coverage.cjs` prefers - always keep it.
 - Raise `parallel` only after the suite is stable; the flow capture appends to a
   single ndjson file, which is append-safe per line but interleaves scenarios
@@ -135,8 +143,14 @@ import { dirname, join } from 'node:path';
 import type { Page } from 'playwright';
 import { env } from './env';
 
+/**
+ * Filename-safe, and **not** ASCII-only: `\p{L}` keeps CJK, Cyrillic, accented
+ * Latin and everything else a team writes scenario names in. Stripping them
+ * instead collapses every non-Latin name to the same fallback, so traces and
+ * flow screenshots overwrite each other and only the last failure survives.
+ */
 export function slugify(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'x';
+  return value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').slice(0, 60) || 'x';
 }
 
 export interface CaptureInput {

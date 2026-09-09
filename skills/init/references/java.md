@@ -381,8 +381,14 @@ public final class FlowCapture {
     private FlowCapture() {
     }
 
+    /**
+     * Filename-safe, and not ASCII-only: {@code \p{L}} keeps CJK, Cyrillic,
+     * accented Latin and everything else a team writes scenario names in.
+     * Stripping them collapses every non-Latin name to the same fallback, so
+     * traces and flow screenshots overwrite each other.
+     */
     public static String slugify(String value) {
-        String slug = value.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("^-|-$", "");
+        String slug = value.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", "-").replaceAll("^-|-$", "");
         return slug.isEmpty() ? "x" : slug.substring(0, Math.min(60, slug.length()));
     }
 

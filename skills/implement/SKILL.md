@@ -143,6 +143,16 @@ Python and .NET, so nothing may assume `npm`:
 `<cucumber-feature>` is what Phases 1 and 5 use - the loop now takes the whole
 feature at once, so a per-scenario command is not enough on its own.
 
+**Confirm `<cucumber-feature>` actually filters, by counting the scenarios it
+runs.** A runner config that pins the feature glob makes the runner ignore a
+path given on the command line and run the whole suite instead, silently -
+cucumber-js does exactly this when `cucumber.mjs` sets `paths`. Drop that key
+(the `init` skill's TypeScript reference explains it) and the path argument
+works. If it cannot be dropped, a union of the feature's requirement tags is the
+fallback, and then say in the plan that **the command is coupled to the
+feature's scenario list**: adding a scenario without updating it under-tests the
+feature and nothing complains.
+
 `skills/run/SKILL.md` has the per-stack invocations. Do not guess them; read
 the project's own config and confirm each one runs before recording it.
 
@@ -214,7 +224,13 @@ Code no capability asks for should not be written without saying so and getting
 an answer.
 
 **The test-integrity rule.** Every test is written in Phase 2, before any
-production code. When one of them turns out to have guessed wrong - the
+production code - with one exception, which has to be declared rather than
+worked around: a capability the stack genuinely cannot unit-test (an `async`
+server component a unit runner cannot render, say). Give that row
+`**no unit test**` in the queue, quote the limitation in `progress.md`, and keep
+it as thin as possible so the untestable surface stays small. Never invent a
+test that asserts nothing to fill the column, and never let such a row absorb
+logic a neighbour could have tested. When one of them turns out to have guessed wrong - the
 interface it assumed is not the interface that emerged - change it and record
 it under **Predictions that were wrong** in `progress.md`, with what replaced
 it. Never quietly reshape a test to match code that was just written: that

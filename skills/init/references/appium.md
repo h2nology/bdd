@@ -666,7 +666,9 @@ definition sets, selected by the runner profile. cucumber-js profiles:
 ```javascript
 // cucumber.mjs
 const shared = {
-  paths: ['features/**/*.feature'],
+  // No `paths` key: it would override a path given on the command line, so
+  // `cucumber-js features/one.feature` would silently run everything. The
+  // default is already `features/**/*.feature`.
   format: ['summary', 'message:bdd-artifacts/cucumber.ndjson'],
 };
 

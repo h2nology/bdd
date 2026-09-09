@@ -31,6 +31,14 @@ const { labelsFor } = require('./lib/labels.cjs');
 
 const ID_RE = /^[A-Za-z][A-Za-z0-9]*[-_:]?[A-Za-z0-9.]+$/;
 
+/**
+ * Tags whose scenarios are never executed by design. They still count in the
+ * specification - that is the point of them - so they must not be mistaken for
+ * a filtered run. Kept in step with the `tags` default the init skill writes
+ * into the runner config.
+ */
+const NEVER_EXECUTED_TAGS = ['@wip', '@manual'];
+
 function loadRequirements(file) {
   if (!file || !fs.existsSync(file)) return [];
   if (file.toLowerCase().endsWith('.json')) {
@@ -190,6 +198,20 @@ function build(features, results, declared, opts) {
   const coveredReq = requirements.filter((r) => r.scenarios.length).length;
   const passedReq = requirements.filter((r) => r.status === 'passed').length;
 
+  /**
+   * Scenarios the results file says nothing about, excluding the ones nobody
+   * expects to run. `@wip` and `@manual` are always excluded from execution and
+   * still count in the specification, so comparing raw totals would cry wolf on
+   * every project that uses them.
+   *
+   * Anything left is a scenario that should have run and did not - almost always
+   * because the results file came from a filtered run, which makes every number
+   * below understate what the suite actually verifies.
+   */
+  const unexecuted = spec.scenarios.filter(
+    (s) => !s.executions.length && !NEVER_EXECUTED_TAGS.some((t) => s.tags.includes(t)),
+  );
+
   const model = {
     generatedAt: u.nowStamp(),
     sources: results.sources,
@@ -209,6 +231,7 @@ function build(features, results, declared, opts) {
       passRate: u.pct(results.stats.passed, results.cases.length),
       resultStats: results.stats,
       orphans: orphans.length,
+      unexecutedScenarios: unexecuted.length,
     },
     requirements: requirements.map((r) => ({
       id: r.id, title: r.title, declared: r.declared, status: r.status,
@@ -227,6 +250,7 @@ function build(features, results, declared, opts) {
     })),
     untaggedScenarios: spec.scenarios.filter((s) => !s.requirements.length)
       .map((s) => ({ uri: s.uri, name: s.name, line: s.line })),
+    unexecutedScenarios: unexecuted.map((s) => ({ uri: s.uri, name: s.name, line: s.line })),
     orphanCases: orphans.map((o) => ({ name: o.scenarioName, uri: o.uri, status: o.status })),
   };
 
@@ -318,6 +342,20 @@ function main() {
   }
   if (model.untaggedScenarios.length) console.log(`coverage: ${model.untaggedScenarios.length} scenario(s) carry no requirement tag`);
   if (model.orphanCases.length) console.log(`coverage: ${model.orphanCases.length} executed case(s) matched no scenario in the specs`);
+  // A results file that covers only part of the specification makes every number
+  // above understate what the suite verifies. Say so on stderr, loudly, rather
+  // than letting a filtered run be read as a measurement of the whole suite.
+  if (results.cases.length && model.stats.unexecutedScenarios) {
+    console.error(`warning: ${model.stats.unexecutedScenarios} scenario(s) have no result in ` +
+      `${results.sources.map((src) => src.file).join(', ')} - this looks like a FILTERED run, ` +
+      'so the coverage figures above understate the suite. Re-run without a tag or path filter ' +
+      'before reporting them:');
+    for (const sc of model.unexecutedScenarios.slice(0, 10)) {
+      console.error(`  ${sc.uri}:${sc.line}  ${sc.name}`);
+    }
+    const rest = model.unexecutedScenarios.length - 10;
+    if (rest > 0) console.error(`  ... and ${rest} more`);
+  }
   for (const src of results.sources) if (src.format === 'missing' || src.format === 'unrecognized') console.error(`warning: results file ${src.file} is ${src.format}`);
   console.log(`coverage: wrote ${written}`);
 

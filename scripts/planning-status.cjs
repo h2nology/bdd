@@ -56,13 +56,30 @@ function fingerprintOf(file) {
     .update(fs.readFileSync(file)).digest('hex');
 }
 
-/** Body of one `## Heading` section, up to the next heading of the same level. */
+/**
+ * Body of one `##`-to-`####` heading, up to the next heading at the same level
+ * or shallower.
+ *
+ * The level range matters: the BDD template puts `#### Capability Queue` inside
+ * Phase 2, and a `##`-only lookup returned nothing for it - which silently
+ * disabled every cross-check that reads that table.
+ */
 function section(md, heading) {
   const lines = md.split(/\r?\n/);
-  const start = lines.findIndex((l) => l.trim().toLowerCase() === '## ' + heading.toLowerCase());
+  const want = heading.trim().toLowerCase();
+  let level = 0;
+  const start = lines.findIndex((l) => {
+    const head = l.trim().match(/^(#{2,4})\s+(.*)$/);
+    if (!head || head[2].trim().toLowerCase() !== want) return false;
+    level = head[1].length;
+    return true;
+  });
   if (start === -1) return '';
   const rest = lines.slice(start + 1);
-  const end = rest.findIndex((l) => /^##\s/.test(l));
+  // Ends at the next heading of the same level or shallower. A deeper heading is
+  // a subsection of this one, so it does not close it.
+  const closes = new RegExp('^#{2,' + level + '}\\s');
+  const end = rest.findIndex((l) => closes.test(l));
   return (end === -1 ? rest : rest.slice(0, end)).join('\n').trim();
 }
 
@@ -110,7 +127,7 @@ function parseSource(md) {
 
 /**
  * The Capability Queue: the feature's whole breakdown, one row per capability,
- * each one owning a `Phase 4.x`. Absent from older per-scenario plans, which is
+ * each one owning a `Phase 3.x`. Absent from older per-scenario plans, which is
  * why every caller treats an empty result as "this plan does not use it".
  */
 function parseCapabilities(md) {
