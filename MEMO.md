@@ -25,3 +25,9 @@ BDD要基于cucumber + Playwright + 多种开发语言支持。
 目前通过bdd plugin生成的feature文件，并不能直接用于开发。因为它缺少了像 planning-with-files plugin 里的plan功能（规划，进度管理，上下文管理），也缺少了ecc plugin里的tdd-workflow skill那样真正推进开发的skill。
 
 我想这样来做，根据bdd plugin生成的feature文件，模仿planning-with-files plugin来生成task_plan/progress/findings文件，然后准备一个类似于ecc plugin里的tdd-workflow的skill，使用tdd的开发模式来推进开发
+
+## v3
+
+我想要对bdd plugin进行扩展（version 3）。
+
+1. 我想要添加一个草图UI功能，在完成feature文件之后，应该可以从feature中推演出UIUX。我想做一个HTML canvas的页面，就像Figma那样，然后把草图UI展示出来，并描绘出页面跳转图
