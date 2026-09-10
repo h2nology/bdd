@@ -66,6 +66,9 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       everything in it fails. If it does not, stop and use the `bdd-setup`
       skill.
 - [ ] Resolve this project's commands and fill the table below.
+- [ ] If any scenario in this feature is tagged `@web`, fill the Design System
+      table below. If the project has no design system at all, stop and use the
+      `design-system-setup` skill first.
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be
       `green` - the feature may be partly built.
@@ -83,6 +86,22 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
 of them.
+
+### Design system
+
+Only for features that render UI. Leave it out for an API-only or CLI feature,
+and say that is why.
+
+| Field | Value |
+|---|---|
+| Source | `DESIGN.md` \| component library \| advisor output |
+| Path | `<where it lives>` |
+
+Phase 3.x styles what it builds against this. Without it the loop writes
+unstyled pages, and **nothing in any later phase catches that** - the scenarios
+pass on behaviour and say nothing about appearance. Detection rules are in
+`${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`;
+they are the same ones `design-system-setup` uses, so the two cannot disagree.
 
 **Confirm each one by the count it prints, not by the fact that it ran.**
 `<cucumber-feature>` especially: a runner config that pins the feature glob
@@ -247,6 +266,12 @@ nothing more.
 #### Phase 3.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
+- [ ] If this capability renders UI, style it against the design system named in
+      Setup. **Minimum is measured against that spec, not against a blank page.**
+      An element left to the browser's defaults is outside the spec, and
+      following the spec costs no more code than ignoring it - a styled button
+      and a bare one are the same line. Do not invent a value the spec does not
+      define either; that is outside it in the other direction.
 - [ ] Stay inside this capability. The later rows have their own phases -
       writing them here means writing code no failing test asked for, and it
       will not be clear later which test proved which line.
@@ -261,7 +286,7 @@ nothing more.
 
 #### Phase 3.2: <capability name>
 
-- [ ] <same six checks>
+- [ ] <same seven checks>
 - **Status:** `pending`
 
 ### Phase 4: All units green

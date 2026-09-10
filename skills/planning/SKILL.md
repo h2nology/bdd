@@ -111,7 +111,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --fingerprint features/<n
 Translate the prose into the user's language as you fill it in. Leave a
 placeholder unfilled rather than inventing a value for it.
 
-## 4. BDD plans only: Phase 0 - harness, commands, baseline
+## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline
 
 A BDD plan cannot be written without this: the Scenario Queue's initial state
 has to be **observed**, not guessed, and the six commands have to be real.
@@ -121,6 +121,16 @@ This is the last thing the planning skill does; Phase 1 onward is
 **Harness.** Run the suite. If it cannot execute at all, stop and use
 `bdd-setup`. A missing harness is not something to work around one capability at
 a time.
+
+**Design system.** If any scenario in the feature is tagged `@web`, record which
+design system the plan builds against - the detection rules are in
+`${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`.
+If the project has none, stop and use `design-system-setup`, for the same reason
+as a missing harness: it is not something to work around one capability at a
+time, and unlike a missing harness nothing downstream will complain. Scenarios
+assert behaviour, so they go green on a page nobody could use. A feature that
+renders no UI needs none - record that it is why, rather than leaving the row
+blank.
 
 **Commands.** Resolve the six placeholders and write them into the plan's
 Phase 0 table. They differ per stack - this plugin supports TypeScript, Java,

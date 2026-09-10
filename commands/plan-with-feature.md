@@ -41,10 +41,10 @@ directory** - never reopen the old one.
 
 Follow the `planning` skill, using the **BDD template set** (`assets/*-bdd.md`).
 It covers: the directory name, the Source table and fingerprint, Phase 0
-(harness check, the six commands, the baseline run), and how the queues are
-filled.
+(harness check, the six commands, the design system, the baseline run), and how
+the queues are filled.
 
-Two things this command must not skip, because they are what make the plan
+Three things this command must not skip, because they are what make the plan
 usable rather than decorative:
 
 - **The six commands are confirmed by running them**, not by reading
@@ -52,10 +52,22 @@ usable rather than decorative:
   the scenario counts differ.
 - **The Scenario Queue's states come from the baseline run.** Some scenarios
   may already be `green`. Never fill the column from expectation.
+- **A `@web` feature names its design system.** Detect it with the rules in
+  `${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`
+  and record the source and path in Phase 0.
 
 If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
 was introduced rather than found.
+
+**If any scenario here is tagged `@web` and the project has no design system at
+all, stop and use `design-system-setup`.** This is a hard stop, not a warning to
+carry forward. A UI feature planned without one gets built as unstyled pages,
+and no later phase catches it: the scenarios assert behaviour, so they pass on a
+page nobody could use. Planning around that only makes it expensive to fix.
+
+An API-only or CLI feature needs no design system. Say that is why the table is
+empty rather than leaving the reader to guess.
 
 ## 4. Report
 
@@ -63,6 +75,7 @@ State, in the user's language:
 
 - Where the plan is, and what its Phase 0 recorded.
 - The six commands, as resolved.
+- The design system the plan will build against, or why the feature needs none.
 - The baseline: how many scenarios are `green` / `red` / `blocked` /
   `undefined` right now.
 - Anything Phase 0 could not resolve, named plainly.
