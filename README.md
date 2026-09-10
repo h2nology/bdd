@@ -2,9 +2,10 @@
 
 Take a one-line requirement to working, traceable code: mine it into Gherkin,
 review it as an HTML document, scaffold cucumber + Playwright in the project's
-language, drive each scenario to green with outside-in TDD, run the suite with
-requirement coverage, derive a page flow map from the run's screenshots, and
-generate database DDL from the same specs.
+language, give the UI work a design system to build against, drive each scenario
+to green with outside-in TDD, run the suite with requirement coverage, derive a
+page flow map from the run's screenshots, and generate database DDL from the
+same specs.
 
 ## Skills
 
@@ -12,6 +13,7 @@ generate database DDL from the same specs.
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `bdd-setup` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
+| `design-system-setup` | Establish what the UI should look like - a `DESIGN.md`, a component library, or a generated one - and compile its tokens into code the pages can reference (web lane) |
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
@@ -27,6 +29,7 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 | Command | Use it for |
 |---|---|
+| `/bdd:bootstrap` | Set a project up end to end: the cucumber harness, then the design system the UI work builds against - `bdd-setup` and `design-system-setup` in order |
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
 | `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page, with a callout beside it saying what each button and link does and which scenario says so - and render it as a read-only wireframe board, before any code exists |
 | `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which capability is in hand, what happens next, and which plans need attention |
@@ -36,8 +39,8 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 A command runs only when you type it. `spec-report` parses, confirms the
 reviewer's language and theme, and renders through `html-report`; `status` reads
-the plans and reports them. Neither decides anything, so neither needs to be a
-skill.
+the plans and reports them; `bootstrap` runs the two setup skills in order. None
+of the three decides anything, so none needs to be a skill.
 
 `sketch` is a command for a different reason: deriving a UI from Gherkin is very
 much a judgement call, but you ask for a board when you want one. The line is
@@ -52,13 +55,25 @@ working tree, so it runs when you ask for it and stops after each phase unless
 you pass `--auto`. That default is the point of the split - a phase boundary is
 where the evidence has just been written and is cheapest to disagree with.
 
+**Setting up is two skills for the same reason.** A harness is installed once
+and then left alone - re-running `bdd-setup` is a **repair**. A design system
+evolves with the product - re-running `design-system-setup` is an **update**.
+One skill holding both meanings would do the wrong thing half the time, and a
+project can want either half without the other. `/bdd:bootstrap` runs both when
+you are starting from nothing; call the skills by name when you are not.
+
+**What the design system is not.** It says what the pages should look like;
+nothing checks that they do. The scenarios assert behaviour, so they go green on
+an unstyled page just as happily as on a finished one. Treat it as the spec the
+implementation loop builds against, not as a gate that catches you ignoring it.
+
 ## Typical flow
 
 ```
 requirement
   -> /bdd:discover      features/*.feature
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
-  -> /bdd:bdd-setup     harness + step definitions       (once per project)
+  -> /bdd:bootstrap     harness + design system          (once per project)
   -> /bdd:sketch        bdd-artifacts/sketch.html        (what it would look like)
   -> /bdd:plan-with-feature  docs/planning/<date>-<feature>/  (the plan, and a real baseline)
   -> /bdd:implement     the code                          (capability by capability, to green)
@@ -111,6 +126,15 @@ coverage report detect requirements that have **no** scenario at all.
 `BDD_TRACE` - plus the mobile-lane set (`BDD_PLATFORM`, `BDD_APPIUM_URL`,
 `BDD_DEVICE_NAME`, `BDD_APP`, ...) defined in
 `skills/bdd-setup/references/appium.md`.
+
+**Design system**, for the web lane: one source, in its own format, never
+copied. A `DESIGN.md` (project root, that exact name), a component library's own
+files, or a design advisor's output - whichever exists is the authority, and
+`design-system-setup` compiles tokens out of it only when they are not already
+loadable code. Generated token files carry a header saying they are generated;
+edit the source and re-run instead. Detection rules live once, in
+`skills/design-system-setup/references/design-sources.md`, and `plan-with-feature`
+reads the same ones so the two cannot disagree.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 
@@ -185,6 +209,11 @@ behaviour once, tag the lane-specific scenarios `@web` / `@mobile`, and run each
 lane as its own job with its own step definitions and results file. All three
 reports work across both - the flow map draws pages for web and screens for
 mobile, and coverage merges both lanes' results per requirement.
+
+**`design-system-setup` covers the web lane only.** Compose, SwiftUI and React
+Native component systems are not supported yet, so a mobile-only project gets a
+harness and no design system - `/bdd:bootstrap` says so rather than skipping the
+step quietly.
 
 See `skills/bdd-setup/references/appium.md` (mobile lane: server, drivers,
 capabilities, screen identity, per-language templates, CI) and
