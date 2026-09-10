@@ -125,6 +125,12 @@ A design system that has never rendered is not set up. Always:
 3. Screenshot it and show the user.
 4. Delete the demo page unless the user wants to keep it.
 
+**When the project has no Playwright** - which happens when this skill is run on
+its own, before any harness exists - still write the demo page, and tell the user
+the path to open themselves. Degrade the check; do not skip it and do not install
+a browser driver just for this. Say plainly that the rendering was not verified
+here.
+
 Installing a dependency is not evidence that styling works. A missing stylesheet
 import, an unbuilt Tailwind layer, or a token file nothing imports all survive
 installation and all produce exactly the unstyled pages this skill exists to
