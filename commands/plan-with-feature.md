@@ -53,7 +53,7 @@ usable rather than decorative:
 - **The Scenario Queue's states come from the baseline run.** Some scenarios
   may already be `green`. Never fill the column from expectation.
 
-If the harness cannot execute at all, stop and use `bootstrap`. If the project
+If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
 was introduced rather than found.
 

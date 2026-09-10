@@ -1,6 +1,6 @@
 # Flow capture contract
 
-`flow-map.cjs` consumes exactly this format. The `bootstrap` skill's templates
+`flow-map.cjs` consumes exactly this format. The `bdd-setup` skill's templates
 write it in both lanes:
 
 | Lane | Driver | Identity field |

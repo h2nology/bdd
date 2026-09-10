@@ -17,7 +17,7 @@ stakeholders ask: *which requirements are verified, and which are not?*
 
 ## 1. Run the suite
 
-Detect the stack (see the `bootstrap` skill, step 1, if unsure) and the lane,
+Detect the stack (see the `bdd-setup` skill, step 1, if unsure) and the lane,
 then run:
 
 | Stack | Command | Results file |
@@ -29,7 +29,7 @@ then run:
 | Python (behave) | `behave -f json -o bdd-artifacts/cucumber.json` | same |
 | C#/.NET | `dotnet test` | `bdd-artifacts/cucumber.json` |
 
-**Web lane** (Playwright) - the environment contract from the `bootstrap` skill:
+**Web lane** (Playwright) - the environment contract from the `bdd-setup` skill:
 
 ```bash
 BDD_BASE_URL=http://localhost:3000 \
@@ -49,7 +49,7 @@ npx cucumber-js -p mobile --tags 'not @wip and not @manual and not @web'
 
 The runner and the feature files are the same; the driver, the glue path and the
 results file differ - see
-`${CLAUDE_PLUGIN_ROOT}/skills/bootstrap/references/appium.md` section 9.
+`${CLAUDE_PLUGIN_ROOT}/skills/bdd-setup/references/appium.md` section 9.
 
 Before running (web lane):
 
@@ -160,7 +160,7 @@ same sentence as the pass rate.
 Read `references/troubleshooting.md`. Order of diagnosis:
 
 1. **Undefined steps** - the step text has no definition. Either fix the text to
-   match an existing definition or implement it (the `bootstrap` skill has the
+   match an existing definition or implement it (the `bdd-setup` skill has the
    patterns).
    Undefined is never a test failure to be ignored: the behaviour is unverified.
 2. **Failed steps** - re-run only that scenario with `BDD_HEADED=1 BDD_SLOWMO=250`

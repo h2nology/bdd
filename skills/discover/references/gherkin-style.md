@@ -241,7 +241,7 @@ cucumber implementation supports the English set best.
 
 Tags stay English too - `@REQ-1042`, `@web`, `@wip` are keys the coverage and
 spec reports match on, and they must not change with the prose. Step definitions
-have to match the localized step text character for character; the `bootstrap`
+have to match the localized step text character for character; the `bdd-setup`
 skill's language references have a section on writing them.
 
 **Localized keywords** (`機能:` / `功能:` / `場景:`) are still parsed - dialects

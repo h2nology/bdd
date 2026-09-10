@@ -34,7 +34,7 @@ const ID_RE = /^[A-Za-z][A-Za-z0-9]*[-_:]?[A-Za-z0-9.]+$/;
 /**
  * Tags whose scenarios are never executed by design. They still count in the
  * specification - that is the point of them - so they must not be mistaken for
- * a filtered run. Kept in step with the `tags` default the bootstrap skill
+ * a filtered run. Kept in step with the `tags` default the bdd-setup skill
  * writes into the runner config.
  */
 const NEVER_EXECUTED_TAGS = ['@wip', '@manual'];

@@ -63,7 +63,7 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 ### Phase 0: Harness and baseline
 
 - [ ] The cucumber harness runs at all - `<cucumber>` executes, even if
-      everything in it fails. If it does not, stop and use the `bootstrap`
+      everything in it fails. If it does not, stop and use the `bdd-setup`
       skill.
 - [ ] Resolve this project's commands and fill the table below.
 - [ ] Run the whole suite once and record the output in `progress.md`.

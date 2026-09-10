@@ -11,7 +11,7 @@ generate database DDL from the same specs.
 | Skill | Use it for |
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
-| `bootstrap` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
+| `bdd-setup` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
@@ -58,7 +58,7 @@ where the evidence has just been written and is cheapest to disagree with.
 requirement
   -> /bdd:discover      features/*.feature
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
-  -> /bdd:bootstrap     harness + step definitions       (once per project)
+  -> /bdd:bdd-setup     harness + step definitions       (once per project)
   -> /bdd:sketch        bdd-artifacts/sketch.html        (what it would look like)
   -> /bdd:plan-with-feature  docs/planning/<date>-<feature>/  (the plan, and a real baseline)
   -> /bdd:implement     the code                          (capability by capability, to green)
@@ -110,7 +110,7 @@ coverage report detect requirements that have **no** scenario at all.
 `BDD_SLOWMO`, `BDD_DEVICE`, `BDD_TIMEOUT`, `BDD_FLOW_CAPTURE`, `BDD_FLOW_DIR`,
 `BDD_TRACE` - plus the mobile-lane set (`BDD_PLATFORM`, `BDD_APPIUM_URL`,
 `BDD_DEVICE_NAME`, `BDD_APP`, ...) defined in
-`skills/bootstrap/references/appium.md`.
+`skills/bdd-setup/references/appium.md`.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 
@@ -186,9 +186,9 @@ lane as its own job with its own step definitions and results file. All three
 reports work across both - the flow map draws pages for web and screens for
 mobile, and coverage merges both lanes' results per requirement.
 
-See `skills/bootstrap/references/appium.md` (mobile lane: server, drivers,
+See `skills/bdd-setup/references/appium.md` (mobile lane: server, drivers,
 capabilities, screen identity, per-language templates, CI) and
-`skills/bootstrap/references/responsive-web.md` (web lane viewport emulation,
+`skills/bdd-setup/references/responsive-web.md` (web lane viewport emulation,
 and why it is not a device).
 
 ## License

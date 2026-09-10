@@ -4,7 +4,7 @@ The outer loop rests on one thing: a scenario that fails **because the
 behaviour is missing**, and whose failure says so. This file is about getting
 that failure, in each of the four stacks this plugin supports.
 
-`bootstrap` sets up the harness and the World; this is about what goes inside a
+`bdd-setup` sets up the harness and the World; this is about what goes inside a
 step once it exists.
 
 ## What a valid RED looks like
@@ -87,7 +87,7 @@ These produce a red run, or a green one, without either meaning anything.
 
 ## The four stacks
 
-Follow the World / context object `bootstrap` set up; these show only the shape
+Follow the World / context object `bdd-setup` set up; these show only the shape
 of the assertion. Step text is in the team's language, keywords stay English -
 `skills/discover/SKILL.md` has the rule.
 
@@ -127,7 +127,7 @@ public void 订单总额为(double total) {
 }
 ```
 
-For non-web assertions use AssertJ, which `bootstrap` already adds:
+For non-web assertions use AssertJ, which `bdd-setup` already adds:
 `assertThat(order.total()).isEqualTo(new BigDecimal("42.50"))`. Prefer it over
 `assertTrue(order.total().equals(...))`, which prints only `expected: true`.
 

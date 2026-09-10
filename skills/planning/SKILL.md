@@ -119,7 +119,7 @@ This is the last thing the planning skill does; Phase 1 onward is
 `/bdd:implement`.
 
 **Harness.** Run the suite. If it cannot execute at all, stop and use
-`bootstrap`. A missing harness is not something to work around one capability at
+`bdd-setup`. A missing harness is not something to work around one capability at
 a time.
 
 **Commands.** Resolve the six placeholders and write them into the plan's
@@ -139,7 +139,7 @@ Python and .NET, so nothing may assume `npm`:
 runs.** A runner config that pins the feature glob makes the runner ignore a
 path given on the command line and run the whole suite instead, silently -
 cucumber-js does exactly this when `cucumber.mjs` sets `paths`. Drop that key
-(the `bootstrap` skill's TypeScript reference explains it) and the path argument
+(the `bdd-setup` skill's TypeScript reference explains it) and the path argument
 works. The honest way to confirm it is to make the two counts differ: with only
 one feature file in the project they are identical either way, so add a
 throwaway second feature, check the counts, and delete it. If the key cannot be

@@ -1,9 +1,9 @@
 ---
-name: bootstrap
+name: bdd-setup
 description: This skill should be used when a project needs a cucumber BDD test harness set up or repaired - for example "set up cucumber in this project", "initialize BDD testing", "add Playwright to our cucumber suite", "set up Appium for our mobile app", "scaffold step definitions", "configure the test environment for feature files", "test our Android/iOS app with cucumber", or when feature files exist but nothing can execute them. Web runs on Playwright, mobile runs on Appium; covers TypeScript/JavaScript, Java, Python and C#/.NET stacks.
 ---
 
-# Bootstrap a cucumber harness
+# Set up a cucumber harness
 
 Install and wire the runner, the driver, the directory layout, the World /
 context object, and the hooks that the rest of this plugin depends on.
