@@ -154,7 +154,7 @@ After the feature files are agreed, tell the user which next step applies:
 - Manager-ready HTML review document -> the `/bdd:spec-report` command
 - No test harness in the project yet -> `init`
 - Harness exists, run and measure -> `run`
-- Data model implied by the scenarios -> `ddl`
+- Data model implied by the scenarios -> `export-ddl`
 
 ## Working from a bug report
 

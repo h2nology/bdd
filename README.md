@@ -15,8 +15,8 @@ generate database DDL from the same specs.
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
-| `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
-| `openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
+| `export-ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
+| `export-openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
 | `html-report` | Render a report as one self-contained HTML file; its `spec` mode backs the specification report |
 
 Each is invocable as `/bdd:<name>` and triggers automatically from a matching
@@ -65,8 +65,8 @@ requirement
   -> /bdd:implement     the code                          (capability by capability, to green)
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
-  -> /bdd:ddl           migrations/                       (schema implied by the specs)
-  -> /bdd:openapi       openapi.yaml                      (HTTP contract implied by the specs)
+  -> /bdd:export-ddl    migrations/                       (schema implied by the specs)
+  -> /bdd:export-openapi openapi.yaml                     (HTTP contract implied by the specs)
 ```
 
 ## Bundled scripts

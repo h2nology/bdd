@@ -1,5 +1,5 @@
 ---
-name: ddl
+name: export-ddl
 description: This skill should be used when a database schema must be derived from Gherkin - for example "generate DDL from the feature files", "create the tables for these scenarios", "what does this feature imply for the data model", "write a migration from these acceptance criteria", "derive the schema from the data tables in our features", or when the entities and fields named in scenarios need to become CREATE TABLE statements for PostgreSQL, MySQL, Oracle, SQL Server or SQLite.
 ---
 

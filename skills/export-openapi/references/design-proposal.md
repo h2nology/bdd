@@ -24,7 +24,7 @@ and mentally approved.
 
 ## The three confidence levels
 
-Use them consistently; they are the same three the `ddl` skill uses, and they
+Use them consistently; they are the same three the `export-ddl` skill uses, and they
 mean the same things.
 
 **derived** - the scenario states it. An explicit status code, an endpoint named

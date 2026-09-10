@@ -1,5 +1,5 @@
 ---
-name: openapi
+name: export-openapi
 description: This skill should be used when an HTTP API contract must be derived from Gherkin, or when the BDD suite must be checked against an existing one - for example "generate an OpenAPI spec from the feature files", "export our scenarios to swagger", "what API do these acceptance criteria imply", "which endpoints have no scenario covering them", "check our API tests against openapi.yaml", "document the REST API from our cucumber tests", or when someone wants a machine-readable contract out of the behaviour the suite already specifies. Emits OpenAPI 3.1 (or matches the project's existing document) and reports operation coverage both ways.
 ---
 
@@ -99,7 +99,7 @@ file is a poor API source. Do not silently invent a REST design and present it
 as "derived from your specs".
 
 Instead follow `references/design-proposal.md`, which is the same shape as the
-`ddl` skill's model proposal: present a table of proposed operations with the
+`export-ddl` skill's model proposal: present a table of proposed operations with the
 evidence and a confidence for each **before** writing any YAML.
 
 | Operation | Purpose | Source | Confidence |

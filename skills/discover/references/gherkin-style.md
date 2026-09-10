@@ -160,7 +160,7 @@ Given the following users exist:
 ```
 
 - Header row names the fields; keep header names identical across features so
-  step definitions and generated DDL stay consistent (`ddl` reads these).
+  step definitions and generated DDL stay consistent (`export-ddl` reads these).
 - Escape a literal pipe as `\|` and a newline as `\n`.
 
 ## Doc strings
