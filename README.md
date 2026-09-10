@@ -12,7 +12,7 @@ generate database DDL from the same specs.
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `init` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
-| `implement` | Drive a feature to green one scenario at a time - failing scenario outside, failing unit tests inside - keeping the plan, the evidence and the decisions on disk |
+| `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
@@ -30,7 +30,10 @@ names with Claude Code's built-in `/init` and `/run`, so `/bdd:init` and
 |---|---|
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
 | `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page - and render it as a read-only wireframe board whose arrows run from each button to the page it opens, before any code exists |
-| `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which scenario is in hand, what happens next, and which plans need attention |
+| `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which capability is in hand, what happens next, and which plans need attention |
+| `/bdd:plan-with-feature` | Plan one feature file's implementation: the dated planning directory, this project's six test commands, and a scenario queue filled from a real baseline run |
+| `/bdd:plan` | Plan work that has no feature file - infrastructure, an upgrade, a cleanup - as phases with a verification for each |
+| `/bdd:implement` | Drive an existing plan forward. Pauses after every phase by default; `--auto` runs straight through |
 
 A command runs only when you type it. `spec-report` parses, confirms the
 reviewer's language and theme, and renders through `html-report`; `status` reads
@@ -40,8 +43,15 @@ skill.
 `sketch` is a command for a different reason: deriving a UI from Gherkin is very
 much a judgement call, but you ask for a board when you want one. The line is
 not "does it decide things" - it is whether the model should reach for it
-mid-task. It should reach for `discover` or `implement`; it should not decide on
+mid-task. It should reach for `discover` or `planning`; it should not decide on
 its own that your feature needs wireframing.
+
+**Planning and building are split on purpose.** The `planning` skill owns the
+files on disk and is safe to trigger mid-task - "what was I working on" should
+reach it. Writing code against a plan is not: `/bdd:implement` moves your
+working tree, so it runs when you ask for it and stops after each phase unless
+you pass `--auto`. That default is the point of the split - a phase boundary is
+where the evidence has just been written and is cheapest to disagree with.
 
 ## Typical flow
 
@@ -51,7 +61,8 @@ requirement
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
   -> /bdd:init          harness + step definitions        (once per project)
   -> /bdd:sketch        bdd-artifacts/sketch.html        (what it would look like)
-  -> /bdd:implement     docs/planning/<date>-<feature>/   (scenario by scenario, to green)
+  -> /bdd:plan-with-feature  docs/planning/<date>-<feature>/  (the plan, and a real baseline)
+  -> /bdd:implement     the code                          (capability by capability, to green)
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
   -> /bdd:ddl           migrations/                       (schema implied by the specs)

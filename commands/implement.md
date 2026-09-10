@@ -1,0 +1,229 @@
+---
+description: Drive an existing plan forward - outside-in TDD for a BDD plan, phase by phase for a general one. Pauses after each phase by default; pass --auto to run straight through.
+argument-hint: "[plan directory] [--auto]"
+---
+
+# Drive the plan
+
+Build the code the plan calls for, one phase at a time, writing the evidence to
+`progress.md` as it happens.
+
+This command **drives**. It does not create plans - `/bdd:plan-with-feature`
+and `/bdd:plan` do that, through the `planning` skill. If there is no plan, say
+so and point at those rather than improvising one.
+
+It refuses to write production code that no failing test asked for.
+
+Arguments the user gave: `$ARGUMENTS`
+
+## Pausing
+
+**Default: stop after every phase.** Write the evidence, move the status,
+report what happened and what is next, and then wait. The user decides whether
+to continue.
+
+**`--auto`: run straight through** without pausing between phases, until the
+plan is done or something in **When to stop and ask** below forces a halt.
+
+`--auto` never disables the gates. It removes the pause between phases; it does
+not remove the RED gate, the scope rule, the test-integrity rule, or any of the
+stop conditions. A phase whose checks were not observed does not become
+complete because nobody was watching.
+
+A BDD plan's `Phase 3` expands into one sub-phase per capability, and each of
+those is a phase for pausing purposes. A nine-capability feature therefore
+pauses nine times in the default mode. If the queue is long and the user is not
+watching, say so and suggest `--auto` rather than quietly running on.
+
+## 1. Find the plan
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs
+```
+
+| Argument | Behaviour |
+|---|---|
+| A plan directory | Use it. |
+| Nothing, one plan open | Use it. |
+| Nothing, several open | List them and ask which. |
+| Nothing, no plans | Stop. Point at `/bdd:plan-with-feature` or `/bdd:plan`. |
+
+Then **read all three files** and run `git diff --stat` to see code the plan
+may not know about yet. `progress.md` has a **Reboot check** table for this.
+
+A drift warning stops the run: the feature file moved after the plan was made.
+Do not diff-and-guess which scenarios changed. Follow **Drift** in the
+`planning` skill.
+
+## 2. A general plan: phase by phase
+
+Work the phases in order. For each one:
+
+- Move it to `in_progress` **before** the first action.
+- Tick each `- [ ]` to `- [x]` as it is observed, one at a time.
+- **Run the `Verifies` line for real.** Do not reason about what it would
+  print. A change that was never executed is not verified, however obviously
+  correct it looks.
+- Paste the real output into `progress.md`.
+- Move it to `complete` **after** the evidence is written, and rewrite
+  `## Next Step`.
+
+If the verification cannot be run here - it needs credentials, a cluster, a
+device, a review - say so plainly, name what is missing, and leave the phase
+`in_progress`. An unverifiable phase is not a complete one.
+
+## 3. A BDD plan: the loop
+
+One pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
+Phase 3 expands into one sub-phase per capability, and those are the only thing
+that repeats:
+
+```
+per feature   1 outer RED (every scenario)
+           -> 2 break into capabilities + write every failing unit test
+           -> 3.1 -> 3.2 -> ... -> 3.N   (code, in dependency order)
+           -> 4 all units green
+           -> 5 outer GREEN (every scenario) -> 6 refactor -> 7 delivery
+```
+
+Nothing resets. Every capability keeps its own numbered phase and its own
+status, so `task_plan.md` shows the whole shape of the work at once.
+
+Phase 2 comes **after** the outer RED, never before: the failures are what say
+which capabilities are missing. A breakdown written earlier is a guess about
+code nobody has run.
+
+The plan is the authority on the steps. This command is the authority on the
+four things the plan cannot enforce on its own.
+
+### The RED gate
+
+Phase 1 is not complete until at least one scenario fails **on an assertion
+whose message names the expected outcome against the actual one**, and every
+other scenario is classified from what the run printed.
+
+An `undefined` step is not RED. It says nobody has claimed the sentence yet,
+not that the behaviour is wrong. A step definition that logs and returns is not
+RED either. Neither is a failure caused by a typo, a broken fixture, a missing
+dependency, or a scenario that was already failing for an unrelated reason.
+
+`${CLAUDE_PLUGIN_ROOT}/references/step-definitions.md` is the detail: what a valid RED looks like per
+stack, why `Given`/`When`/`Then` failures mean different things, and the
+anti-patterns that produce a red run that proves nothing.
+
+**`blocked` is not RED, and it is not a pass either.** A scenario whose `Given`
+cannot establish its state - because the seam it seeds through does not exist
+yet - never reached an assertion. Record it as `blocked`, name the missing seam
+in `progress.md`, and add that seam to the Capability Queue. Counting a blocked
+scenario as red overstates what has been proven; leaving it `undefined`
+pretends nobody has looked.
+
+**When every scenario dies in its `When` before any assertion runs** - the
+usual shape when the UI does not exist at all - the gate is not passed, and the
+honest fix is a **skeleton**: the shape the step definitions drive, with no
+behaviour behind it. An empty form, an empty list. Say in `progress.md` that it
+is a skeleton and what it deliberately does not do. A skeleton is not
+production code for the scope rule's purposes, and it is not progress either.
+
+Until the gate is passed, **do not edit production code**. Everything the loop
+is worth rests here: without a scenario that fails for the right reason, there
+is no evidence the code written next was needed, and none that it does what the
+feature says.
+
+### The scope rule
+
+Inside a `Phase 3.x`, write only what that capability's failing test asked for.
+Code for a later capability belongs to its own phase. Code no capability asks
+for should not be written without saying so and getting an answer.
+
+Do not run the whole suite in a `3.x` phase to see whether the feature works.
+That is Phase 5. What each sub-phase observes is its own capability's test, and
+that every previously passing test still passes.
+
+### The test-integrity rule
+
+Every test is written in Phase 2, before any production code - with one
+exception, which has to be declared rather than worked around: a capability the
+stack genuinely cannot unit-test (an `async` server component a unit runner
+cannot render, say). Give that row `**no unit test**` in the queue, quote the
+limitation in `progress.md`, and keep it as thin as possible so the untestable
+surface stays small. Never invent a test that asserts nothing to fill the
+column, and never let such a row absorb logic a neighbour could have tested.
+
+**Tests go in the test root, never beside the file under test** -
+`${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` has the per-stack locations
+and the reasons.
+
+Phase 2's own gate is that **every** test fails. A test that passes against a
+skeleton has not been shown to test anything. When placeholder return values
+make some tests pass for free - a skeleton returning `[]`, `null` or `false`
+happens to satisfy assertions expecting exactly that - make the skeleton throw
+instead, and record why in `progress.md`.
+
+When a Phase 2 test turns out to have guessed wrong - the interface it assumed
+is not the interface that emerged - change it and record it under **Predictions
+that were wrong** in `progress.md`, with what replaced it. Never quietly
+reshape a test to match code that was just written: that inverts the order the
+whole method depends on, and nothing in the files would show it happened. The
+same goes for deleting, skipping or loosening a test to reach Phase 4; that
+phase asks about it directly.
+
+### Delivery
+
+Phase 7 closes the feature: every row in the Scenario Queue `green`, every row
+in the Capability Queue `done`, `<coverage>` regenerated, every requirement tag
+covered. Then report the way `run` does: the numbers, then what they do not
+cover.
+
+A scenario still `blocked` at Phase 7 means the Capability Queue was
+incomplete. Say that, and name the seam - never report the feature as done with
+a blocked row in its queue.
+
+Name anything deliberately left undone, and name every assumption still marked
+`assumed - unconfirmed` in `findings.md`. A feature reported as done while a
+step definition encodes a guess nobody agreed to is worse than one reported as
+unfinished.
+
+## 4. Moving statuses and ticking boxes
+
+Both are the `planning` skill's rules, and they hold here without exception:
+status is moved with `phase-status.cjs`, `complete` comes **after** the
+evidence is in `progress.md`, `## Next Step` is rewritten in the same pass, and
+boxes are ticked one at a time as each check is observed.
+
+## When to stop and ask
+
+These halt the run even under `--auto`:
+
+- The RED gate cannot be reached because the scenario is ambiguous - a sentence
+  could mean two things. Record it under **Specification issues found while
+  implementing** in `findings.md` and go back to `discover`. Never resolve an
+  ambiguity by picking one meaning inside a step definition.
+- The feature contradicts existing code or another feature.
+- **Three attempts at the same error have failed.** Say what was tried, quote
+  the error, name what is unclear. Do not open a fourth.
+- Making the scenario pass would require a change nobody asked for - a schema
+  migration, a new dependency, a change to another feature's behaviour.
+- Phase 2 cannot enumerate the capabilities because the feature's scenarios
+  disagree with each other, or because a `blocked` scenario needs a seam whose
+  shape nobody has decided.
+- The plan has drifted from the feature file.
+
+## Hard limits - say these out loud
+
+- **A scenario that was never run is not green.** Never mark a row `green`, or
+  write `PASS` in `progress.md`, for something that was not executed.
+- **Production code before a red scenario is not TDD.** If it happened anyway -
+  the code was already there, or it got written before the gate - say so in
+  `progress.md` rather than backfilling a test and calling it RED.
+- **A passing scenario built on an unconfirmed assumption is a false report.**
+  It now claims a requirement is verified when nobody agreed what it means.
+  Flag it every time the feature's status is reported.
+- **Skipped, quarantined and `@wip` scenarios are not covered.** Count them as
+  what they are. So is a `blocked` one: its assertion never ran.
+- **A test changed after the code it checks proves nothing.**
+- **This command does not edit feature files.** Behaviour changes go through
+  `discover`, where the people who own the requirement can see them. A pure
+  wording fix that resolves an ambiguity is still a change to a document
+  someone signed off: ask before making it, and record it in `findings.md`
+  with who agreed.

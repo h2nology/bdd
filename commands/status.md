@@ -5,7 +5,7 @@ argument-hint: "[plan directory] [--root <dir>] [--stale-days <n>]"
 
 # Planning status
 
-Report the state of the plans the `implement` skill keeps under
+Report the state of the plans the `planning` skill keeps under
 `docs/planning/`: where each one is, what it says happens next, and what needs
 attention.
 
@@ -29,7 +29,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --plan docs/planning/<dir
 `--root <dir>` if the project keeps its plans somewhere else. `--stale-days <n>`
 to change when an untouched plan starts warning (default 14).
 
-If there are no plans at all, say so and stop. Suggest `implement` if the
+If there are no plans at all, say so and stop. Suggest `/bdd:plan-with-feature` if the
 project has feature files whose scenarios do not pass yet - do not create
 anything here.
 
@@ -80,5 +80,5 @@ offer to run the suite with `run` to get the current answer instead.
 - Report the plans that exist. Never infer a plan for a feature that has none.
 - A warning is not noise to summarise away. If a plan is drifted, blocked or
   stale, say so plainly, even when the user only asked what is next.
-- Do not edit any planning file from this command. It reads; `implement`
+- Do not edit any planning file from this command. It reads; `/bdd:implement`
   writes.

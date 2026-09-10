@@ -71,7 +71,7 @@ export default {
   path passed on the command line: `npx cucumber-js features/checkout.feature`
   then runs the whole suite instead of that one file, silently. Without the key,
   the positional argument filters as expected. This matters because the
-  `implement` skill needs a command that runs exactly one feature; the
+  `/bdd:implement` command needs one that runs exactly one feature; the
   alternative - a union of tags - has to be edited by hand every time a scenario
   is added, and under-tests the feature when somebody forgets.
 - `message:` ndjson is the input `coverage.cjs` prefers - always keep it.

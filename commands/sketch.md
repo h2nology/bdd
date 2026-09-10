@@ -14,7 +14,7 @@ Where this sits in the plugin:
 |---|---|---|
 | `discover` | What should the system do? | first |
 | **`/bdd:sketch`** | **What would that look like?** | **after the feature file is agreed, before code** |
-| `implement` | Build it, scenario by scenario | next |
+| `/bdd:plan-with-feature` + `/bdd:implement` | Build it, capability by capability | next |
 | `flow-map` | Which screens did the tests actually visit? | after a run |
 
 This and `flow-map` both draw a transition diagram, and they are not the same

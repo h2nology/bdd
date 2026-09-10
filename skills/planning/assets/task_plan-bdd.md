@@ -212,6 +212,12 @@ row then looks covered. Do not let the row absorb logic that *could* be tested:
 push every decision into a unit-testable neighbour and leave this row as thin
 wiring, so the untestable surface is as small as you can make it.
 
+`Test` names the file **and** the test within it, as a path under the project's
+test root - never a path beside the file under test.
+`${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` has the per-stack roots and why. Naming the test before it exists is only
+possible because the layout is predictable, which is the practical argument for
+mirroring the source tree.
+
 Order is a claim about dependency, not preference. If capability 3 needs
 capability 2, it comes after it - otherwise its test fails for a reason that
 has nothing to do with capability 3, and Phase 3.3 cannot tell a real RED from

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * Status of the planning files the `implement` skill keeps on disk.
+ * Status of the planning files the `planning` skill keeps on disk.
  *
  * Usage:
  *   node planning-status.cjs [options]
@@ -408,7 +408,7 @@ function main() {
   if (!plans.length) {
     if (!opts.warningsOnly) {
       process.stdout.write('No plans under ' + root + '.\n'
-        + 'The implement skill creates one per feature; nothing has been started yet.\n');
+        + 'Create one with /bdd:plan-with-feature <feature> or /bdd:plan <task>.\n');
     }
     return;
   }

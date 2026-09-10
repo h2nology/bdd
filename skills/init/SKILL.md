@@ -212,3 +212,4 @@ Diagnose in this order, and fix only what is broken:
 - `references/dotnet.md` - Reqnroll + Microsoft.Playwright, bindings and hooks
 - `references/appium.md` - the mobile lane: Appium server and drivers, capabilities, screen identity, per-language driver/hooks/capture, running both lanes from one suite, CI
 - `references/responsive-web.md` - web-lane viewport emulation per language, and why it is not a device
+- `${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` - where **unit** tests go per stack, and why never beside the file under test. The cucumber suite's own location is set by this skill; that file governs the inner loop's tests

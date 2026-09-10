@@ -136,7 +136,14 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --json bdd-artifact
 
 The command prints feature/scenario/case/step counts, lists scenarios without a
 requirement tag, and prints parse warnings on stderr. Treat any warning as a
-defect in the feature file, and report the counts back to the user. If a
+defect in the feature file, and report the counts back to the user.
+
+The parser cannot see one defect, so check it by hand: **no step sentence may
+appear both as setup and as an assertion.** Resolve `And`/`But` to the keyword
+they inherit, then intersect the setup sentences (`Given`, `Background`) with
+the `Then` sentences - the result has to be empty. A collision here is not
+cosmetic: it cannot be implemented at all, because cucumber matches step
+definitions on the text alone. If a
 scenario the user asked for is missing from the counts, say so - never claim
 completion from the file you wrote alone.
 
@@ -158,6 +165,11 @@ so coverage still attributes it to the original requirement.
 
 ## Anti-patterns to refuse
 
+- **One sentence used for two meanings** - the same step text as setup in one
+  place and as an assertion in another (`Given 清单是空的` … `Then 清单是空的`).
+  Cucumber matches on the text alone, so a single step definition would have to
+  both establish and check the state. Give the assertion its own wording; see
+  "One sentence, one meaning" in `references/gherkin-style.md`.
 - Scenarios that assert on implementation detail (SQL, class names, HTTP status
   codes) when the requirement is about business behaviour.
 - One scenario with ten `When` steps: split it, one behaviour per scenario.

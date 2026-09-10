@@ -13,6 +13,66 @@
 A scenario with two `When`s separated by `Then`s is two scenarios, unless the
 requirement is genuinely about a sequence (then say so in the scenario name).
 
+## One sentence, one meaning
+
+**A step sentence may carry exactly one meaning across the whole suite.** The
+same words must never be setup in one place and an assertion in another.
+
+This is not a style preference - it is a property of how cucumber works. Step
+definitions are matched on the **text**, and the text alone. `Given`, `When`
+and `Then` are not part of the match, and a step definition's body cannot see
+which keyword invoked it. So this feature file cannot be implemented:
+
+```gherkin
+# Broken - the same sentence has to do two opposite things
+Scenario: A blank title is rejected
+  Given 我的待办清单是空的        # asks the step to EMPTY the list
+  When 我添加待办 "   "
+  Then 系统提示 "请输入待办内容"
+  And 我的待办清单是空的          # asks the same step to ASSERT it is empty
+```
+
+One function is now expected both to truncate the table and to assert against
+it. Whichever it does, the other reading is silently wrong: if it clears, the
+`Then` proves nothing; if it asserts, the `Given` sets nothing up.
+
+The fix is wording, not machinery. Give the two meanings two sentences:
+
+```gherkin
+Scenario: A blank title is rejected
+  Given 我的待办清单是空的
+  When 我添加待办 "   "
+  Then 系统提示 "请输入待办内容"
+  And 清单中没有任何待办
+```
+
+**Do not solve this in the glue.** It is technically possible to record the
+pickle step's type in a `BeforeStep` hook and branch on it, and it is the wrong
+answer twice over: the reader of the feature file still meets one sentence
+meaning two things, and the step definition now depends on where in a scenario
+it was called from, which no other step does.
+
+### Catching it before it reaches the step definitions
+
+Group the step text by its **effective** keyword - `And` and `But` inherit the
+keyword above them, so resolve those first - and look for any sentence that
+appears under both a setup keyword (`Given`, or a `Background` step) and
+`Then`. That intersection should be empty.
+
+It is worth doing deliberately, because the collision is invisible while the
+feature file is being read for its content: both lines look natural where they
+sit, and the problem only exists in the space between them. It usually surfaces
+at the worst moment - when someone is writing the glue and has to decide, alone,
+what the sentence means.
+
+Two habits keep the intersection empty:
+
+- **Setup describes the world; assertions describe what is on the screen.**
+  `我的待办清单是空的` is a fact about the system; `清单中没有任何待办` is an
+  observation of the list. Different subjects, so different sentences.
+- **Never reuse a `Given` sentence as a `Then` "nothing changed" check.** That
+  check is its own assertion and deserves its own words.
+
 ## Block keywords, and their synonyms
 
 The table above covers step keywords. The block keywords have synonyms, and
