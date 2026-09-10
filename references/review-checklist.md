@@ -55,5 +55,5 @@ footer carries its generation timestamp), and any item accepted as an exception.
 | A rule is wrong | `discover` - re-mine that rule, rewrite the scenarios |
 | A case is missing | `discover` - add the example to the existing feature |
 | A requirement has no scenarios | `discover`, then re-run this report |
-| Scenarios are fine, nothing runs them | `init` then `run` |
+| Scenarios are fine, nothing runs them | `bootstrap` then `run` |
 | Data model questions raised in review | `export-ddl` to derive the schema from the agreed scenarios |

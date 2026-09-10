@@ -23,9 +23,9 @@ Both lanes feed the same generator:
 
 ## 1. Make sure the run captures
 
-The capture hooks ship with the `init` skill's templates for every language. If
-the project was set up by `init`, capture is already implemented and only needs
-to be switched on:
+The capture hooks ship with the `bootstrap` skill's templates for every
+language. If the project was set up by `bootstrap`, capture is already
+implemented and only needs to be switched on:
 
 ```bash
 # web lane (Playwright)
@@ -39,9 +39,9 @@ BDD_FLOW_CAPTURE=1 BDD_DRIVER=appium BDD_PLATFORM=android npx cucumber-js -p mob
 ```
 
 If the project has no capture hooks, add them from the matching reference - the
-web lane from `${CLAUDE_PLUGIN_ROOT}/skills/init/references/<language>.md`
+web lane from `${CLAUDE_PLUGIN_ROOT}/skills/bootstrap/references/<language>.md`
 ("flow capture"), the mobile lane from
-`${CLAUDE_PLUGIN_ROOT}/skills/init/references/appium.md`. Do not invent a
+`${CLAUDE_PLUGIN_ROOT}/skills/bootstrap/references/appium.md`. Do not invent a
 different record format: the exact schema is specified in
 `references/capture-contract.md` and the generator depends on it.
 
@@ -116,7 +116,7 @@ The diagram is a review artifact, not decoration. Read it for:
 | A page nobody enters (0 entries, 1 visit) | Reached only mid-journey; fine, but check it has a direct-entry scenario if users can bookmark it |
 | Pages in the app that appear nowhere | Untested screens. This is the most valuable finding - list them for the user |
 | Dashed edges | The flow broke there; cross-reference the failing scenario in the coverage report |
-| Mobile: every screen has the same name | A single-activity Android app with no per-screen identifier. The diagram is worthless until the app exposes one - see `${CLAUDE_PLUGIN_ROOT}/skills/init/references/appium.md` section 4 |
+| Mobile: every screen has the same name | A single-activity Android app with no per-screen identifier. The diagram is worthless until the app exposes one - see `${CLAUDE_PLUGIN_ROOT}/skills/bootstrap/references/appium.md` section 4 |
 | Mobile: a WebView screen appears as a URL | Expected for hybrid apps: the capture records both, and `url` wins |
 
 Point out coverage gaps explicitly: compare the map against the app's own

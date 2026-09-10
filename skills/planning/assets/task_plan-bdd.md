@@ -63,7 +63,8 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 ### Phase 0: Harness and baseline
 
 - [ ] The cucumber harness runs at all - `<cucumber>` executes, even if
-      everything in it fails. If it does not, stop and use the `init` skill.
+      everything in it fails. If it does not, stop and use the `bootstrap`
+      skill.
 - [ ] Resolve this project's commands and fill the table below.
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be

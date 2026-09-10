@@ -8,7 +8,7 @@
 | `net::ERR_CONNECTION_REFUSED` on every scenario | App not running, or wrong `BDD_BASE_URL` | Start the app, or correct the URL. Ask the user how the app starts |
 | `0 scenarios (0 passed)` | Wrong `paths` / features base dir, or every scenario filtered out | Check the runner config paths and the tag expression |
 | `Undefined. Implement with the following snippet` for everything | Glue/step path not loaded | Fix `import`/`cucumber.glue`/`bdd_features_base_dir`/`[Binding]` assembly |
-| Timeout on the first step of every scenario | Browser launched but page never created | The `Before` hook is not creating a context/page (see the `init` skill) |
+| Timeout on the first step of every scenario | Browser launched but page never created | The `Before` hook is not creating a context/page (see the `bootstrap` skill) |
 
 ## Scenarios interfere with each other
 

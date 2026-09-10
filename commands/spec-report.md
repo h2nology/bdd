@@ -18,8 +18,8 @@ Arguments the user gave: `$ARGUMENTS`
 If the user named paths, use them. Otherwise let the parser fall back to its usual
 roots (`features/`, `src/test/resources/features/`, `Features/`, `tests/features/`).
 
-If the project has none, stop and offer `discover` (write scenarios) or `init` (set
-up the harness) instead of producing an empty report.
+If the project has none, stop and offer `discover` (write scenarios) or
+`bootstrap` (set up the harness) instead of producing an empty report.
 
 ## 2. Parse into the structured model
 

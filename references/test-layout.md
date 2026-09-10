@@ -63,7 +63,7 @@ Capability Queue name a test file before it exists.
 ## What this does not cover
 
 **The BDD suite is not a unit test tree.** Feature files and step definitions
-keep the location the `init` skill set up - `features/` for TypeScript and
+keep the location the `bootstrap` skill set up - `features/` for TypeScript and
 Python, `src/test/resources/features/` for Java, `Features/` for .NET - because
 cucumber's own conventions point there and the whole team reads them, not just
 developers. The rule above is about the inner loop's tests.

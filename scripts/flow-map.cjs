@@ -4,7 +4,7 @@
  * Playwright step captures -> page flow map (Mermaid + HTML gallery).
  *
  * Reads the capture records written by the AfterStep hooks installed by the
- * init skill (see skills/flow-map/references/capture-contract.md).
+ * bootstrap skill (see skills/flow-map/references/capture-contract.md).
  *
  * Two lanes feed it:
  *   web    - Playwright captures carry `url`; page identity comes from the path

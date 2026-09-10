@@ -1,7 +1,7 @@
 # Flow capture contract
 
-`flow-map.cjs` consumes exactly this format. The `init` skill's templates write
-it in both lanes:
+`flow-map.cjs` consumes exactly this format. The `bootstrap` skill's templates
+write it in both lanes:
 
 | Lane | Driver | Identity field |
 |---|---|---|
