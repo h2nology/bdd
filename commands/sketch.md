@@ -1,12 +1,13 @@
 ---
-description: Derive the UI a set of Gherkin features implies - every data state of every screen - and render it as a read-only pan/zoom wireframe board with the page flow between them, for review before any code is written.
+description: Derive the UI a set of Gherkin features implies - every data state of every screen, with what each button and link does written on it - and render it as a read-only pan/zoom wireframe board, for review before any code is written.
 argument-hint: "[feature paths] [--lang en|zh-CN|zh-TW|ja]"
 ---
 
 # UI sketch from Gherkin
 
-Derive the screens a feature implies, their wireframes and the transitions
-between them, and render them on a read-only Figma-style board.
+Derive the screens a feature implies and their wireframes, annotate every button
+and link with what clicking it does and which scenario says so, and render it all
+on a read-only Figma-style board.
 
 Where this sits in the plugin:
 
@@ -17,10 +18,13 @@ Where this sits in the plugin:
 | `/bdd:plan-with-feature` + `/bdd:implement` | Build it, capability by capability | next |
 | `flow-map` | Which screens did the tests actually visit? | after a run |
 
-This and `flow-map` both draw a transition diagram, and they are not the same
-artefact: this one is the **intended** flow inferred from the text, that one is
-the **observed** flow recorded from a real run. Never present a sketch as
-evidence of what the app does.
+**This board draws screens, not a flow.** What happens after a click goes in a
+callout beside the page - joined to its button by a leader line, and stamped with
+the scenario it came from - because that claim, not the arrow, is what a reviewer
+argues about. The flow *diagram* belongs to `flow-map`, which draws it from a real
+run. So never present a sketch as evidence of what the app does: here every
+outcome is an inference from the wording, which is why each one names its
+scenario.
 
 Arguments the user gave: `$ARGUMENTS`
 
@@ -37,9 +41,9 @@ things the feature file does not determine. Do not resolve those silently.
 
 ## Communication policy
 
-- The spec JSON, element labels, `route` values and `step`/`trigger` text stay in
-  **English** when the feature file is English - carry step text **verbatim** so a
-  reviewer can grep for it.
+- The spec JSON, element labels, `route` values, `step` text, `action.text` and
+  `action.scenario` stay in **English** when the feature file is English - carry
+  step text and scenario names **verbatim** so a reviewer can grep for them.
 - Explain the board and the open questions to the user in **their** language, and
   localize the board chrome with `lang`.
 
@@ -72,24 +76,35 @@ result to `bdd-artifacts/sketch.json` in the format specified by
 
 The two contracts exist so the split holds:
 
-- **You decide what is on a screen.** Gherkin says "submits payment", not "there
-  is a card-number field"; that inference is a judgement call and it is yours.
+- **You decide what is on a screen, and what each control does.** Gherkin says
+  "submits payment", not "there is a card-number field"; that inference is a
+  judgement call and it is yours.
 - **The renderer decides where it goes.** Never write pixel coordinates - layout
   comes from `region` + array order + `width`, so regenerating the spec cannot
   make the board drift.
 
 Three rules worth repeating because they are what makes the artefact trustworthy:
 
-- Fill `step` on every element and `trigger` on every transition, verbatim from
-  the feature. An element with no `step` and no `notes` entry is a design guess.
-  Matching text also anchors each arrow to its button for free.
+- Fill `step` on every element, verbatim from the feature. An element with no
+  `step` and no `notes` entry is a design guess.
+- **Fill `action` on every button and link**, as `{ text, scenario, source }`:
+  where the click goes, named the way `route` names it, with the condition when
+  the feature states one and both outcomes when it states two ("on success opens
+  /checkout/done; a declined card stays here with an error alert") - **plus the
+  `Scenario:` name it came from**, verbatim. The renderer reports a control with
+  no `action`, and an `action` with no `scenario`, because a button whose outcome
+  nobody wrote down, or a claim with no provenance, is exactly the gap this board
+  exists to surface. If the feature does not say, write `"unspecified - see open
+  questions"` and add the question.
 - **One card per data state.** A page whose UI depends on data is several cards
   sharing a `route`, each with its own `state` - "empty", "card declined", "2
   items". They are drawn stacked inside one labelled group. Collapsing them into
   a single card hides the difference the reviewer is there to check, and gets the
-  flow wrong, because the states usually lead somewhere different.
+  behaviour wrong, because the same button usually does something different in
+  each state.
 - Every gap goes in `openQuestions`, not into a confident invention. A state you
-  suspect exists but no scenario describes is a question, not a card.
+  suspect exists but no scenario describes is a question, not a card. The same
+  goes for a destination: an `action` may not invent a page no scenario mentions.
 
 ## 3. Settle one thing with the user
 
@@ -117,7 +132,6 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/sketch.cjs \
   --input bdd-artifacts/sketch.json \
   --out bdd-artifacts/sketch.html \
   --json bdd-artifacts/sketch-layout.json \
-  --mermaid bdd-artifacts/sketch.mmd \
   --labels zh-CN
 ```
 
@@ -125,31 +139,33 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/sketch.cjs \
 |---|---|
 | `--input <file>` | Sketch spec JSON (default `bdd-artifacts/sketch.json`) |
 | `--out <file>` | Output HTML (default `bdd-artifacts/sketch.html`) |
-| `--json <file>` | The laid-out model: each screen's box, column, row, plus warnings |
-| `--mermaid <file>` | The screen flow as Mermaid source, for a PR or a wiki |
+| `--json <file>` | The laid-out model: each screen's box and column, plus warnings |
 | `--labels <tag>` | Board chrome language: `en` \| `zh-CN` \| `zh-TW` \| `ja` |
 | `--title <text>` | Override the board title |
 | `--viewport <v>` | Override `app.viewport`: `desktop` \| `tablet` \| `mobile` |
 
-Exit codes: `0` board written, `2` the spec is missing, unparseable, has no
-screens, or has a transition pointing at a screen id or a `fromElement` that does
-not exist. A dangling reference is deliberately fatal rather than silently
-dropped - a flow diagram missing an edge is worse than no diagram. A `2` is a
-defect in the derivation, not in the renderer: fix the spec and re-run.
+Exit codes: `0` board written, `2` the spec is missing, unparseable, or has no
+screens. A `2` is a defect in the derivation, not in the renderer: fix the spec
+and re-run. Everything else the renderer objects to - an unknown element type, a
+button with no `action` - is a warning printed with the board, not a failure.
 
 ### How the board is laid out
 
-Positions are computed twice. `sketch.cjs` writes a simple column layout into the
-HTML, and the page then loads **elkjs** from a CDN and re-runs the layout with
-orthogonal edge routing, so no arrow crosses a card. Consequences worth knowing:
+A grid of pages, computed once in `sketch.cjs`: a near-square number of columns,
+each page group dropped into the shortest column so a tall page does not strand
+one. No layout engine, no CDN, no network - the file opens the same offline.
 
-- **It needs network on first open.** Without it the board still works - it keeps
-  the built-in layout and says so in the toolbar - but arrows are drawn as curves
-  that may pass over a card. Tell the user this if they are reviewing offline.
-- Groups of state variants move as one unit and their frame is drawn around them,
-  so a page's states always read as a column.
-- Groups holding an entry screen are pinned to the first layer, so the board
-  reads left-to-right from where a journey starts.
+- Every page group carries a **gutter on its right** holding the action callouts
+  of its cards. A callout sits level with the control it annotates, and is pushed
+  down only when the one above it would overlap, so a leader line stays short and
+  roughly horizontal. Because the callouts live in the group's own gutter, no
+  leader ever crosses another page.
+- Groups of state variants are drawn inside one labelled frame, so a page's
+  states always read as a column.
+- Groups holding an entry screen are placed first, so the board still starts
+  where a journey does.
+- The same spec always produces the same board, so a reviewer's mental map
+  survives a regeneration.
 
 ### What reviewers can do
 
@@ -157,43 +173,48 @@ The board is **read-only** on purpose. It is a review artefact; the way to chang
 what it shows is to change the feature file and regenerate. Reviewers can:
 
 - drag to pan, `⌘`/`ctrl` + wheel (or pinch) to zoom, `+` / `-` / `0` by keyboard
-- click a screen to highlight everything that reaches it or leads out of it, and
-  see its state, purpose, source `feature:line`, tags and the steps it was
-  derived from
+- click a screen to light it, the other states of the same page, and its action
+  callouts with their leader lines - and see its state, purpose, source
+  `feature:line`, tags, notes and the steps it was derived from
+- click a callout to select the screen it annotates
+- read every click behaviour of the selected screen in full in the detail panel,
+  each with the scenario it came from - a callout clamps a very long one, the
+  tooltip and the panel do not
 - jump between a page's states from the detail panel
-- follow each arrow back to the control that triggers it - arrows leave from the
-  button or link named by the step, not from the card's edge
 - press `Esc` or click the same screen again to clear the selection
 
 ## 5. Read the board before showing it
 
 | Observation | What it usually means |
 |---|---|
-| A screen with no outgoing transition | A dead end. Either a journey is unfinished, or the feature never says where the user goes next |
+| A button or link with no `action` | The feature never says what clicking it does. The renderer warns about exactly this - answer it or make it an open question |
+| A callout with no scenario in its footer | The claim has no provenance. The renderer warns about it: find the scenario, or admit the behaviour is invented |
+| An `action` naming a page that has no card | Either a screen is missing from the sketch, or the destination is invented. Both are defects |
+| An `action` that says only "submits" | Says nothing a reviewer can disagree with. Where does it go, and what happens when it fails? |
+| Several callouts citing the same scenario on one page | Usually right - one scenario walks several controls. Worth a glance that they do not contradict each other |
 | A page with only one state | Ask whether it really has one. Empty, error and loading states are the ones features forget |
 | Two variants with identical wireframes | Over-splitting: they are the same state described twice. Merge them |
-| A variant nothing leads to | The feature describes the state but never how the user reaches it |
-| An arrow leaving from a card's edge, not a control | No element carries that step text. Either the button is missing from the sketch, or the step never says what the user clicks |
+| Two variants whose buttons carry identical `action` text | Suspicious - if the states behave the same, why are they two cards? |
+| A page no `action` anywhere leads to, and not an entry | The feature describes the page but never how the user reaches it |
 | A screen whose elements have no `step` | Invention. Justify each one from the text or drop it |
 | Many `openQuestions` on one screen | That screen's scenarios are underspecified - the most useful thing you can report |
-| An `error` transition with no destination screen | The failure path was written as an outcome but never as a place |
-| A screen drawn as an entry that should not be one | The spec is missing the transition that reaches it; the renderer warns about exactly this |
+| A failure outcome with no place to land | The failure path was written as an outcome but never as a screen or a state |
 | A wireframe that looks obviously wrong | Good - that is the artefact working. Take it back to the feature file |
 
 ## 6. Report the numbers before claiming success
 
 Give the user, in their language:
 
-1. Counts: pages, state variants, transitions, elements, open questions - and
-   that this is derived from the text, not observed from a run.
+1. Counts: pages, state variants, annotated click behaviours, elements, open
+   questions - and that this is derived from the text, not observed from a run.
 2. Which pages have more than one state, and which have only one - the latter is
    usually where a state is missing rather than where none exists.
-3. The board path, and that the `.mmd` renders as a diagram in a PR or wiki.
+3. The board path, and that it opens offline with no network.
 4. **The open questions, spelled out.** Do not bury them - they are the reason to
    sketch before building. Ask which ones they want to answer into the feature
    file now.
-5. Any renderer warnings: unknown element types, dropped regions, duplicate
-   element ids, screens with no incoming transition.
+5. Any renderer warnings: buttons or links with no `action`, actions with no
+   scenario, unknown element types, dropped regions, screens with no elements.
 6. A reminder that the wireframes are deliberately unstyled, so "it looks plain"
    is not a finding.
 
@@ -206,7 +227,15 @@ Give the user, in their language:
   to argue about placement.
 - **`route` is a guess** until the app exists. It is shaped like a real route on
   purpose (see the spec contract's last section), so a later run's `flow.ndjson`
-  can be compared against it.
+  can be compared against it - which is also why an `action` names its
+  destination as a route rather than as prose.
+- **An `action` is a claim about behaviour, and the board is not a flow diagram.**
+  The only lines on it run from a callout to the control it annotates. If someone
+  wants page-to-page arrows, the honest version is `flow-map` after a run, not a
+  graph drawn from the same wording twice.
+- **The callout's scenario is what makes it reviewable.** A callout citing no
+  scenario, or citing one that does not say what the callout says, is worse than
+  no callout: it looks sourced.
 - **No screenshots, no real data.** Example values come from `Examples:` tables.
   If a value looks like a real customer's, it came from the feature file and that
   is a problem with the feature file.

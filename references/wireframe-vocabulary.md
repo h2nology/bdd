@@ -69,7 +69,7 @@ column is what must actually be in the feature text.
 Fill `step` on every element derived this way. An element with no `step` and no
 entry in `notes` is a design guess; either justify it or drop it.
 
-## 3. Deriving the screens and transitions
+## 3. Deriving the screens and the click behaviour
 
 1. **Collect the screens.** One screen per distinct place the steps put the user.
    Evidence for a screen is an explicit navigation step ("I am on the checkout
@@ -85,22 +85,32 @@ entry in `notes` is a design guess; either justify it or drop it.
    page holding different data, draw **one card per state**, sharing a `route`
    and `name` with distinct `state` values (see the spec contract's "State
    variants"). "Given my cart contains 2 items" and "Given my cart is empty" are
-   two cards, because they look different, and because they usually lead
-   somewhere different. What is *not* a new card: two scenarios reaching the same
+   two cards, because they look different, and because the same button usually
+   does something different on each. What is *not* a new card: two scenarios reaching the same
    page in the same data state, differing only in wording.
-4. **Draw the transitions from the steps that move the user.** The `When` that
-   ends a screen's involvement is the `trigger`. A failure scenario's stop is
-   `kind: "error"`. Only draw an edge the feature text supports. Point each edge
-   at the **specific variant** it reaches - a declined card lands on the declined
-   variant, not on "Payment" in general.
-5. **Anchor each transition to its control.** Carry the triggering step verbatim
-   into both the button's `step` and the transition's `trigger`, and the arrow
-   starts at that button instead of at the card's edge. Add an element `id` plus
-   `fromElement` only when one screen has two controls with the same step text.
-6. **Mark the entries.** Any screen a scenario's first navigation step lands on
+4. **Write the click behaviour as an `action`, in words.** The `When` that ends
+   a screen's involvement becomes that button's or link's `action.text`: where it
+   goes, named the way `route` names it, plus the condition when the feature
+   states one and both outcomes when it states two ("on success opens
+   /checkout/done; a declined card stays here with an error alert"). Name the
+   **specific variant** - a declined card lands on the declined state, not on
+   "Payment" in general. The renderer draws this in a callout beside the page,
+   with a leader line to the control; nothing about behaviour goes on the
+   wireframe itself (see the spec contract's "Click behaviour").
+5. **Name the scenario each action comes from.** `action.scenario` is the
+   `Scenario:` name, verbatim, plus `source` when you have the line. That is
+   what turns "the button does X" into "this scenario says the button does X",
+   which is the only version a reviewer can check.
+6. **Every button and link gets one.** Carry the triggering step verbatim into
+   the control's `step`, and its outcome into `action`. A control with no
+   `action`, or an `action` with no `scenario`, is reported by the renderer, and
+   rightly: a button whose outcome nobody wrote down is the gap the board exists
+   to surface. When the feature truly does not say, write
+   `"unspecified - see open questions"` and add the question.
+7. **Mark the entries.** Any screen a scenario's first navigation step lands on
    gets `entry: true`.
-7. **Write down what is missing.** Every place you wanted to draw an edge or a
-   field but the text did not say - `openQuestions`. This list is the most
+8. **Write down what is missing.** Every place you wanted to state an outcome or
+   a field but the text did not say - `openQuestions`. This list is the most
    valuable part of the artefact, because it is the list of conversations the
    feature file still owes the team.
 
@@ -112,12 +122,18 @@ entry in `notes` is a design guess; either justify it or drop it.
 - **Do not style.** No colours, no brand, no spacing choices. This is a
   greyscale wireframe whose job is to provoke "that's not what I meant" early -
   polish invites the opposite reaction.
-- **Do not paraphrase step text in `step` or `trigger`.** Carry it verbatim, so a
-  reviewer can grep the feature file for it.
+- **Do not paraphrase step text in `step`, or scenario names in
+  `action.scenario`.** Carry both verbatim, so a reviewer can grep the feature
+  file for them. An `action.text` is prose, but it still only says what the
+  feature says.
 - **Do not fabricate example data.** Use the `Examples:` table's values, or a
   visibly synthetic placeholder. A wireframe with plausible-looking invented
   customer data gets mistaken for a real record.
 - **Do not resolve an ambiguity silently.** That is what `openQuestions` is for.
+- **Do not draw a flow.** No arrows between pages, no "next screen" columns, no
+  Mermaid graph smuggled into a `note`. The *observed* flow is `flow-map`'s job,
+  from a real run; here a click's outcome is a sentence in a callout, and the
+  only lines on the board are the leaders from a callout to its control.
 - **Do not invent a state variant.** A loading, permission-denied or error state
   no scenario describes is an open question, not a card. Draw the states the
   feature earns, then say which ones it never mentions.

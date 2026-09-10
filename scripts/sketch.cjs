@@ -1,16 +1,22 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * Gherkin-derived UI spec -> read-only wireframe canvas (pan/zoom board + flow arrows).
+ * Gherkin-derived UI spec -> read-only wireframe canvas (pan/zoom board).
  *
  * Consumes the JSON the `sketch` skill derives from feature files (see
  * references/sketch-spec.md). The model decides what is on each
  * screen; this renderer decides where it goes, so regenerating the JSON cannot
  * make the board drift.
  *
+ * The board draws screens only - there are deliberately no page-flow arrows.
+ * What happens after a click is written in a callout **beside** the wireframe,
+ * with a leader line back to the button or link and the scenario it came from.
+ * Keeping it off the card is the point: the wireframe stays a wireframe, and the
+ * annotation carries its own provenance.
+ *
  * Every wireframe element is rendered at a fixed height taken from ELEMENT_H,
- * which is what lets the layout compute each card's exact box up front and draw
- * transition arrows that actually meet the card edges.
+ * which is what lets the layout compute each card's exact box - and each
+ * control's y inside it, which is where a leader line starts - up front.
  *
  * Usage:
  *   node sketch.cjs [--input <file>] [options]
@@ -18,8 +24,7 @@
  * Options:
  *   --input <file>     Sketch spec JSON (default bdd-artifacts/sketch.json)
  *   --out <file>       Output HTML (default bdd-artifacts/sketch.html)
- *   --json <file>      Also write the laid-out model (boxes, columns, edges) as JSON
- *   --mermaid <file>   Also write the screen flow as Mermaid source
+ *   --json <file>      Also write the laid-out model (boxes, columns) as JSON
  *   --labels <tag>     Board chrome language: en | zh-CN | zh-TW | ja
  *   --title <text>     Override the board title
  *   --viewport <v>     Override app.viewport: desktop | tablet | mobile
@@ -38,6 +43,16 @@ const ELEMENT_H = {
   pagination: 32, empty: 68, spinner: 48, divider: 17, radio: 0, checkbox: 0,
 };
 const PLACEHOLDER_H = 48;
+/**
+ * An action callout: a fixed-width note in the gutter beside its page, holding
+ * the control's label, what the click does, and the scenario that says so.
+ * Every value is also in BOARD_CSS and must stay in step with it.
+ */
+const CALLOUT = {
+  w: 236, pad: 11, gap: 34, vGap: 12, line: 17, head: 18, foot: 16, maxLines: 8,
+  /** Inner width in half-width character units, at ~6.3px per unit. */
+  units: 33,
+};
 const CARD_W = { desktop: 344, tablet: 304, mobile: 264 };
 /**
  * Every value here is also written into BOARD_CSS and must stay in step with it:
@@ -53,22 +68,10 @@ const LAYOUT = {
 /** Frame around a page's state variants; `top` leaves room for the route label. */
 const GROUP_PAD = { top: 34, side: 14, bottom: 14 };
 const REGIONS = ['header', 'main', 'aside', 'footer'];
-/**
- * elkjs runs in the browser, so the board's final layout is computed on load.
- * The Node-side layout above is the initial render and the offline fallback -
- * when this cannot be fetched the board still works, it just routes edges as
- * curves that may cross a card.
- */
-const ELK_CDN = 'https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js';
-/**
- * A trigger label has to read inside colGap, at roughly 6px per character, so it
- * wraps onto at most two lines. Truncating to a single line instead would cut
- * the tail - which for a Gherkin step is exactly where the distinguishing words
- * are ("... with a valid card" vs "... with a declined card").
- */
-const EDGE_LABEL_CHARS = 26;
-const EDGE_LABEL_LINES = 2;
-const KINDS = new Set(['primary', 'alternate', 'error']);
+/** Controls whose behaviour after a click has to be stated, or it is a gap. */
+const CLICKABLE = new Set(['button', 'link']);
+/** Full-width scripts cost two units per character when estimating a line. */
+const WIDE_CHAR = /[\u1100-\u115F\u2E80-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6\u3000-\u303F]/;
 
 /* ---------------------------------------------------------------- normalize */
 
@@ -87,7 +90,7 @@ function normalize(spec, opts) {
   const screens = rawScreens.map((raw, i) => {
     let id = typeof raw.id === 'string' && raw.id.trim() ? raw.id.trim() : u.slug(raw.name || 'screen-' + i);
     if (seen.has(id)) {
-      warnings.push('duplicate screen id "' + id + '" - renamed so transitions stay unambiguous');
+      warnings.push('duplicate screen id "' + id + '" - renamed so the cards stay distinguishable');
       let n = 2;
       while (seen.has(id + '-' + n)) n += 1;
       id = id + '-' + n;
@@ -95,7 +98,6 @@ function normalize(spec, opts) {
     seen.add(id);
 
     const regions = {};
-    const elementIds = new Map();
     const rawRegions = raw.regions && typeof raw.regions === 'object' ? raw.regions : {};
     for (const key of Object.keys(rawRegions)) {
       if (!REGIONS.includes(key)) {
@@ -113,14 +115,18 @@ function normalize(spec, opts) {
         if (!(el.type in ELEMENT_H)) {
           warnings.push('screen "' + id + '": unknown element type "' + String(el.type) + '" drawn as a placeholder');
         }
-        if (typeof el.id === 'string' && el.id.trim()) {
-          const eid = el.id.trim();
-          if (elementIds.has(eid)) {
-            warnings.push('screen "' + id + '": duplicate element id "' + eid + '" - only the first can be a transition anchor');
-          } else {
-            elementIds.set(eid, el);
-            el.id = eid;
-          }
+        el.action = normalizeAction(el.action);
+        // A button with no stated outcome is the gap this board exists to show,
+        // so it is reported rather than drawn as if it were settled.
+        if (CLICKABLE.has(el.type) && !el.action) {
+          warnings.push('screen "' + id + '": ' + el.type + ' "' + String(el.label || '?') +
+            '" has no "action" - say what happens when it is clicked, or put it in openQuestions');
+        }
+        // An annotation with no scenario is an assertion with no evidence: the
+        // callout exists to show where the claim came from.
+        if (el.action && !el.action.scenario) {
+          warnings.push('screen "' + id + '": the action on "' + String(el.label || el.type) +
+            '" names no scenario - add "scenario" so the callout can say where it came from');
         }
       }
       if (els.length) regions[key] = els;
@@ -132,7 +138,6 @@ function normalize(spec, opts) {
       name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim() : id,
       route: typeof raw.route === 'string' ? raw.route : null,
       state: typeof raw.state === 'string' && raw.state.trim() ? raw.state.trim() : null,
-      elementIds,
       purpose: typeof raw.purpose === 'string' ? raw.purpose : null,
       entry: Boolean(raw.entry),
       tags: Array.isArray(raw.tags) ? raw.tags.filter((t) => typeof t === 'string') : [],
@@ -142,69 +147,32 @@ function normalize(spec, opts) {
     };
   });
 
-  const byId = new Map(screens.map((s) => [s.id, s]));
-  const transitions = [];
-  for (const raw of Array.isArray(spec.transitions) ? spec.transitions : []) {
-    if (!raw || typeof raw !== 'object') continue;
-    if (!byId.has(raw.from) || !byId.has(raw.to)) {
-      throw new Error('transition ' + JSON.stringify(raw.from) + ' -> ' + JSON.stringify(raw.to) +
-        ' references a screen id that does not exist; fix the spec rather than drawing a partial graph');
-    }
-    const trigger = typeof raw.trigger === 'string' ? raw.trigger : null;
-    transitions.push({
-      from: raw.from, to: raw.to,
-      fromElement: resolveAnchor(byId.get(raw.from), raw, trigger),
-      trigger,
-      kind: KINDS.has(raw.kind) ? raw.kind : 'primary',
-      tags: Array.isArray(raw.tags) ? raw.tags.filter((t) => typeof t === 'string') : [],
-      source: raw.source && typeof raw.source === 'object' ? raw.source : null,
-    });
-  }
-
   return {
     app: { name: typeof app.name === 'string' ? app.name : null, platform, viewport },
-    screens, transitions, groups: groupScreens(screens),
+    screens, groups: groupScreens(screens),
     openQuestions: (Array.isArray(spec.openQuestions) ? spec.openQuestions : []).filter((q) => typeof q === 'string'),
     warnings,
   };
 }
 
 /**
- * Which control does this transition leave from? An explicit `fromElement` wins;
- * otherwise the element whose `step` is the transition's `trigger`, preferring a
- * button or link. Returns an element id, or null to leave the arrow on the
- * card's edge. Elements matched by step get an id assigned so the renderer can
- * anchor to them.
+ * What happens after a click, as the callout needs it: the text, and the
+ * scenario that says so. A bare string is accepted and reported, because a
+ * claim with no provenance is exactly what the callout is meant to expose.
  */
-const ANCHOR_PREFERRED = new Set(['button', 'link']);
-
-function resolveAnchor(screen, raw, trigger) {
-  if (typeof raw.fromElement === 'string' && raw.fromElement.trim()) {
-    const want = raw.fromElement.trim();
-    if (!screen.elementIds.has(want)) {
-      throw new Error('transition ' + JSON.stringify(raw.from) + ' -> ' + JSON.stringify(raw.to) +
-        ' has fromElement ' + JSON.stringify(want) + ', which screen ' + JSON.stringify(raw.from) +
-        ' does not define; fix the spec rather than dropping the anchor');
-    }
-    return want;
+function normalizeAction(raw) {
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    return text ? { text, scenario: null, source: null } : null;
   }
-  if (!trigger) return null;
-  const hits = [];
-  for (const region of REGIONS) {
-    for (const el of screen.regions[region] || []) {
-      if (typeof el.step === 'string' && el.step.trim() === trigger.trim()) hits.push(el);
-    }
-  }
-  if (!hits.length) return null;
-  const pick = hits.find((el) => ANCHOR_PREFERRED.has(el.type)) || hits[0];
-  if (!pick.id) {
-    let n = 1;
-    let auto = 'auto-' + u.slug(String(pick.label || pick.type)).slice(0, 24);
-    while (screen.elementIds.has(auto)) { n += 1; auto = auto + '-' + n; }
-    pick.id = auto;
-    screen.elementIds.set(auto, pick);
-  }
-  return pick.id;
+  if (!raw || typeof raw !== 'object') return null;
+  const text = typeof raw.text === 'string' ? raw.text.trim() : '';
+  if (!text) return null;
+  return {
+    text,
+    scenario: typeof raw.scenario === 'string' && raw.scenario.trim() ? raw.scenario.trim() : null,
+    source: raw.source && typeof raw.source === 'object' ? raw.source : null,
+  };
 }
 
 /**
@@ -247,6 +215,21 @@ function elementHeight(el) {
   return ELEMENT_H[type] === undefined ? PLACEHOLDER_H : ELEMENT_H[type];
 }
 
+/** Wrapped line count for a callout body, counting CJK as two units wide. */
+function textLines(text, units, maxLines) {
+  let n = 0;
+  for (const ch of String(text)) n += WIDE_CHAR.test(ch) ? 2 : 1;
+  return Math.max(1, Math.min(maxLines, Math.ceil(n / units)));
+}
+
+/** The callout's box, and how many lines of body text fit in it. */
+function calloutBox(action) {
+  const lines = textLines(action.text, CALLOUT.units, CALLOUT.maxLines);
+  const h = CALLOUT.pad * 2 + CALLOUT.head + lines * CALLOUT.line +
+    (action.scenario ? CALLOUT.foot : 0);
+  return { w: CALLOUT.w, h, lines };
+}
+
 const SPAN = { full: 1, half: 2, third: 3 };
 
 /** Group elements into rows: consecutive half/third elements share one row. */
@@ -282,17 +265,17 @@ function regionHeight(elements) {
 }
 
 /**
- * The card's box, plus where every id-carrying element sits inside it.
+ * The card's box, plus the y of every control that carries an action.
  *
  * The y walk mirrors the CSS exactly - cardHead, then each region's padding,
  * rows and gaps - which is only reliable because every element renders at the
- * fixed height ELEMENT_H gives it. Those offsets become the ELK port positions,
- * so an arrow can start at the button the user clicks.
+ * fixed height elementHeight gives it. Those offsets are where a leader line
+ * meets its button.
  */
 function screenLayout(screen, viewport) {
   const w = CARD_W[viewport];
   const used = REGIONS.filter((r) => screen.regions[r]);
-  const anchors = new Map();
+  const marks = [];
 
   let y = LAYOUT.cardHead;
   used.forEach((region, ri) => {
@@ -300,7 +283,7 @@ function screenLayout(screen, viewport) {
     const rows = rowsOf(screen.regions[region]);
     rows.forEach((row, i) => {
       for (const el of row.els) {
-        if (el.id) anchors.set(el.id, { y: y + elementHeight(el) / 2, h: elementHeight(el), region });
+        if (el.action) marks.push({ el, y: y + elementHeight(el) / 2 });
       }
       y += row.h;
       if (i < rows.length - 1) y += LAYOUT.elGap;
@@ -312,62 +295,24 @@ function screenLayout(screen, viewport) {
   const body = used.reduce((sum, r) => sum + regionHeight(screen.regions[r]), 0) +
     Math.max(0, used.length - 1) * LAYOUT.regionGap;
   const h = LAYOUT.border + LAYOUT.cardHead + Math.max(LAYOUT.minBody, body) + LAYOUT.regionPad;
-  return { w, h, anchors };
+  return { w, h, marks };
 }
 
 /* ------------------------------------------------------------------- layout */
 
 /**
- * Column (flow depth) per *group*, not per screen, so a page's state variants
- * always end up side by side.
+ * With no flow to lay out, the board is a grid of pages: a near-square column
+ * count, and each group dropped into the shortest column so tall pages do not
+ * leave one column stranded. Entry pages come first, so the board still starts
+ * where a journey does.
  *
- * Breadth-first, so each group's column is its distance from an entry and is
- * assigned exactly once - a cycle in the flow cannot drag a group forward pass
- * after pass, which is what a longest-path relaxation would do.
- */
-function assignColumns(model) {
-  const { screens, groups, transitions } = model;
-  const groupOf = new Map(screens.map((s) => [s.id, s.group]));
-  const ids = groups.map((g) => g.id);
-
-  const indeg = new Map(ids.map((id) => [id, 0]));
-  const out = new Map(ids.map((id) => [id, new Set()]));
-  for (const t of transitions) {
-    const a = groupOf.get(t.from);
-    const b = groupOf.get(t.to);
-    if (a === b) continue;
-    out.get(a).add(b);
-  }
-  for (const [a, targets] of out) for (const b of targets) indeg.set(b, indeg.get(b) + 1);
-
-  // A screen no transition leads to *is* an entry, whether or not the spec said
-  // so; `implied` reports the ones the spec should have marked.
-  const screenIndeg = new Map(screens.map((s) => [s.id, 0]));
-  for (const t of transitions) if (t.from !== t.to) screenIndeg.set(t.to, screenIndeg.get(t.to) + 1);
-  const implied = screens.filter((s) => !s.entry && screenIndeg.get(s.id) === 0).map((s) => s.id);
-
-  const rootSet = new Set(groups.filter((g) => g.screens.some((s) => s.entry)).map((g) => g.id));
-  for (const id of ids) if (indeg.get(id) === 0) rootSet.add(id);
-  if (!rootSet.size) rootSet.add(ids[0]);
-  const roots = ids.filter((id) => rootSet.has(id));
-
-  const col = new Map(ids.map((id) => [id, null]));
-  for (const id of roots) col.set(id, 0);
-  const queue = roots.slice();
-  while (queue.length) {
-    const id = queue.shift();
-    for (const next of out.get(id)) {
-      if (col.get(next) === null) { col.set(next, col.get(id) + 1); queue.push(next); }
-    }
-  }
-  const maxCol = Math.max(0, ...ids.map((id) => col.get(id)).filter((c) => c !== null));
-  for (const id of ids) if (col.get(id) === null) col.set(id, maxCol + 1);
-  return { col, implied };
-}
-
-/**
- * The fallback layout, used as the initial render and kept when elkjs cannot be
- * fetched. Columns of groups, variants stacked inside their group.
+ * Each group carries a gutter on its right holding the action callouts of every
+ * card in it. A callout sits level with the control it annotates and is pushed
+ * down only when the one above it would overlap, so a leader line stays short
+ * and roughly horizontal.
+ *
+ * Deterministic on purpose - the same spec always produces the same board, so a
+ * reviewer's mental map survives a regeneration.
  */
 function layout(model) {
   const { screens, groups, app } = model;
@@ -378,241 +323,99 @@ function layout(model) {
     g.w = pad.side * 2 + Math.max(...g.screens.map((s) => s.w));
     g.h = pad.top + pad.bottom + g.screens.reduce((n, s) => n + s.h, 0) +
       Math.max(0, g.screens.length - 1) * LAYOUT.variantGap;
+    // Offsets inside the group, so the group can be placed as one unit later -
+    // and so the callouts can be stacked against them before it is placed.
+    let sy = pad.top;
+    for (const s of g.screens) {
+      s.inGroupX = pad.side;
+      s.inGroupY = Math.round(sy);
+      sy += s.h + LAYOUT.variantGap;
+    }
   }
+  placeCallouts(model);
 
-  const { col, implied } = assignColumns(model);
-  for (const id of implied) {
-    const s = screens.find((x) => x.id === id);
-    s.entry = true;
-    model.warnings.push('screen "' + id + '" has no incoming transition, so it is drawn as an entry - ' +
-      'mark it "entry": true in the spec, or add the transition that reaches it');
-  }
-
-  const columns = new Map();
-  for (const g of groups) {
-    const c = col.get(g.id);
-    if (!columns.has(c)) columns.set(c, []);
-    columns.get(c).push(g);
-    g.col = c;
-  }
-  const colKeys = Array.from(columns.keys()).sort((a, b) => a - b);
-  const colWidths = colKeys.map((c) => Math.max(...columns.get(c).map((g) => g.w)));
-  const colHeights = colKeys.map((c) => {
-    const list = columns.get(c);
-    return list.reduce((sum, g) => sum + g.h, 0) + (list.length - 1) * LAYOUT.rowGap;
+  const cols = Math.max(1, Math.min(groups.length, Math.ceil(Math.sqrt(groups.length))));
+  const columns = Array.from({ length: cols }, () => []);
+  const colH = new Array(cols).fill(0);
+  const ordered = groups.slice().sort((a, b) => {
+    const ae = a.screens.some((s) => s.entry) ? 0 : 1;
+    const be = b.screens.some((s) => s.entry) ? 0 : 1;
+    return ae - be || a.order - b.order;
   });
-  const tallest = Math.max(...colHeights, 0);
+  for (const g of ordered) {
+    let pick = 0;
+    for (let i = 1; i < cols; i += 1) if (colH[i] < colH[pick]) pick = i;
+    columns[pick].push(g);
+    colH[pick] += g.hTotal + LAYOUT.rowGap;
+    g.col = pick;
+  }
 
+  const colWidths = columns.map((list) => Math.max(0, ...list.map((g) => g.wTotal)));
   let x = LAYOUT.pad;
-  colKeys.forEach((c, i) => {
-    const list = columns.get(c);
-    let y = LAYOUT.pad + (tallest - colHeights[i]) / 2;
+  columns.forEach((list, i) => {
+    let y = LAYOUT.pad;
     for (const g of list) {
       g.x = Math.round(x);
       g.y = Math.round(y);
-      let sy = g.pad.top;
       for (const s of g.screens) {
-        // Offset inside the group, so the group can be moved as one unit - which
-        // is exactly what the elk relayout does with it.
-        s.inGroupX = g.pad.side;
-        s.inGroupY = Math.round(sy);
         s.x = g.x + s.inGroupX;
         s.y = g.y + s.inGroupY;
-        sy += s.h + LAYOUT.variantGap;
       }
-      y += g.h + LAYOUT.rowGap;
+      for (const c of g.callouts) {
+        c.x = g.x + g.w + CALLOUT.gap;
+        c.y = g.y + c.inGroupY;
+        // The leader starts at the control and ends at the callout's left edge.
+        c.from = { x: c.screen.x + c.screen.w, y: c.screen.y + c.markY };
+        c.to = { x: c.x, y: c.y + c.h / 2 };
+      }
+      y += g.hTotal + LAYOUT.rowGap;
     }
     x += colWidths[i] + LAYOUT.colGap;
   });
 
   return {
     width: Math.round(x - LAYOUT.colGap + LAYOUT.pad),
-    height: Math.round(LAYOUT.pad * 2 + tallest),
-    columns: colKeys.length,
+    height: Math.round(LAYOUT.pad * 2 + Math.max(0, ...colH.map((h) => h - LAYOUT.rowGap))),
+    columns: cols,
   };
 }
 
-/* --------------------------------------------------------------- elk graph */
-
 /**
- * The graph elkjs lays out in the browser.
- *
- * A group is one flat ELK node, never a subgraph: `elk.hierarchyHandling` of
- * INCLUDE_CHILDREN ignores a subgraph's own algorithm options (so variants would
- * not stack), and SEPARATE_CHILDREN turns the subgraph into a black box (so an
- * edge could no longer reach a port on a card inside it). Keeping groups flat
- * gives ELK the whole flow to route while this file keeps control of how variants
- * sit inside a group.
- *
- * A transition anchored to a control becomes an edge from a FIXED_POS port whose
- * y is the control's offset within its card plus the card's offset within its
- * group. Transitions between two variants of one page are not given to ELK at
- * all - they are drawn as a short connector in the gap between the two cards.
+ * One callout per annotated control, stacked in the group's right-hand gutter in
+ * the order the controls appear, each level with its control unless the one
+ * above already occupies that band. `hTotal`/`wTotal` are what the grid packs,
+ * so a group with more callouts than card takes the room it actually needs.
  */
-function elkGraph(model) {
-  const groupOf = new Map(model.screens.map((s) => [s.id, s.group]));
-  const portId = (groupId, screenId, element) =>
-    groupId + '::' + screenId + '::' + (element || '__edge');
-
-  const crossing = [];
-  const intra = [];
-  model.transitions.forEach((t, i) => {
-    (groupOf.get(t.from) === groupOf.get(t.to) ? intra : crossing).push({ index: i, t });
-  });
-
-  const children = model.groups.map((g) => {
-    const node = { id: g.id, width: g.w, height: g.h };
-    const ports = [];
-    const add = (id, y) => {
-      if (!ports.some((p) => p.id === id)) {
-        ports.push({
-          id, width: 1, height: 1, x: g.w, y: Math.round(y),
-          layoutOptions: { 'elk.port.side': 'EAST' },
+function placeCallouts(model) {
+  let n = 0;
+  for (const g of model.groups) {
+    const list = [];
+    for (const s of g.screens) {
+      for (const mark of s.marks) {
+        n += 1;
+        const box = calloutBox(mark.el.action);
+        list.push({
+          id: 'act-' + n, screen: s, group: g.id,
+          label: mark.el.label || mark.el.type, type: mark.el.type,
+          action: mark.el.action, markY: mark.y,
+          w: box.w, h: box.h, lines: box.lines,
         });
       }
-    };
-    let needsDefault = false;
-    for (const { t } of crossing) {
-      if (groupOf.get(t.from) !== g.id) continue;
-      const s = g.screens.find((x) => x.id === t.from);
-      const a = t.fromElement && s.anchors.get(t.fromElement);
-      if (a) add(portId(g.id, t.from, t.fromElement), s.inGroupY + a.y);
-      else needsDefault = true;
     }
-    // Once a node carries FIXED_POS ports, ELK pins every other edge leaving it
-    // to the node's boundary origin - its top-right corner. So a group with any
-    // anchored edge also gets one centred port for the rest.
-    if (ports.length && needsDefault) add(portId(g.id, null, null), g.h / 2);
-    if (ports.length) {
-      node.ports = ports;
-      node.layoutOptions = { 'elk.portConstraints': 'FIXED_POS' };
+    g.callouts = list;
+
+    let bottom = 0;
+    for (const c of list) {
+      const want = c.screen.inGroupY + c.markY - c.h / 2;
+      c.inGroupY = Math.round(Math.max(want, bottom ? bottom + CALLOUT.vGap : g.pad.top));
+      bottom = c.inGroupY + c.h;
     }
-    // Pin the groups the user starts from to the first layer, so the board reads
-    // left-to-right from where a journey actually begins.
-    if (g.screens.some((s) => s.entry)) {
-      node.layoutOptions = Object.assign({}, node.layoutOptions, {
-        'elk.layered.layering.layerConstraint': 'FIRST',
-      });
-    }
-    return node;
-  });
-
-  const edges = crossing.map(({ index, t }) => {
-    const from = groupOf.get(t.from);
-    const s = model.screens.find((x) => x.id === t.from);
-    const anchored = t.fromElement && s.anchors.has(t.fromElement);
-    const node = children.find((c) => c.id === from);
-    const source = anchored ? portId(from, t.from, t.fromElement)
-      : (node.ports || []).some((p) => p.id === portId(from, null, null))
-        ? portId(from, null, null) : from;
-    return { id: 'e' + index, sources: [source], targets: [groupOf.get(t.to)] };
-  });
-
-  return {
-    graph: {
-      id: 'root',
-      layoutOptions: {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(LAYOUT.colGap),
-        'elk.spacing.nodeNode': String(LAYOUT.rowGap),
-        'elk.spacing.edgeNode': '24',
-        'elk.spacing.edgeEdge': '14',
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-        'elk.padding': '[top=' + LAYOUT.pad + ',left=' + LAYOUT.pad +
-          ',bottom=' + LAYOUT.pad + ',right=' + LAYOUT.pad + ']',
-      },
-      children,
-      edges,
-    },
-    intra: intra.map(({ index, t }) => ({ edge: index, from: t.from, to: t.to })),
-  };
-}
-
-/* -------------------------------------------------------------------- edges */
-
-/**
- * The initial (and offline-fallback) edge path: a cubic bezier from a's edge to
- * b's, plus the label anchor at t=0.5. When elkjs loads it replaces these with
- * orthogonal routes that avoid the cards; without it these curves may cross one,
- * which is a legible board rather than a broken one.
- *
- * The start y honours the transition's anchor element, so even the fallback
- * leaves from roughly the right control.
- */
-function edgeGeometry(a, b, transition) {
-  const mid = (p0, p1, p2, p3) => (p0 + 3 * p1 + 3 * p2 + p3) / 8;
-  const anchor = transition && transition.fromElement && a.anchors
-    ? a.anchors.get(transition.fromElement) : null;
-  const ay = a.y + (anchor ? anchor.y : a.h / 2);
-
-  if (a.id === b.id) {
-    const x = a.x + a.w;
-    const y = a.y + a.h * 0.62;
-    const r = 46;
-    return {
-      d: 'M ' + x + ' ' + y + ' C ' + (x + r) + ' ' + y + ' ' + (x + r) + ' ' + (y + r) +
-        ' ' + x + ' ' + (y + r * 0.75),
-      lx: x + r * 0.8, ly: y + r * 0.45,
-    };
+    g.wTotal = g.w + (list.length ? CALLOUT.gap + CALLOUT.w : 0);
+    g.hTotal = Math.max(g.h, bottom);
   }
-  if (b.x > a.x) {
-    const x0 = a.x + a.w;
-    const x1 = b.x;
-    const y1 = b.y + b.h / 2;
-    const dx = Math.max(48, (x1 - x0) * 0.5);
-    const c1 = x0 + dx;
-    const c2 = x1 - dx;
-    return {
-      d: 'M ' + x0 + ' ' + ay + ' C ' + c1 + ' ' + ay + ' ' + c2 + ' ' + y1 + ' ' + x1 + ' ' + y1,
-      lx: mid(x0, c1, c2, x1), ly: mid(ay, ay, y1, y1),
-    };
-  }
-  // Backward or same column: leave the bottom, curve under, re-enter from below.
-  const x0 = a.x + a.w / 2;
-  const y0 = a.y + a.h;
-  const x1 = b.x + b.w / 2;
-  const y1 = b.y + b.h;
-  const drop = 64 + Math.abs((a.col || 0) - (b.col || 0)) * 18;
-  const c1y = y0 + drop;
-  const c2y = y1 + drop;
-  return {
-    d: 'M ' + x0 + ' ' + y0 + ' C ' + x0 + ' ' + c1y + ' ' + x1 + ' ' + c2y + ' ' + x1 + ' ' + y1,
-    lx: mid(x0, x0, x1, x1), ly: mid(y0, c1y, c2y, y1),
-  };
 }
 
 /* ------------------------------------------------------------------- render */
-
-function truncate(text, max) {
-  const t = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
-  return t.length > max ? t.slice(0, max - 1) + '…' : t;
-}
-
-/**
- * Greedy word wrap for an edge label, falling back to a hard character cut for
- * scripts that do not space their words (a Chinese or Japanese Gherkin step).
- * Returns at most `lines` lines, with an ellipsis when text had to be dropped.
- */
-function wrapLabel(text, maxChars, maxLines) {
-  const clean = String(text == null ? '' : text).replace(/\s+/g, ' ').trim();
-  if (!clean) return [];
-  const out = [];
-  let rest = clean;
-  while (rest && out.length < maxLines) {
-    if (rest.length <= maxChars) { out.push(rest); rest = ''; break; }
-    let cut = rest.lastIndexOf(' ', maxChars);
-    if (cut <= 0) cut = maxChars;
-    out.push(rest.slice(0, cut).trim());
-    rest = rest.slice(cut).trim();
-  }
-  if (rest) {
-    const last = out[out.length - 1];
-    out[out.length - 1] = last.slice(0, Math.max(1, maxChars - 1)).trim() + '…';
-  }
-  return out;
-}
 
 const e = u.escapeHtml;
 
@@ -687,14 +490,68 @@ function renderElement(el) {
         (el.label ? ': ' + e(el.label) : '') + '</div>';
   }
 
-  const title = el.step ? ' title="' + e(el.step) + '"' : '';
-  return '<div class="el s' + span + '" style="height:' + h + 'px"' + title + '>' + inner + '</div>';
+  // The click behaviour is annotated in a callout beside the card, never on it:
+  // the wireframe stays a wireframe. The tooltip still carries both.
+  const tip = [el.step, el.action ? '\u2192 ' + el.action.text : ''].filter(Boolean).join('\n');
+  const title = tip ? ' title="' + e(tip) + '"' : '';
+  const marked = el.action ? ' marked' : '';
+  return '<div class="el s' + span + marked + '" style="height:' + h + 'px"' + title + '>' + inner + '</div>';
 }
 
 function renderRegion(name, elements) {
   const rows = rowsOf(elements).map((r) =>
     '<div class="row">' + r.els.map(renderElement).join('') + '</div>').join('');
   return '<div class="rg rg-' + name + '">' + rows + '</div>';
+}
+
+/**
+ * The annotation itself: which control, what the click does, and the scenario
+ * that says so. Placed outside the card in the group's gutter.
+ */
+function renderCallout(c, L) {
+  const src = c.action.source && c.action.source.uri
+    ? c.action.source.uri + (c.action.source.line ? ':' + c.action.source.line : '') : '';
+  const foot = c.action.scenario
+    ? '<div class="co-src"><span>' + e(L.scenario) + '</span>' + e(c.action.scenario) +
+      (src ? '<code>' + e(src) + '</code>' : '') + '</div>'
+    : '';
+  return '<aside class="callout" data-act="' + e(c.id) + '" data-screen="' + e(c.screen.id) + '"' +
+    ' style="left:' + c.x + 'px;top:' + c.y + 'px;width:' + c.w + 'px;height:' + c.h + 'px">' +
+    '<div class="co-head"><b>' + e(c.label) + '</b><i>' + e(c.type) + '</i></div>' +
+    '<div class="co-text" style="height:' + (c.lines * CALLOUT.line) + 'px" title="' +
+    e(c.action.text) + '">' + e(c.action.text) + '</div>' + foot + '</aside>';
+}
+
+/**
+ * The leader line from a callout to the control it annotates: out of the
+ * callout's left edge, one elbow, arrowhead on the button. Orthogonal and
+ * always inside the group's own gutter, so no leader crosses another page.
+ */
+function leaderPath(c) {
+  const x0 = c.to.x;
+  const y0 = c.to.y;
+  const x1 = c.from.x;
+  const y1 = c.from.y;
+  const mx = (x0 + x1) / 2;
+  if (Math.abs(y0 - y1) < 1) return 'M ' + x0 + ' ' + y0 + ' L ' + x1 + ' ' + y1;
+  const r = Math.min(9, Math.abs(y0 - y1) / 2, Math.abs(mx - x0), Math.abs(mx - x1));
+  const dir = y1 > y0 ? 1 : -1;
+  return 'M ' + x0 + ' ' + y0 + ' L ' + (mx + r) + ' ' + y0 +
+    ' Q ' + mx + ' ' + y0 + ' ' + mx + ' ' + (y0 + r * dir) +
+    ' L ' + mx + ' ' + (y1 - r * dir) +
+    ' Q ' + mx + ' ' + y1 + ' ' + (mx - r) + ' ' + y1 +
+    ' L ' + x1 + ' ' + y1;
+}
+
+function renderLeaders(model, size, L) {
+  const paths = model.groups.flatMap((g) => g.callouts).map((c) =>
+    '<path class="leader" data-act="' + e(c.id) + '" data-screen="' + e(c.screen.id) +
+    '" d="' + leaderPath(c) + '" marker-end="url(#lead-arw)"></path>').join('');
+  return '<svg class="leaders" width="' + size.width + '" height="' + size.height +
+    '" aria-label="' + e(L.actions) + '">' +
+    '<defs><marker id="lead-arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" ' +
+    'markerHeight="6.5" orient="auto-start-reverse"><path class="m-lead" d="M 0 0 L 10 5 L 0 10 z">' +
+    '</path></marker></defs>' + paths + '</svg>';
 }
 
 function renderCard(screen, model, L) {
@@ -728,57 +585,6 @@ function renderGroups(model, L) {
     '<i>' + g.screens.length + ' ' + e(L.states) + '</i></span></div>').join('');
 }
 
-function renderEdges(model, size, L) {
-  const byId = new Map(model.screens.map((s) => [s.id, s]));
-  const paths = [];
-  const labels = [];
-  model.transitions.forEach((t, i) => {
-    const g = edgeGeometry(byId.get(t.from), byId.get(t.to), t);
-    paths.push('<path class="edge k-' + t.kind + '" data-edge="' + i + '" data-from="' + e(t.from) +
-      '" data-to="' + e(t.to) + '" d="' + g.d + '" marker-end="url(#arw-' + t.kind + ')"></path>');
-    const lines = wrapLabel(t.trigger, EDGE_LABEL_CHARS, EDGE_LABEL_LINES);
-    if (lines.length) {
-      const x = Math.round(g.lx);
-      // Lift the block by half its extra height so it stays centred on the path.
-      const y = Math.round(g.ly - (lines.length - 1) * 6.5);
-      labels.push('<text class="edgelbl" data-edge="' + i + '" data-from="' + e(t.from) + '" data-to="' + e(t.to) +
-        '" x="' + x + '" y="' + y + '">' +
-        lines.map((ln, n) => '<tspan x="' + x + '" dy="' + (n === 0 ? '0' : '1.15em') + '">' +
-          e(ln) + '</tspan>').join('') + '</text>');
-    }
-  });
-  const marker = (id, cls) => '<marker id="arw-' + id + '" viewBox="0 0 10 10" refX="9" refY="5" ' +
-    'markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
-    '<path class="' + cls + '" d="M 0 0 L 10 5 L 0 10 z"></path></marker>';
-  const svg = (cls, inner, defs) => '<svg class="' + cls + '" width="' + size.width + '" height="' +
-    size.height + '"' + (defs ? ' aria-label="' + e(L.diagram) + '"' : ' aria-hidden="true"') + '>' +
-    (defs ? '<defs>' + marker('primary', 'm-primary') + marker('alternate', 'm-alternate') +
-      marker('error', 'm-error') + '</defs>' : '') + inner + '</svg>';
-  // Paths sit under the cards; labels sit over them, so a trigger label is never
-  // hidden behind the screen it points at.
-  return {
-    paths: svg('edges', paths.join(''), true),
-    labels: svg('edgelabels', labels.join(''), false),
-  };
-}
-
-function mermaidOf(model) {
-  const ids = new Map(model.screens.map((s, i) => [s.id, 'n' + i]));
-  const clean = (t) => String(t).replace(/"/g, "'").replace(/[[\]{}()<>|]/g, ' ').replace(/\s+/g, ' ').trim();
-  const lines = ['graph LR'];
-  for (const s of model.screens) {
-    const detail = s.route && s.route !== s.name ? '<br/>' + clean(s.route) : '';
-    lines.push('  ' + ids.get(s.id) + '["' + clean(s.name) + detail + '"]');
-  }
-  for (const t of model.transitions) {
-    const arrow = t.kind === 'error' ? '-.->' : t.kind === 'alternate' ? '-->' : '==>';
-    const label = t.trigger ? '|"' + clean(truncate(t.trigger, 44)) + '"|' : '';
-    lines.push('  ' + ids.get(t.from) + ' ' + arrow + label + ' ' + ids.get(t.to));
-  }
-  for (const s of model.screens) if (s.entry) lines.push('  style ' + ids.get(s.id) + ' stroke-width:3px');
-  return lines.join('\n');
-}
-
 /* ----------------------------------------------------------------- board CSS */
 
 /**
@@ -795,23 +601,9 @@ const BOARD_CSS = `
   background-size: 22px 22px; cursor: grab; touch-action: none;
 }
 .board.drag { cursor: grabbing; }
-.board.sel .edge, .board.sel .edgelbl { opacity: .16; }
-.board.sel .edge.hot, .board.sel .edgelbl.hot { opacity: 1; }
 .board.sel .scr { opacity: .5; }
 .board.sel .scr.hot { opacity: 1; }
 .stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
-.edges, .edgelabels { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
-.edge { fill: none; stroke: var(--muted); stroke-width: 2; }
-.edge.k-alternate { stroke-width: 1.25; stroke-dasharray: 1 0; }
-.edge.k-error { stroke: var(--bad); stroke-dasharray: 6 4; }
-.edge.hot { stroke: var(--accent); stroke-width: 2.75; }
-.m-primary, .m-alternate { fill: var(--muted); }
-.m-error { fill: var(--bad); }
-.edgelbl {
-  font: 500 11.5px var(--sans); fill: var(--muted); text-anchor: middle;
-  paint-order: stroke; stroke: var(--bg); stroke-width: 5px; stroke-linejoin: round;
-}
-.edgelbl.hot { fill: var(--accent); }
 
 /* --- screen card ------------------------------------------------------- */
 .scr {
@@ -849,6 +641,42 @@ const BOARD_CSS = `
 .el.s1 { flex: 1 1 100%; }
 .el.s2 { flex: 1 1 calc(50% - 4px); min-width: 0; }
 .el.s3 { flex: 1 1 calc(33.33% - 6px); min-width: 0; }
+/* An annotated control is marked on the side its leader line arrives from; the
+   note itself sits outside the card. */
+.el.marked { box-shadow: 3px 0 0 var(--accent); }
+
+/* --- action callouts --------------------------------------------------- */
+.leaders { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; }
+.leader { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; opacity: .75; }
+.m-lead { fill: var(--accent); }
+.board.sel .leader { opacity: .12; }
+.board.sel .leader.hot { opacity: 1; }
+.board.sel .callout { opacity: .4; }
+.board.sel .callout.hot { opacity: 1; }
+.callout {
+  position: absolute; box-sizing: border-box; padding: 11px; overflow: hidden;
+  background: var(--panel); border: 1px solid var(--accent); border-left-width: 3px;
+  border-radius: 8px; box-shadow: 0 1px 3px rgba(15, 23, 42, .07);
+}
+.co-head {
+  height: 18px; display: flex; align-items: center; gap: 6px; overflow: hidden;
+  font-size: 11px; color: var(--muted); white-space: nowrap;
+}
+.co-head b { font-size: var(--fs-sm); color: var(--ink); font-weight: 650;
+  overflow: hidden; text-overflow: ellipsis; }
+.co-head i { font-style: normal; font: 400 10px var(--mono); background: var(--chip);
+  border-radius: 3px; padding: 0 4px; flex: none; margin-left: auto; }
+.co-text {
+  font-size: 11.5px; line-height: 17px; color: var(--ink); overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 8;
+}
+.co-src {
+  height: 16px; line-height: 16px; font-size: 10.5px; color: var(--muted);
+  display: flex; align-items: center; gap: 5px; white-space: nowrap; overflow: hidden;
+}
+.co-src span { font-weight: 600; color: var(--accent); flex: none; }
+.co-src code { font: 400 10px var(--mono); color: var(--muted); overflow: hidden;
+  text-overflow: ellipsis; }
 
 /* --- wireframe glyphs (greyscale on purpose: this is a sketch, not a design) */
 .lbl { font-size: 11px; color: var(--muted); line-height: 1.5; white-space: nowrap;
@@ -965,8 +793,6 @@ const BOARD_CSS = `
   border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; cursor: pointer;
 }
 .detail .sibs button:hover { border-color: var(--accent); color: var(--accent); }
-.layoutnote { font-size: var(--fs-xs); color: var(--muted); }
-.layoutnote.warn { color: var(--warn); }
 
 /* --- board chrome ------------------------------------------------------ */
 .tools { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; flex-wrap: wrap; }
@@ -977,10 +803,8 @@ const BOARD_CSS = `
 .tools .spacer { flex: 1; }
 .legend { display: flex; gap: 14px; font-size: var(--fs-xs); color: var(--muted); flex-wrap: wrap; }
 .legend span { display: flex; align-items: center; gap: 5px; }
-.legend i { width: 22px; height: 0; border-top: 2px solid var(--muted); }
-.legend i.alt { border-top-width: 1px; }
-.legend i.err { border-top-style: dashed; border-top-color: var(--bad); }
 .legend i.ent { width: 12px; height: 12px; border: 2px solid var(--accent); border-radius: 3px; }
+.legend i.actg { width: 22px; height: 0; border-top: 1.5px dashed var(--accent); }
 .detail { margin-top: 14px; }
 .detail .empty { color: var(--muted); font-size: var(--fs-sm); }
 .detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
@@ -1052,24 +876,26 @@ const BOARD_JS = [
   '    dragging = false; board.classList.remove("drag");',
   '    if (moved > 5) return;',
   '    var card = ev.target.closest ? ev.target.closest(".scr") : null;',
-  '    select(card ? card.dataset.id : null);',
+  '    var note = ev.target.closest ? ev.target.closest(".callout") : null;',
+  '    select(card ? card.dataset.id : note ? note.dataset.screen : null);',
   '  });',
   '',
   '  function select(id) {',
   '    sel = (id && sel === id) ? null : id;',
   '    board.classList.toggle("sel", Boolean(sel));',
-  '    var i, els = stage.querySelectorAll(".scr, .edge, .edgelbl");',
+  '    var i, els = stage.querySelectorAll(".scr, .callout, .leader");',
   '    for (i = 0; i < els.length; i += 1) els[i].classList.remove("hot");',
   '    if (!sel) { renderDetail(null); return; }',
   '    var own = stage.querySelector(\'.scr[data-id="\' + sel + \'"]\');',
   '    if (own) own.classList.add("hot");',
-  '    var linked = stage.querySelectorAll(\'[data-from="\' + sel + \'"], [data-to="\' + sel + \'"]\');',
-  '    for (i = 0; i < linked.length; i += 1) {',
-  '      linked[i].classList.add("hot");',
-  '      var other = linked[i].dataset.from === sel ? linked[i].dataset.to : linked[i].dataset.from;',
-  '      var peer = stage.querySelector(\'.scr[data-id="\' + other + \'"]\');',
-  '      if (peer) peer.classList.add("hot");',
+  '    // The other data states of the same page stay lit: they are the thing a',
+  '    // reviewer compares the selected card against.',
+  '    if (own) {',
+  '      var sibs = stage.querySelectorAll(\'.scr[data-group="\' + own.dataset.group + \'"]\');',
+  '      for (i = 0; i < sibs.length; i += 1) sibs[i].classList.add("hot");',
   '    }',
+  '    var notes = stage.querySelectorAll(\'[data-screen="\' + sel + \'"]\');',
+  '    for (i = 0; i < notes.length; i += 1) notes[i].classList.add("hot");',
   '    renderDetail(sel);',
   '  }',
   '',
@@ -1091,17 +917,11 @@ const BOARD_JS = [
   '      (sc.source.line ? ":" + esc(sc.source.line) : "") + "</code>" : "");',
   '    row(model.L.tags, sc.tags.length ? sc.tags.map(function (t) {',
   '      return \'<span class="chip">\' + esc(t) + "</span>"; }).join(" ") : "");',
-  '    var ins = model.transitions.filter(function (t) { return t.to === id && t.from !== id; });',
-  '    var outs = model.transitions.filter(function (t) { return t.from === id && t.to !== id; });',
-  '    function edgeList(list, key) {',
-  '      return \'<ul>\' + list.map(function (t) {',
-  '        var peer = model.screens.filter(function (x) { return x.id === t[key]; })[0];',
-  '        return "<li><strong>" + esc(peer ? peer.name : t[key]) + "</strong>" +',
-  '          (t.trigger ? \' <span class="sub">\' + esc(t.trigger) + "</span>" : "") + "</li>";',
-  '      }).join("") + "</ul>";',
-  '    }',
-  '    row(model.L.incoming, ins.length ? edgeList(ins, "from") : "");',
-  '    row(model.L.outgoing, outs.length ? edgeList(outs, "to") : "");',
+  '    row(model.L.actions, (sc.actions || []).length ? "<ul>" + sc.actions.map(function (a) {',
+  '      return "<li><strong>" + esc(a.label) + "</strong> <span class=\\"sub\\">" +',
+  '        esc(a.action) + "</span>" + (a.scenario ? \' <span class="sub">(\' +',
+  '        esc(model.L.scenario) + ": " + esc(a.scenario) + ")</span>" : "") +',
+  '        "</li>"; }).join("") + "</ul>" : "");',
   '    row(model.L.notes, sc.notes.length ? "<ul>" + sc.notes.map(function (n) {',
   '      return "<li>" + esc(n) + "</li>"; }).join("") + "</ul>" : "");',
   '    row(model.L.otherStates, sc.siblings.length ? \'<div class="sibs">\' +',
@@ -1147,142 +967,6 @@ const BOARD_JS = [
   '  fit();',
   '  window.addEventListener("resize", fit);',
   '',
-  '  // ---- elkjs relayout -------------------------------------------------',
-  '  // The board is already usable with the Node-side layout. If elkjs loads,',
-  '  // it recomputes positions and routes every edge orthogonally so no arrow',
-  '  // crosses a card; if it does not, we keep what is on screen.',
-  '  var status = document.getElementById("layoutnote");',
-  '  function polyPath(pts, r) {',
-  '    if (pts.length < 2) return "";',
-  '    var d = "M " + pts[0].x + " " + pts[0].y;',
-  '    for (var i = 1; i < pts.length - 1; i += 1) {',
-  '      var p = pts[i], a = pts[i - 1], b = pts[i + 1];',
-  '      var la = Math.hypot(p.x - a.x, p.y - a.y), lb = Math.hypot(b.x - p.x, b.y - p.y);',
-  '      if (!la || !lb) continue;',
-  '      var ra = Math.min(r, la / 2), rb = Math.min(r, lb / 2);',
-  '      d += " L " + (p.x + (a.x - p.x) / la * ra) + " " + (p.y + (a.y - p.y) / la * ra);',
-  '      d += " Q " + p.x + " " + p.y + " " + (p.x + (b.x - p.x) / lb * rb) + " " + (p.y + (b.y - p.y) / lb * rb);',
-  '    }',
-  '    var last = pts[pts.length - 1];',
-  '    return d + " L " + last.x + " " + last.y;',
-  '  }',
-  '  var groupById = {};',
-  '  model.groups.forEach(function (g) { groupById[g.id] = g; });',
-  '',
-  '  function place(laid) {',
-  '    (laid.children || []).forEach(function (c) {',
-  '      var g = groupById[c.id];',
-  '      if (!g) return;',
-  '      var frame = stage.querySelector(\'.grp[data-group="\' + c.id + \'"]\');',
-  '      if (frame) {',
-  '        frame.style.left = c.x + "px"; frame.style.top = c.y + "px";',
-  '        frame.style.width = c.width + "px"; frame.style.height = c.height + "px";',
-  '      }',
-  '      g.screens.forEach(function (sc) {',
-  '        var card = stage.querySelector(\'.scr[data-id="\' + sc.id + \'"]\');',
-  '        if (!card) return;',
-  '        card.style.left = (c.x + sc.x) + "px";',
-  '        card.style.top = (c.y + sc.y) + "px";',
-  '      });',
-  '    });',
-  '  }',
-  '',
-  '  // Variant-to-variant transitions are not in the elk graph: the two cards are',
-  '  // stacked with a fixed gap, so a short connector in that gap is both simpler',
-  '  // and clearer than an orthogonal route around the group.',
-  '  function drawIntra() {',
-  '    model.intra.forEach(function (link) {',
-  '      var path = stage.querySelector(\'.edge[data-edge="\' + link.edge + \'"]\');',
-  '      if (!path) return;',
-  '      var a = stage.querySelector(\'.scr[data-id="\' + link.from + \'"]\');',
-  '      var b = stage.querySelector(\'.scr[data-id="\' + link.to + \'"]\');',
-  '      if (!a || !b) return;',
-  '      var ax = parseFloat(a.style.left), ay = parseFloat(a.style.top);',
-  '      var aw = parseFloat(a.style.width), ah = parseFloat(a.style.height);',
-  '      var bx = parseFloat(b.style.left), by = parseFloat(b.style.top);',
-  '      var bw = parseFloat(b.style.width), bh = parseFloat(b.style.height);',
-  '      var d, mid;',
-  '      if (link.from === link.to) {',
-  '        var lx = ax + aw, ly = ay + ah * 0.62;',
-  '        d = "M " + lx + " " + ly + " C " + (lx + 44) + " " + ly + " " + (lx + 44) + " " +',
-  '          (ly + 44) + " " + lx + " " + (ly + 34);',
-  '        mid = { x: lx + 34, y: ly + 20 };',
-  '      } else if (by >= ay + ah - 1) {',
-  '        d = "M " + (ax + aw / 2) + " " + (ay + ah) + " L " + (bx + bw / 2) + " " + by;',
-  '        mid = { x: (ax + aw / 2 + bx + bw / 2) / 2, y: (ay + ah + by) / 2 };',
-  '      } else if (ay >= by + bh - 1) {',
-  '        d = "M " + (ax + aw / 2) + " " + ay + " L " + (bx + bw / 2) + " " + (by + bh);',
-  '        mid = { x: (ax + aw / 2 + bx + bw / 2) / 2, y: (ay + by + bh) / 2 };',
-  '      } else {',
-  '        d = "M " + (ax + aw) + " " + (ay + ah / 2) + " L " + bx + " " + (by + bh / 2);',
-  '        mid = { x: (ax + aw + bx) / 2, y: (ay + ah / 2 + by + bh / 2) / 2 };',
-  '      }',
-  '      path.setAttribute("d", d);',
-  '      var lbl = stage.querySelector(\'.edgelbl[data-edge="\' + link.edge + \'"]\');',
-  '      if (lbl) moveLabel(lbl, mid);',
-  '    });',
-  '  }',
-  '',
-  '  function moveLabel(lbl, at) {',
-  '    var spans = lbl.querySelectorAll("tspan");',
-  '    lbl.setAttribute("x", Math.round(at.x));',
-  '    lbl.setAttribute("y", Math.round(at.y - (spans.length - 1) * 6.5));',
-  '    for (var i = 0; i < spans.length; i += 1) spans[i].setAttribute("x", Math.round(at.x));',
-  '  }',
-  '  // An orthogonal route\'s midpoint often lands on a vertical leg beside a',
-  '  // card; its longest horizontal run is the readable place for the label.',
-  '  function labelAnchor(pts) {',
-  '    var best = null, bestLen = -1;',
-  '    for (var i = 1; i < pts.length; i += 1) {',
-  '      if (Math.abs(pts[i].y - pts[i - 1].y) > 1) continue;',
-  '      var len = Math.abs(pts[i].x - pts[i - 1].x);',
-  '      if (len > bestLen) {',
-  '        bestLen = len;',
-  '        best = { x: (pts[i].x + pts[i - 1].x) / 2, y: pts[i].y - 7 };',
-  '      }',
-  '    }',
-  '    if (best && bestLen >= 40) return best;',
-  '    var m = Math.floor(pts.length / 2);',
-  '    return { x: pts[m].x, y: pts[m].y - 7 };',
-  '  }',
-  '',
-  '  function reroute(laid) {',
-  '    (laid.edges || []).forEach(function (ed) {',
-  '      var key = ed.id.slice(1);',
-  '      var path = stage.querySelector(\'.edge[data-edge="\' + key + \'"]\');',
-  '      if (!path || !ed.sections || !ed.sections.length) return;',
-  '      var s = ed.sections[0];',
-  '      var pts = [s.startPoint].concat(s.bendPoints || [], [s.endPoint]);',
-  '      path.setAttribute("d", polyPath(pts, 12));',
-  '      var lbl = stage.querySelector(\'.edgelbl[data-edge="\' + key + \'"]\');',
-  '      if (lbl) moveLabel(lbl, labelAnchor(pts));',
-  '    });',
-  '  }',
-  '  function loadElk() {',
-  '    return new Promise(function (res, rej) {',
-  '      var s = document.createElement("script");',
-  '      s.src = model.elkUrl; s.onload = res; s.onerror = rej;',
-  '      document.head.appendChild(s);',
-  '    });',
-  '  }',
-  '  loadElk().then(function () {',
-  '    return new ELK().layout(model.elk);',
-  '  }).then(function (g) {',
-  '    place(g);',
-  '    reroute(g);',
-  '    drawIntra();',
-  '    W = Math.ceil(g.width); H = Math.ceil(g.height);',
-  '    stage.style.width = W + "px"; stage.style.height = H + "px";',
-  '    stage.dataset.w = W; stage.dataset.h = H;',
-  '    var svgs = stage.querySelectorAll("svg");',
-  '    for (var i = 0; i < svgs.length; i += 1) {',
-  '      svgs[i].setAttribute("width", W); svgs[i].setAttribute("height", H);',
-  '    }',
-  '    if (status) status.remove();',
-  '    requestAnimationFrame(fit);',
-  '  }).catch(function () {',
-  '    if (status) { status.textContent = model.L.fallbackLayout; status.classList.add("warn"); }',
-  '  });',
   '})();',
 ].join('\n');
 
@@ -1292,17 +976,15 @@ function build(spec, opts) {
   const model = normalize(spec, opts);
   const L = labelsFor(opts.labels);
   const size = layout(model);
-  const nodeWord = model.app.platform === 'mobile' ? L.screens : L.pages;
   const title = typeof opts.title === 'string' ? opts.title
     : (model.app.name ? model.app.name + ' - ' + L.sketchReport : L.sketchReport);
 
-  const elk = elkGraph(model);
   const clientModel = {
     L: {
       screen: L.screen, purpose: L.purpose, source: L.source, tags: L.tags,
-      incoming: L.incoming, outgoing: L.outgoing, notes: L.notes,
+      actions: L.actions, scenario: L.scenario, notes: L.notes,
       derivedFrom: L.derivedFrom, selectHint: L.selectHint,
-      fallbackLayout: L.fallbackLayout, otherStates: L.otherStates, state: L.state,
+      otherStates: L.otherStates, state: L.state,
     },
     screens: model.screens.map((s) => ({
       id: s.id, name: s.name, route: s.route, state: s.state, group: s.group,
@@ -1311,30 +993,17 @@ function build(spec, opts) {
         .filter((x) => x.id !== s.id).map((x) => ({ id: x.id, state: x.state, name: x.name })),
       steps: Array.from(new Set(REGIONS.filter((r) => s.regions[r])
         .flatMap((r) => s.regions[r].map((el) => el.step).filter(Boolean)))),
+      // The full click behaviour, untruncated - a callout clamps a long one.
+      actions: REGIONS.filter((r) => s.regions[r])
+        .flatMap((r) => s.regions[r].filter((el) => el.action)
+          .map((el) => ({ label: el.label || el.type, action: el.action.text,
+            scenario: el.action.scenario }))),
     })),
-    transitions: model.transitions.map((t) => ({
-      from: t.from, to: t.to, trigger: t.trigger, kind: t.kind, fromElement: t.fromElement || null,
-    })),
-    elk: elk.graph,
-    intra: elk.intra,
-    groups: model.groups.map((g) => ({
-      id: g.id, variants: g.variants, pad: g.pad,
-      screens: g.screens.map((s) => ({ id: s.id, x: s.inGroupX, y: s.inGroupY, w: s.w, h: s.h })),
-    })),
-    elkUrl: ELK_CDN,
   };
 
   const h = [];
   h.push('<header class="top"><h1>' + e(title) + '</h1><div class="sub">' +
     e(L.generated) + ': ' + e(u.nowStamp()) + ' &middot; ' + e(L.derivedSketch) + '</div></header>');
-
-  h.push('<div class="cards">');
-  h.push(u.statCard(nodeWord, model.screens.length));
-  h.push(u.statCard(L.transitions, model.transitions.length));
-  h.push(u.statCard(L.elements, model.screens.reduce((n, s) =>
-    n + REGIONS.filter((r) => s.regions[r]).reduce((m, r) => m + s.regions[r].length, 0), 0)));
-  if (model.openQuestions.length) h.push(u.statCard(L.openQuestions, model.openQuestions.length));
-  h.push('</div>');
 
   h.push('<div class="tools">' +
     '<button id="zoutb" type="button">&minus;</button>' +
@@ -1343,21 +1012,17 @@ function build(spec, opts) {
     '<button id="zfit" type="button">' + e(L.fit) + '</button>' +
     '<button id="zone" type="button">100%</button>' +
     '<span class="spacer"></span>' +
-    '<span class="layoutnote" id="layoutnote">' + e(L.layingOut) + '</span>' +
     '<span class="legend">' +
     '<span><i class="ent"></i>' + e(L.entry) + '</span>' +
-    '<span><i></i>' + e(L.primaryPath) + '</span>' +
-    '<span><i class="alt"></i>' + e(L.altPath) + '</span>' +
-    '<span><i class="err"></i>' + e(L.errorPath) + '</span>' +
+    '<span><i class="actg"></i>' + e(L.actions) + '</span>' +
     '</span></div>');
 
-  const edges = renderEdges(model, size, L);
   h.push('<div class="board" id="board"><div class="stage" id="stage" data-w="' + size.width +
     '" data-h="' + size.height + '" style="width:' + size.width + 'px;height:' + size.height + 'px">' +
     renderGroups(model, L) +
-    edges.paths +
+    renderLeaders(model, size, L) +
     model.screens.map((s) => renderCard(s, model, L)).join('') +
-    edges.labels +
+    model.groups.flatMap((g) => g.callouts).map((c) => renderCallout(c, L)).join('') +
     '</div></div>');
 
   h.push('<div class="panel detail" id="detail"></div>');
@@ -1376,19 +1041,18 @@ function build(spec, opts) {
     JSON.stringify(clientModel).replace(/</g, '\\u003c') + '</script>');
   h.push('<script>' + BOARD_JS + '</script>');
 
-  // `anchors` is a Map and `elementIds` holds element references; neither
-  // survives JSON, and neither belongs in the reported model.
+  // `marks` and a callout's `screen` hold element/screen references, which do not
+  // survive JSON and do not belong in the reported model.
   const reported = Object.assign({ generatedAt: u.nowStamp(), size }, model, {
-    screens: model.screens.map((s) => {
-      const { anchors, elementIds, ...rest } = s;
-      return Object.assign(rest, { anchors: Object.fromEntries(anchors) });
-    }),
-    groups: model.groups.map((g) => Object.assign({}, g, { screens: g.screens.map((s) => s.id) })),
+    screens: model.screens.map(({ marks, ...rest }) => rest),
+    groups: model.groups.map((g) => Object.assign({}, g, {
+      screens: g.screens.map((s) => s.id),
+      callouts: g.callouts.map((c) => Object.assign({}, c, { screen: c.screen.id })),
+    })),
   });
   return {
     model: reported,
     html: u.htmlPage(title, h.join('\n'), BOARD_CSS),
-    mermaid: mermaidOf(model),
   };
 }
 
@@ -1420,11 +1084,12 @@ function main() {
   const outFile = typeof opts.out === 'string' ? opts.out : path.join('bdd-artifacts', 'sketch.html');
   const written = u.writeFileEnsured(outFile, out.html);
   if (typeof opts.json === 'string') u.writeFileEnsured(opts.json, JSON.stringify(out.model, null, 2));
-  if (typeof opts.mermaid === 'string') u.writeFileEnsured(opts.mermaid, out.mermaid + '\n');
 
   const m = out.model;
+  const actions = m.screens.reduce((n, s) => n + Object.keys(s.regions)
+    .reduce((k, r) => k + s.regions[r].filter((el) => el.action).length, 0), 0);
   console.log('sketch: ' + m.screens.length + (m.app.platform === 'mobile' ? ' screens, ' : ' pages, ') +
-    m.transitions.length + ' transitions, ' + m.size.columns + ' flow columns, ' +
+    m.groups.length + ' page group(s), ' + actions + ' click action(s), ' +
     m.openQuestions.length + ' open question(s)');
   for (const s of m.screens.filter((x) => x.entry)) console.log('  entry: ' + s.name + (s.route ? ' (' + s.route + ')' : ''));
   for (const w of m.warnings) console.log('  warning: ' + w);
@@ -1433,6 +1098,6 @@ function main() {
 
 if (require.main === module) main();
 module.exports = {
-  build, normalize, layout, elementHeight, rowsOf, edgeGeometry, wrapLabel,
-  screenLayout, groupScreens, elkGraph, ELEMENT_H,
+  build, normalize, layout, elementHeight, rowsOf,
+  screenLayout, groupScreens, ELEMENT_H,
 };

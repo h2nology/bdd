@@ -28,7 +28,6 @@ The model decides *what is on a screen* (a judgement call - Gherkin says
     "viewport": "desktop"
   },
   "screens": [ /* Screen */ ],
-  "transitions": [ /* Transition */ ],
   "openQuestions": [
     "Where does a declined card return the user? No scenario covers it."
   ]
@@ -40,8 +39,7 @@ The model decides *what is on a screen* (a judgement call - Gherkin says
 | `app.name` | no | Canvas title. Defaults to the source feature's name |
 | `app.platform` | no | `web` \| `mobile`. Drives the frame chrome (URL bar vs status bar) and whether nodes are called pages or screens |
 | `app.viewport` | no | `desktop` \| `tablet` \| `mobile`. Card width only. Default `desktop`, or `mobile` when platform is `mobile` |
-| `screens` | **yes** | At least one. Order is irrelevant; layout comes from the transition graph |
-| `transitions` | no | Omit for a single-screen feature |
+| `screens` | **yes** | At least one. Order only decides which column a page lands in; the board is a grid of pages, not a flow |
 | `openQuestions` | no | Rendered as a visible panel. See "Open questions" below |
 
 ## Screen
@@ -68,12 +66,12 @@ The model decides *what is on a screen* (a judgement call - Gherkin says
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | **yes** | Stable slug, unique. `transitions` reference it. Keep it stable across regenerations so a reviewer's mental map survives |
-| `name` | **yes** | Shown on the card header and in the flow diagram |
+| `id` | **yes** | Stable slug, unique. Keep it stable across regenerations so a reviewer's mental map survives |
+| `name` | **yes** | Shown on the card header |
 | `route` | no | Web: the inferred path (`/checkout/payment`). Mobile: the screen name (`PaymentActivity`). **Keep it shaped like a real route** - this is what lets a later run's `flow.ndjson` be matched against the sketch, and it is what groups a page's state variants (see below) |
 | `state` | no | Which data state this card shows: `"empty"`, `"card declined"`, `"2 items"`. Omit for a page with only one state. See "State variants" |
 | `purpose` | no | One line, in the user's language. Why the screen exists |
-| `entry` | no | `true` when a scenario starts here. Entry cards get a thicker border and seed the layout's first column |
+| `entry` | no | `true` when a scenario starts here. Entry cards get a thicker border and are placed first |
 | `tags` | no | Gherkin tags carried through, so `@REQ-…` traceability survives into the sketch |
 | `source` | no | Where in the feature files this screen was inferred from. Shown in the detail panel |
 | `regions` | **yes** | At least one non-empty region |
@@ -86,7 +84,6 @@ ignored (and reported as a warning). `aside` is dropped on a `mobile` viewport.
 
 ```json
 {
-  "id": "pay-now",
   "type": "input",
   "label": "Card number",
   "value": "4111 1111 1111 1111",
@@ -96,13 +93,17 @@ ignored (and reported as a warning). `aside` is dropped on a `mobile` viewport.
   "emphasis": "primary",
   "items": ["Visa", "Mastercard"],
   "columns": ["Item", "Qty", "Price"],
-  "step": "When I enter my card number"
+  "step": "When I enter my card number",
+  "action": {
+    "text": "on success opens /checkout/done; a declined card stays here with an error alert",
+    "scenario": "Paying with a declined card",
+    "source": { "uri": "features/checkout.feature", "line": 14 }
+  }
 }
 ```
 
 | Field | Applies to | Notes |
 |---|---|---|
-| `id` | all | Optional, unique within its screen. Only needed so a transition's `fromElement` can point at this element - see "Anchoring a transition to a control" |
 | `type` | all | **Required.** See the vocabulary reference. An unknown type renders as a labelled placeholder box and is reported |
 | `label` | all | The visible text. Required for everything except `divider`, `image`, `spinner` |
 | `value` | inputs | Example data. Prefer values lifted verbatim from the scenario's `Examples:` table - a wireframe showing the real example data is far more reviewable than one showing "Lorem" |
@@ -114,30 +115,66 @@ ignored (and reported as a warning). `aside` is dropped on a `mobile` viewport.
 | `columns` | table | Column headers. Rows are drawn as skeleton bars |
 | `current` | tabs, stepper | Index (0-based) of the active item |
 | `step` | all | The Gherkin step that implies this element. Shown on hover and in the detail panel. **This is the traceability link - fill it in whenever a step is what put the element on the screen** |
+| `action` | button, link (any type may carry one) | What happens after the click, and which scenario says so. `{ text, scenario, source? }`. **Required on every `button` and `link`** - the renderer reports one that has none, and one whose `scenario` is missing. See "Click behaviour" |
 
-## Transition
+## Click behaviour
+
+There are **no flow arrows on this board**, and nothing about behaviour is
+written on the wireframe itself. What happens after a click goes in a **callout
+beside the page**, joined to its control by a leader line, and it carries the
+scenario it came from:
 
 ```json
-{
-  "from": "payment",
-  "fromElement": "pay-now",
-  "to": "confirmation",
-  "trigger": "When I submit payment with a valid card",
-  "kind": "primary",
-  "tags": ["@REQ-1042"],
-  "source": { "uri": "features/checkout.feature", "line": 14 }
-}
+{ "type": "button", "label": "Pay now", "emphasis": "primary",
+  "step": "When I submit payment",
+  "action": {
+    "text": "on success opens /checkout/done; a declined card stays here with an error alert",
+    "scenario": "Paying with a declined card",
+    "source": { "uri": "features/checkout.feature", "line": 14 }
+  } }
 ```
 
 | Field | Required | Notes |
 |---|---|---|
-| `from`, `to` | **yes** | Screen `id`s. A dangling id is a hard error - the renderer exits `2` rather than drawing a partial graph |
-| `fromElement` | no | Element `id` on the `from` screen that this transition leaves from, so the arrow starts at the button or link the user clicks rather than at the card's edge. A dangling element id is a hard error too. When omitted the renderer falls back to matching `trigger` against each element's `step` - see below |
-| `trigger` | no | The Gherkin step that causes it. Becomes the edge label |
-| `kind` | no | `primary` (default, solid) \| `alternate` (thin) \| `error` (dashed red). `error` is for failure paths - a declined card, a validation stop |
-| `tags`, `source` | no | As for a screen |
+| `text` | **yes** | What happens after the click, in one or two short sentences. An `action` with no `text` is dropped |
+| `scenario` | **yes in practice** | The `Scenario:` name, **verbatim**, that this behaviour comes from. The renderer reports an action without one, because a claim on the board with no provenance is exactly what a reviewer cannot check |
+| `source` | no | `{ uri, line }` of that scenario, shown as `feature:line` in the callout's footer |
 
-`from === to` is allowed (a screen that re-renders itself) and drawn as a self-loop.
+Why a callout rather than an arrow or a caption on the button:
+
+- **An arrow only says which card comes next**, which is the easy half. What has
+  to be true for it to go there, and what happens when it does not, only fits in
+  words.
+- **Words on the wireframe stop it being a wireframe.** The card is what the
+  reviewer compares against their mental picture of the screen; behaviour is a
+  claim *about* the card, so it sits outside it with a line pointing in.
+- **The scenario name is the reason to trust it.** It turns "the button does X"
+  into "this scenario says the button does X", which is checkable.
+
+Rules:
+
+- **Every `button` and every `link` carries an `action`.** A control with none is
+  reported as a warning, because a button whose outcome nobody wrote down is the
+  gap this board exists to surface. If the feature genuinely does not say, put
+  that in `openQuestions` and say so in the `text`
+  (`"unspecified - see open questions"`).
+- **Name the destination the way `route` names it** (`"opens /checkout/payment"`,
+  `"back to /products"`), so the intended destination is still greppable against
+  a later run's `flow.ndjson`.
+- **Say the condition when there is one**, and both outcomes when a step has two
+  (`"on success … ; when declined …"`). This is where an error path lives now.
+- **Carry `scenario` verbatim** from the feature file, so a reviewer can grep for
+  it. When one control's behaviour is established by two scenarios, either name
+  the one that decides the outcome or write two sentences in one `text` - the
+  board draws one callout per control, not per scenario.
+- **Keep it to a couple of sentences.** A callout clamps a long `text` (the full
+  string stays in the tooltip and the detail panel). Behaviour that needs a
+  paragraph is a screen `note`, not an `action`.
+- Reproduce the outcome as the feature words it. An `action` is still an
+  inference - it does not license inventing a destination no scenario mentions.
+
+Any element type may carry an `action` (a `list` whose rows open a detail page,
+for instance). Only `button` and `link` are required to.
 
 ## State variants
 
@@ -156,7 +193,7 @@ Why this way round: a Gherkin scenario *is* a data state - "Given my cart
 contains 2 items" and "Given my cart is empty" describe the same page twice.
 Collapsing them into one card with two `alert` elements throws away exactly the
 thing the reviewer needs to see, and it makes the flow wrong too, because the two
-states usually have different outgoing transitions.
+states usually behave differently when the same button is clicked.
 
 Rules:
 
@@ -164,27 +201,14 @@ Rules:
   `state`. The `state` text is what the reviewer reads on the card header, so
   name the *data condition* (`"empty"`, `"card declined"`, `"read-only"`), not
   the visual (`"variant B"`).
-- Give each variant its own `id`, and point transitions at the specific variant:
-  a declined payment goes to the declined variant, not to "Payment".
+- Give each variant its own `id`, and name the specific variant in the `action`
+  text that leads to it: a declined payment names the declined state, not
+  "Payment".
 - Only create a variant a scenario actually describes. A state you merely suspect
   exists (a loading state, a permissions state) goes in `openQuestions`, not on
   the board.
 - Do **not** split on cosmetic difference. Two scenarios that reach the same page
   in the same data state, differing only in wording, are one card.
-
-## Anchoring a transition to a control
-
-An arrow that starts at the button the user clicks is far easier to review than
-one that starts at a card's edge. The renderer resolves the anchor in this order:
-
-1. `fromElement`, when given - an element `id` on the `from` screen.
-2. Otherwise, the element whose `step` equals the transition's `trigger`,
-   preferring a `button` or `link` over other types.
-3. Otherwise, the card's edge.
-
-So filling in `step` on your buttons and `trigger` on your transitions - both
-verbatim from the feature file - gets the arrows anchored for free. Reach for
-`fromElement` only when a screen has two controls carrying the same step text.
 
 ## Open questions
 
@@ -198,7 +222,8 @@ rather than over a wireframe that hides them.
 ## Alignment with the flow capture contract
 
 `route` is deliberately the same shape as the `url` path / `screen` name in
-`skills/flow-map/references/capture-contract.md`. The sketch is the *intended*
-flow; `flow.ndjson` is the *observed* flow. Keeping the node identity in the same
-shape is what would let the two be diffed later - do not "improve" `route` into
-a prose label.
+`skills/flow-map/references/capture-contract.md`. The sketch says which pages are
+*intended* and what each control claims to do; `flow.ndjson` records what a run
+*observed*. Keeping the node identity in the same shape is what lets the two be
+compared later - do not "improve" `route` into a prose label, and name
+destinations inside `action` the same way.

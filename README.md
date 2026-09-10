@@ -29,7 +29,7 @@ names with Claude Code's built-in `/init` and `/run`, so `/bdd:init` and
 | Command | Use it for |
 |---|---|
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
-| `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page - and render it as a read-only wireframe board whose arrows run from each button to the page it opens, before any code exists |
+| `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page, with a callout beside it saying what each button and link does and which scenario says so - and render it as a read-only wireframe board, before any code exists |
 | `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which capability is in hand, what happens next, and which plans need attention |
 | `/bdd:plan-with-feature` | Plan one feature file's implementation: the dated planning directory, this project's six test commands, and a scenario queue filled from a real baseline run |
 | `/bdd:plan` | Plan work that has no feature file - infrastructure, an upgrade, a cleanup - as phases with a verification for each |
@@ -77,7 +77,7 @@ inside Java, Python and .NET projects too. Node 14+.
 | Script | Purpose |
 |---|---|
 | `scripts/spec-report.cjs` | Gherkin -> HTML specification report + JSON model |
-| `scripts/sketch.cjs` | Sketch spec JSON -> wireframe canvas (pan/zoom board, state-variant groups, elkjs orthogonal routing, Mermaid) |
+| `scripts/sketch.cjs` | Sketch spec JSON -> wireframe canvas (pan/zoom board, state-variant groups, action callouts leader-lined to their control) |
 | `scripts/coverage.cjs` | Feature files + test results -> requirement coverage report, with CI gating |
 | `scripts/flow-map.cjs` | Step captures -> Mermaid page flow diagram, transition table, gallery |
 | `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |

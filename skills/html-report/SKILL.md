@@ -35,9 +35,9 @@ It converts markdown reports produced by `moai-bi:executive-summary`, `moai-fina
   2. A pinned highlight.js script — **the only external JS**, scoped exclusively to code-block syntax highlighting ([`references/code-blocks.md`](references/code-blocks.md))
 
 **One mode is exempt from the two principles above: `sketch`.** It renders a
-pan/zoom wireframe board whose card positions, arrow endpoints and port offsets are
-*computed coordinates*, not prose, so it needs a layout engine (elkjs) and the
-interaction code to drive it. Rather than dilute the principles for every mode, the
+pan/zoom wireframe board whose card positions are *computed coordinates*, not
+prose, and it needs the interaction code that drives the pan, the zoom and the
+selection detail panel. Rather than dilute the principles for every mode, the
 `sketch` mode is the one mode this skill does **not** render itself: it delegates to
 the bdd plugin's `sketch.cjs`, and the exemption travels with that delegation. See
 the `sketch` mode section for the exact boundary.
@@ -94,16 +94,17 @@ A single `.html` file (`<cwd>/reports/<slug>-<YYYYMMDD>.html`):
 - Self-contained: opens directly in a browser, attachable to email, usable offline (code remains readable as plain monospaced text if highlight.js CDN is unreachable)
 
 `mode=sketch` differs on the first two points and is documented in its own section:
-a board runs slightly over 50KB and pulls elkjs from a CDN. It matches on the third —
-it opens offline, falling back to a simpler layout.
+a board carries its own interaction JS and grows with the number of cards, so it is
+not size-capped. It matches on the third — it opens offline at full fidelity,
+because it loads nothing.
 
 | | modes `status`…`spec` | mode `sketch` |
 |---|---|---|
 | Rendered by | this skill, from a Mustache template | delegated to `sketch.cjs` |
 | Input | markdown (`spec`: JSON) | JSON only |
-| External JS | highlight.js, for code blocks only | elkjs, for graph layout |
-| Size | ≤ 50KB | ~50–60KB, no cap |
-| Offline | full fidelity | works, simpler edge routing |
+| External JS | highlight.js, for code blocks only | none |
+| Size | ≤ 50KB | ~35KB for a small board, no cap |
+| Offline | full fidelity | full fidelity |
 
 ---
 
@@ -118,7 +119,7 @@ it opens offline, falling back to a simpler layout.
 | **`financial`** | 4 KPI cards · income statement table (item/current/prior/change/change %) · Variance SVG horizontal bar chart · footnote panel | `moai-finance:financial-statements` |
 | **`pr`** | TL;DR · PR meta row (files · +/− · branch) · Before/After 2-column cards · file tour `<details>` · key points · test checklist · rollout steps | `moai-business:investor-relations` |
 | **`spec`** | 6 metric cards · sticky scenario index in a left column · requirement traceability matrix · untagged-scenario gap panel · feature/rule/scenario hierarchy with Gherkin steps · parse-warning panel | `bdd:spec-report` command |
-| **`sketch`** | 4 metric cards · pan/zoom wireframe board · state-variant group frames · orthogonal transition arrows anchored to buttons · selection detail panel · open-questions panel | `/bdd:sketch` command |
+| **`sketch`** | pan/zoom wireframe board (no metric strip - the board is the content) · state-variant group frames · action callouts beside each page, leader-lined to their button and stamped with the source scenario · selection detail panel · open-questions panel | `/bdd:sketch` command |
 
 #### Per-mode input slots summary
 
@@ -190,36 +191,36 @@ node <plugin-root>/scripts/sketch.cjs \
 | `title` | `--title` | Optional; the script titles the board from the spec's `app.name` otherwise |
 | `theme`, `font_stack` | — | Ignored. See the note under Inputs |
 
-Also available: `--json <file>` writes the laid-out model, `--mermaid <file>` writes
-the screen flow as Mermaid source for a PR or wiki.
+Also available: `--json <file>` writes the laid-out model (each card's box and
+column, plus the warnings).
 
 **Why this mode is delegated.** Every other mode renders prose: re-rendering it
 changes typography, never facts. A board renders *arithmetic*. Each wireframe
-element is emitted at a fixed height so a card's declared height equals its content
-height exactly, which is what lets an arrow end precisely on a card edge and a port
-sit on the y of the button that triggers the transition. That arithmetic is pinned
-to the CSS in `sketch.cjs` — the two are edited together and verified together.
-Reproducing it from a Mustache template would put the same numbers in two places,
-and the failure mode is not "slightly different spacing", it is arrows that miss
-their buttons and cards whose content overflows: precisely the properties the board
-exists to show.
+element is emitted at a fixed height, so a card's declared height equals its
+content height exactly — which is what lets the grid place every card, and every
+action callout's leader line meet the y of the control it annotates, before the
+page is opened. That arithmetic is pinned to the CSS in `sketch.cjs` — the two are
+edited together and verified together. Reproducing it from a Mustache template
+would put the same numbers in two places, and the failure mode is not "slightly
+different spacing", it is cards whose content overflows and leader lines pointing
+at the wrong button: precisely the properties the board exists to show.
 
 **Consequently:** do not hand-write a board's HTML, do not "improve" the numbers in
 `sketch.cjs` to match a template, and do not add `sketch.html.tmpl`. If a board
 needs to look different, change `sketch.cjs` and its BOARD_CSS together.
 
-**What this mode's exemption does and does not cover.** It covers exactly one
-external script (elkjs, pinned, for graph layout) and the interaction code that
-drives the board, inside boards only. It does not license a framework CDN, a build
-step, or interaction JS in any other mode. A board also stays a single self-contained
-file, and still opens offline — without elkjs it keeps the layout `sketch.cjs`
-computed and says so in its toolbar.
+**What this mode's exemption does and does not cover.** It covers exactly the
+interaction code that drives the board — pan, zoom, selection, detail panel —
+inside boards only. It does not license a framework CDN, a build step, an external
+script, or interaction JS in any other mode. A board pulls **no** external JS: it is
+a single self-contained file that opens offline at full fidelity.
 
 **Before rendering, check the spec is worth rendering.** `sketch.cjs` exits `2` on a
-missing, unparseable or screen-less spec, and on a transition pointing at a screen or
-element id that does not exist. Those are defects in the derivation, not in the
-renderer — fix the spec and re-run, the same way parse warnings are fixed before a
-`spec` report ships.
+missing, unparseable or screen-less spec. That is a defect in the derivation, not in
+the renderer — fix the spec and re-run, the same way parse warnings are fixed before
+a `spec` report ships. Its warnings deserve the same treatment: a button with no
+`action` means nobody wrote down what clicking it does, and an `action` with no
+`scenario` is a claim on the board with no provenance.
 
 **Report the open questions, not just the file.** A board's `openQuestions` are the
 gaps the feature file does not determine; they are the reason to sketch before
@@ -330,7 +331,7 @@ mode=sketch, lang=zh-CN, input=bdd-artifacts/sketch.json
 - [HARD] Do not replace the default markdown output — HTML is an additional rendering branch
 - [HARD] Do not introduce React / Vue / Tailwind CDN / Chart.js / D3
 - [HARD] Do not introduce a build step (webpack, vite, esbuild)
-- [HARD] Do not extend `mode=sketch`'s elkjs/interaction exemption to any other
+- [HARD] Do not extend `mode=sketch`'s interaction-JS exemption to any other
   mode, and do not render a board from a template — that mode delegates to
   `sketch.cjs` by design
 - [HARD] Do not encroach on `moai-office:pptx-designer` (slides) territory
