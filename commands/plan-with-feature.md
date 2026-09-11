@@ -52,19 +52,24 @@ usable rather than decorative:
   the scenario counts differ.
 - **The Scenario Queue's states come from the baseline run.** Some scenarios
   may already be `green`. Never fill the column from expectation.
-- **A `@web` feature names its design system.** Detect it with the rules in
-  `${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`
-  and record the source and path in Phase 0.
+- **A `@web` feature names what says how its pages should look.** Check all
+  three - a design plugin like `ui-ux-pro-max`, a UI component library, a
+  `DESIGN.md` at the project root - and record every one that is there in
+  Phase 0, with its path.
 
 If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
 was introduced rather than found.
 
-**If any scenario here is tagged `@web` and the project has no design system at
-all, stop and use `design-system-setup`.** This is a hard stop, not a warning to
-carry forward. A UI feature planned without one gets built as unstyled pages,
-and no later phase catches it: the scenarios assert behaviour, so they pass on a
-page nobody could use. Planning around that only makes it expensive to fix.
+**If any scenario here is tagged `@web` and none of the three is there, ask the
+user before planning any UI phase.** Do not plan around it and do not invent a
+look. Offer the three - install a component library, write a `DESIGN.md`, have a
+design plugin generate one - and say what declining costs: the pages get built
+unstyled and no later phase catches it, because the scenarios assert behaviour
+and pass on a page nobody could use.
+
+The user may decline anyway. Record that in Phase 0 so it reads as a decision
+rather than a gap nobody noticed.
 
 An API-only or CLI feature needs no design system. Say that is why the table is
 empty rather than leaving the reader to guess.

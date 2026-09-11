@@ -67,8 +67,8 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       skill.
 - [ ] Resolve this project's commands and fill the table below.
 - [ ] If any scenario in this feature is tagged `@web`, fill the Design System
-      table below. If the project has no design system at all, stop and use the
-      `design-system-setup` skill first.
+      table below. If none of the three is there, **ask the user** before
+      planning any UI phase - do not plan around it.
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be
       `green` - the feature may be partly built.
@@ -92,16 +92,27 @@ of them.
 Only for features that render UI. Leave it out for an API-only or CLI feature,
 and say that is why.
 
-| Field | Value |
-|---|---|
-| Source | `DESIGN.md` \| component library \| advisor output |
-| Path | `<where it lives>` |
+Check for all three. They **coexist** - a project can have two, and finding one
+is not a reason to stop looking:
 
-Phase 3.x styles what it builds against this. Without it the loop writes
-unstyled pages, and **nothing in any later phase catches that** - the scenarios
-pass on behaviour and say nothing about appearance. Detection rules are in
-`${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`;
-they are the same ones `design-system-setup` uses, so the two cannot disagree.
+| Source | Check for | Found? Where? |
+|---|---|---|
+| A UI/UX design plugin | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | |
+| A UI component library | shadcn/ui, Ant Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - the dependency, and where it keeps its tokens and component specs | |
+| `DESIGN.md` | project root, that exact filename | |
+
+**If any of them is there, Phase 3.x builds against it.** Record the path, so
+3.x has somewhere to look. Read the source in place - there is no compiled
+token file and nothing generates one. Where two of them define the same value
+differently, a hand-written `DESIGN.md` wins because someone decided it; say so
+rather than applying it silently.
+
+**If none of them is there, ask the user.** Offer the three - install a
+component library, write a `DESIGN.md`, have a design plugin generate one - and
+say what declining costs: Phase 3.x then writes unstyled pages, and **nothing
+in any later phase catches that**, because the scenarios assert behaviour and
+pass on a page nobody could use. The user may still decline; that is their
+call, but record it here so it was a decision and not a silent gap.
 
 **Confirm each one by the count it prints, not by the fact that it ran.**
 `<cucumber-feature>` especially: a runner config that pins the feature glob

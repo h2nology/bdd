@@ -122,15 +122,16 @@ This is the last thing the planning skill does; Phase 1 onward is
 `bdd-setup`. A missing harness is not something to work around one capability at
 a time.
 
-**Design system.** If any scenario in the feature is tagged `@web`, record which
-design system the plan builds against - the detection rules are in
-`${CLAUDE_PLUGIN_ROOT}/skills/design-system-setup/references/design-sources.md`.
-If the project has none, stop and use `design-system-setup`, for the same reason
-as a missing harness: it is not something to work around one capability at a
-time, and unlike a missing harness nothing downstream will complain. Scenarios
-assert behaviour, so they go green on a page nobody could use. A feature that
-renders no UI needs none - record that it is why, rather than leaving the row
-blank.
+**Design system.** If any scenario in the feature is tagged `@web`, record what
+says how the pages should look. Check all three - a design plugin like
+`ui-ux-pro-max`, a UI component library, and a `DESIGN.md` at the project root -
+and record every one that is there, because they coexist. The template's Phase 0
+carries the table and the precedence rule.
+
+If none of them is there, **ask the user** rather than planning around it.
+Unlike a missing harness, nothing downstream will complain: scenarios assert
+behaviour, so they go green on a page nobody could use. A feature that renders
+no UI needs none - record that it is why, rather than leaving the row blank.
 
 **Commands.** Resolve the six placeholders and write them into the plan's
 Phase 0 table. They differ per stack - this plugin supports TypeScript, Java,

@@ -13,7 +13,6 @@ same specs.
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `bdd-setup` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
-| `design-system-setup` | Establish what the UI should look like - a `DESIGN.md`, any component library, an advisor-generated spec, or several of those together - and compile its tokens into code the pages can reference (web lane) |
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
@@ -29,7 +28,7 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 | Command | Use it for |
 |---|---|
-| `/bdd:bootstrap` | Set a project up end to end: the cucumber harness, then the design system the UI work builds against - `bdd-setup` and `design-system-setup` in order |
+| `/bdd:bootstrap` | Set a project up for BDD: the cucumber harness that can execute feature files - `bdd-setup` |
 | `/bdd:spec-report` | Turn the feature files into an HTML specification report with a requirement traceability matrix, for stakeholder review and sign-off |
 | `/bdd:sketch` | Derive the UI the feature files imply - every data state of each page, with a callout beside it saying what each button and link does and which scenario says so - and render it as a read-only wireframe board, before any code exists |
 | `/bdd:status` | Show what the planning files say is in progress: which feature is being driven, which capability is in hand, what happens next, and which plans need attention |
@@ -39,8 +38,8 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 A command runs only when you type it. `spec-report` parses, confirms the
 reviewer's language and theme, and renders through `html-report`; `status` reads
-the plans and reports them; `bootstrap` runs the two setup skills in order. None
-of the three decides anything, so none needs to be a skill.
+the plans and reports them; `bootstrap` runs `bdd-setup` and says what comes
+after it. None of the three decides anything, so none needs to be a skill.
 
 `sketch` is a command for a different reason: deriving a UI from Gherkin is very
 much a judgement call, but you ask for a board when you want one. The line is
@@ -55,12 +54,16 @@ working tree, so it runs when you ask for it and stops after each phase unless
 you pass `--auto`. That default is the point of the split - a phase boundary is
 where the evidence has just been written and is cheapest to disagree with.
 
-**Setting up is two skills for the same reason.** A harness is installed once
-and then left alone - re-running `bdd-setup` is a **repair**. A design system
-evolves with the product - re-running `design-system-setup` is an **update**.
-One skill holding both meanings would do the wrong thing half the time, and a
-project can want either half without the other. `/bdd:bootstrap` runs both when
-you are starting from nothing; call the skills by name when you are not.
+**The design system is not a setup step.** There is no skill that installs
+one. A project either already has something that says how its pages should look
+- a design plugin like `ui-ux-pro-max`, a UI component library, a `DESIGN.md` -
+or it has to decide, and that decision is the user's.
+
+So the check lives in the plan, not in a bootstrap step. `plan-with-feature`
+records every source the project has, and asks when a `@web` feature has none.
+That is the first point where the question is answerable at all: before the
+feature files exist, nothing can tell whether the project has `@web` scenarios,
+or what product the pages would serve.
 
 **What the design system is not.** It says what the pages should look like;
 nothing checks that they do. The scenarios assert behaviour, so they go green on
@@ -73,9 +76,10 @@ implementation loop builds against, not as a gate that catches you ignoring it.
 requirement
   -> /bdd:discover      features/*.feature
   -> /bdd:spec-report   bdd-artifacts/spec-report.html   (stakeholder sign-off)
-  -> /bdd:bootstrap     harness + design system          (once per project)
+  -> /bdd:bootstrap     harness                          (once per project)
   -> /bdd:sketch        bdd-artifacts/sketch.html        (what it would look like)
   -> /bdd:plan-with-feature  docs/planning/<date>-<feature>/  (the plan, and a real baseline)
+       @web and nothing says how the pages should look? -> it asks you
   -> /bdd:implement     the code                          (capability by capability, to green)
   -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
@@ -127,18 +131,15 @@ coverage report detect requirements that have **no** scenario at all.
 `BDD_DEVICE_NAME`, `BDD_APP`, ...) defined in
 `skills/bdd-setup/references/appium.md`.
 
-**Design system**, for the web lane: every source stays in its own format and is
-never copied into another. A `DESIGN.md` (project root, that exact name), any
-component library's own files, and a design advisor's output **coexist** - a
-`DESIGN.md` defining tokens beside a library supplying components is a normal
-pairing, and an advisor is a tool that produces one of those rather than a third
-kind of thing. Precedence only arises where two of them define the same value,
-and then the hand-written one wins and the override is reported.
-`design-system-setup` compiles tokens out of a source only when they are not
-already loadable code; generated files carry a header saying so - edit the source
-and re-run instead. Detection rules live once, in
-`skills/design-system-setup/references/design-sources.md`, and `plan-with-feature`
-reads the same ones so the two cannot disagree.
+**Design system**, for the web lane: three things can say how a page should
+look - a design plugin like `ui-ux-pro-max`, a UI component library, or a
+`DESIGN.md` at the project root - and they **coexist**. A `DESIGN.md` defining
+tokens beside a library supplying components is a normal pairing, not a conflict
+to resolve. Each stays in its own format and is read in place; nothing is copied
+into a second file and nothing is compiled. Precedence only arises where two of
+them define the same value, and then the hand-written `DESIGN.md` wins and the
+override is reported. `plan-with-feature` records what it finds in Phase 0, and
+asks the user when a `@web` feature has none of the three.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 
@@ -214,10 +215,10 @@ lane as its own job with its own step definitions and results file. All three
 reports work across both - the flow map draws pages for web and screens for
 mobile, and coverage merges both lanes' results per requirement.
 
-**`design-system-setup` covers the web lane only.** Compose, SwiftUI and React
-Native component systems are not supported yet, so a mobile-only project gets a
-harness and no design system - `/bdd:bootstrap` says so rather than skipping the
-step quietly.
+**The design-system check covers the web lane only.** Compose, SwiftUI and
+React Native component systems are not recognized, so `plan-with-feature` does
+not ask about styling on a `@mobile` feature. Say that rather than improvising
+a mobile design system.
 
 See `skills/bdd-setup/references/appium.md` (mobile lane: server, drivers,
 capabilities, screen identity, per-language templates, CI) and

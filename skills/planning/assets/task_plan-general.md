@@ -79,6 +79,17 @@ never made, or it was made and never written down.
 - [ ] Make the change in the smallest steps that can each be checked.
 - [ ] Match the surrounding conventions, including the ones you disagree with.
 - [ ] Touch only what the task needs.
+- [ ] **If this task renders UI**, find what says how it should look before
+      writing any of it. Check all three - they coexist, so finding one is not
+      a reason to stop looking:
+      a **UI/UX design plugin** (`ui-ux-pro-max` or its kind, and whether it
+      has already written a spec), a **UI component library** (shadcn/ui, Ant
+      Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - and
+      where it keeps its tokens), and **`DESIGN.md`** (project root, that exact
+      filename). Build against whatever is there, reading it in place; where
+      two disagree on a value, a hand-written `DESIGN.md` wins. **If none of
+      them is there, ask the user** rather than inventing a look - and say that
+      declining means unstyled pages that no later check catches.
 - **Verifies:** <the build, plan, lint or typecheck command for this stack, and
   its expected result>
 - **Status:** `pending`
