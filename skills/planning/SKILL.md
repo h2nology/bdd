@@ -1,6 +1,7 @@
 ---
 name: planning
 description: This skill should be used when a piece of work needs a plan on disk before it is built - for example "set up the plan for this feature", "plan this requirement", "what was I working on", "resume the plan", or when a feature file exists but nothing tracks the work of making it pass. Creates and maintains task_plan.md, progress.md and findings.md per plan under docs/planning/, for both feature-driven work (outside-in TDD) and work with no feature file such as infrastructure or a dependency upgrade. It defines and updates the plan; `/bdd:implement` is what drives it.
+user-invocable: false
 ---
 
 # Define a plan on disk

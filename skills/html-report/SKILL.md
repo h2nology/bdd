@@ -16,7 +16,7 @@ description: |
   - "spec report html", "Gherkin specification as HTML", "feature files as one HTML file for sign-off"
   - "sketch html", "render the UI sketch", "wireframe board as HTML", "html-report mode=sketch"
 
-user-invocable: true
+user-invocable: false
 version: 1.0.0
 ---
 
