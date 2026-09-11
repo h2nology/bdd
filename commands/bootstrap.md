@@ -16,7 +16,7 @@ only one half is needed.
 | Step | Skill | What it establishes |
 |---|---|---|
 | 1 | `bdd-setup` | cucumber + Playwright (web) or Appium (mobile), step definitions, hooks, the environment contract |
-| 2 | `design-system-setup` | one source of truth for colours, typography, spacing and components, compiled into tokens the code can reference |
+| 2 | `design-system-setup` | what the pages should look like - colours, typography, spacing, components - from whatever the project has, compiled into tokens the code can reference |
 
 Arguments the user gave: `$ARGUMENTS`
 
@@ -62,7 +62,8 @@ In the user's language:
 
 1. **The harness**: stack, lane, what was installed, and the result of the smoke
    run. A harness that never executed a scenario is not set up.
-2. **The design system**: which of the three sources it is, where it lives,
+2. **The design system**: every source found and where each lives - a
+   `DESIGN.md`, a component library, an advisor's output, or several together -
    what was compiled, and the demo page screenshot.
 3. **What is not covered.** Two things are worth saying out loud because users
    assume otherwise:

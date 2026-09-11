@@ -1,6 +1,6 @@
 ---
 name: design-system-setup
-description: This skill should be used when a UI project needs a design system in place before pages get built, or when an existing one must be re-synced - for example "set up the design system", "add design tokens to this project", "we have no styling conventions", "wire up our DESIGN.md", "compile the design tokens", "the pages we build come out unstyled", "make shadcn's tokens usable here", or when a feature tagged @web is about to be implemented and nothing defines what its pages should look like. Establishes one source of truth for colours, typography, spacing and components, and compiles it into tokens the code can actually reference.
+description: This skill should be used when a UI project needs a design system in place before pages get built, or when an existing one must be re-synced - for example "set up the design system", "add design tokens to this project", "we have no styling conventions", "wire up our DESIGN.md", "compile the design tokens", "the pages we build come out unstyled", "make shadcn's tokens usable here", "wire up Ant Design's theme", or when a feature tagged @web is about to be implemented and nothing defines what its pages should look like. Establishes what the pages should look like - colours, typography, spacing, components - from whatever the project already has, and compiles it into tokens the code can actually reference.
 ---
 
 # Set up a design system
@@ -43,8 +43,9 @@ grep -E '"(playwright|@playwright/test|appium)"' package.json 2>/dev/null
 
 Determine and report:
 
-- **Which of the three sources exist** - see `references/design-sources.md` for
-  the detection rules of each.
+- **Every part that already exists** - a `DESIGN.md`, a component library, an
+  advisor's output. They coexist; record all of them rather than stopping at the
+  first. `references/design-sources.md` has the detection rules.
 - **The lane.** Playwright in the dependencies means web; Appium means mobile.
   This skill must run standalone (a project can have a harness already and want
   only a design system), so detect the lane here rather than expecting it to be
@@ -52,25 +53,51 @@ Determine and report:
 - **The stack**, which decides the compilation target: plain CSS, Tailwind,
   SCSS, or CSS-in-JS.
 
-### 2. One source is enough
+### 2. Two parts, and they rarely come from one place
 
-| Source | What it provides |
+A design system here answers two separate questions, and a project usually
+answers them from different places:
+
+| Part | Comes from |
 |---|---|
-| `DESIGN.md` | A full spec. Only this exact filename, in the project root |
-| A UI component library | Components plus the tokens it ships with |
-| A design-advisor plugin | Can generate a design system from nothing |
+| **The spec** - colours, typography, spacing, the values | A `DESIGN.md`, or the tokens a component library ships, or a file a design advisor generated |
+| **The implementation** - what you actually write in a page | A component library, or the project's own CSS and components |
 
-**Any one of them is enough.** Do not require, or build toward, having all three.
+`DESIGN.md` defining tokens **and** a component library supplying components is
+a normal, good combination - not a conflict to resolve. So is a component
+library alone, or a `DESIGN.md` alone with hand-written CSS. Detect every part
+that exists and record all of them; do not stop at the first hit and do not make
+the user pick one when they already have two.
 
-When more than one exists, prefer in that order: a hand-written `DESIGN.md`
-outranks a library's defaults, because someone decided it.
+**A design advisor is a tool, not a source.** `ui-ux-pro-max` and its kind
+*produce* a spec - a `DESIGN.md`, or their own format - and that produced file is
+the source from then on. This is why an advisor coexists with everything else:
+generating a palette for a project that already runs a component library is an
+ordinary thing to want, and so is having it write the `DESIGN.md` you then edit
+by hand.
 
-**When none exists, fall back to a design-advisor plugin and generate one.** Do
-not block, and do not make the user answer a menu of questions first - an empty
-project least needs a quiz, and whatever gets generated can be edited afterwards.
-Default to `ui-ux-pro-max` if it is available; the user may name a different
-plugin. Invoke it the way that plugin documents, and let it write in its own
-format. This skill holds no built-in knowledge of any advisor's interface.
+**Any component library counts.** shadcn/ui, Ant Design, MUI, Bootstrap, Chakra,
+Mantine, Vuetify, a company's internal one - `references/design-sources.md` lists
+the ones with known detection rules, and an unrecognized library still counts:
+find where it keeps its tokens and record that. Never present shadcn/ui as *the*
+choice; it is one row in a table.
+
+**Only when nothing exists at all is there a decision to make**, and it is about
+where to start, not which one to be stuck with:
+
+- have an advisor generate a spec (default to `ui-ux-pro-max` when it is
+  available; the user may name another, and may decline all of them)
+- write a `DESIGN.md` by hand
+- install a component library - whichever one the project wants
+
+None of these forecloses the others. A project that installs a component library
+today can add a `DESIGN.md` tomorrow, and re-running this skill will pick it up.
+Say that when you ask, so the question reads as "where do we start" rather than
+"choose one forever".
+
+Prefer, when two parts disagree about the same value: a hand-written `DESIGN.md`
+outranks a library's defaults, because someone decided it. Report the override
+rather than applying it silently.
 
 ### 3. Never write a copy
 
@@ -146,10 +173,10 @@ whose re-run fixes a broken harness, and it is why the two are separate skills.
 | Situation | Do |
 |---|---|
 | `DESIGN.md` changed | Recompile the tokens; report which values moved |
-| A component library was added to a project that had `DESIGN.md` | Keep `DESIGN.md` as the source; note the overlap rather than merging them |
+| A component library was added to a project that had `DESIGN.md` | Record both - this is a normal pairing, not a conflict. Only where they define the same value does `DESIGN.md` win, and say so |
 | Tokens were hand-edited in a generated file | Say the edits will be lost, show them, and ask whether they belong in the source instead |
-| Two sources now disagree | Report both and let the user collapse them. Do not pick silently |
+| Two sources define the same value differently | Report both and let the user collapse them. Do not pick silently. Coexisting without overlap needs no action |
 
 ## Reference files
 
-- `references/design-sources.md` - detection rules for each of the three sources, the `design.md` format, per-stack compilation targets, and how `plan-with-feature` reuses the same detection
+- `references/design-sources.md` - how to detect a `DESIGN.md`, any component library, or an advisor's output, the `design.md` format, per-stack compilation targets, and how `plan-with-feature` reuses the same detection

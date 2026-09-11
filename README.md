@@ -13,7 +13,7 @@ same specs.
 |---|---|
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `bdd-setup` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
-| `design-system-setup` | Establish what the UI should look like - a `DESIGN.md`, a component library, or a generated one - and compile its tokens into code the pages can reference (web lane) |
+| `design-system-setup` | Establish what the UI should look like - a `DESIGN.md`, any component library, an advisor-generated spec, or several of those together - and compile its tokens into code the pages can reference (web lane) |
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
 | `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
@@ -127,12 +127,16 @@ coverage report detect requirements that have **no** scenario at all.
 `BDD_DEVICE_NAME`, `BDD_APP`, ...) defined in
 `skills/bdd-setup/references/appium.md`.
 
-**Design system**, for the web lane: one source, in its own format, never
-copied. A `DESIGN.md` (project root, that exact name), a component library's own
-files, or a design advisor's output - whichever exists is the authority, and
-`design-system-setup` compiles tokens out of it only when they are not already
-loadable code. Generated token files carry a header saying they are generated;
-edit the source and re-run instead. Detection rules live once, in
+**Design system**, for the web lane: every source stays in its own format and is
+never copied into another. A `DESIGN.md` (project root, that exact name), any
+component library's own files, and a design advisor's output **coexist** - a
+`DESIGN.md` defining tokens beside a library supplying components is a normal
+pairing, and an advisor is a tool that produces one of those rather than a third
+kind of thing. Precedence only arises where two of them define the same value,
+and then the hand-written one wins and the override is reported.
+`design-system-setup` compiles tokens out of a source only when they are not
+already loadable code; generated files carry a header saying so - edit the source
+and re-run instead. Detection rules live once, in
 `skills/design-system-setup/references/design-sources.md`, and `plan-with-feature`
 reads the same ones so the two cannot disagree.
 

@@ -1,9 +1,16 @@
 # Design system sources, detection, and compilation
 
-## 1. Detecting each source
+## 1. Detecting what exists
 
-Check in this order. The first one found wins; a hand-written spec outranks a
-library's defaults because someone decided it.
+**Check for all of them and record everything you find.** These are not
+competing candidates - a `DESIGN.md` supplying tokens alongside a component
+library supplying components is a normal setup, and an advisor can have
+generated either of them. Stopping at the first hit reports a project as simpler
+than it is.
+
+Only when two of them define the *same value* differently is there a precedence
+question, and then a hand-written `DESIGN.md` outranks a library's defaults
+because someone decided it. Report the override; do not apply it silently.
 
 ### `DESIGN.md`
 
@@ -21,6 +28,9 @@ Two shapes, and they are not equivalent:
 
 ### A UI component library
 
+**Any of them.** This table is the ones with known detection rules, not the list
+of acceptable choices:
+
 | Library | Detect by | Tokens live in | Component specs live in |
 |---|---|---|---|
 | shadcn/ui | `components.json` + `components/ui/` | `:root` in `app/globals.css` or `src/index.css` (`--primary`, `--radius`, …) | `cva` variants in `components/ui/*.tsx` |
@@ -29,18 +39,33 @@ Two shapes, and they are not equivalent:
 | Bootstrap | `bootstrap` | `--bs-*` CSS variables, or SCSS variables | Bootstrap's own docs |
 | Chakra | `@chakra-ui/react` | theme object | Chakra's own docs |
 | Mantine | `@mantine/core` | `MantineProvider` theme | Mantine's own docs |
+| Vuetify | `vuetify` | `theme` in the Vuetify plugin config | Vuetify's own docs |
+| PrimeVue / PrimeReact | `primevue` / `primereact` | the active theme preset | Prime's own docs |
+| Element Plus | `element-plus` | `--el-*` CSS variables | Element Plus's own docs |
+| A company-internal library | a dependency nobody here recognizes | wherever it says | its own docs |
+
+**A library not in this table still counts.** Find where it keeps its tokens -
+a theme object, a set of CSS custom properties, a SCSS variables file - and
+record that path. Do not tell a user their library is unsupported because this
+table is finite, and never present shadcn/ui as the default choice: it is one
+row here because its detection is unambiguous, not because it is preferred.
 
 For every one of these the library's own files are the specification. Read them
 when you need to know what is available; do not restate them anywhere.
 
-### A design-advisor plugin
+### A design advisor's output
 
-Detect an already-generated output first - `ui-ux-pro-max` writes
-`design-system/MASTER.md` plus `design-system/pages/*.md`, where a page file
-overrides the master for that page.
+An advisor is a **tool that produces a spec**, not a kind of spec. What you
+detect is what it left behind: `ui-ux-pro-max` writes `design-system/MASTER.md`
+plus `design-system/pages/*.md`, where a page file overrides the master for that
+page. It can equally have been asked to write a `DESIGN.md`, in which case it is
+detected as one and its origin no longer matters.
 
-If none exists and neither of the other two sources does, invoke the advisor to
-generate one. Default to `ui-ux-pro-max` when available; the user may name
+Because it is a tool, it coexists with everything: generating a palette for a
+project that already runs a component library is an ordinary request, and so is
+having it draft the `DESIGN.md` someone then edits.
+
+If nothing at all exists, invoke an advisor to generate something. Default to `ui-ux-pro-max` when available; the user may name
 another. Call it however that plugin documents and let it write in its own
 format - this plugin holds no built-in knowledge of any advisor's interface, and
 must not convert their output.
