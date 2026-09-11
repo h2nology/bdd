@@ -56,10 +56,24 @@ when you need to know what is available; do not restate them anywhere.
 ### A design advisor's output
 
 An advisor is a **tool that produces a spec**, not a kind of spec. What you
-detect is what it left behind: `ui-ux-pro-max` writes `design-system/MASTER.md`
-plus `design-system/pages/*.md`, where a page file overrides the master for that
-page. It can equally have been asked to write a `DESIGN.md`, in which case it is
-detected as one and its origin no longer matters.
+detect is what it left behind: `ui-ux-pro-max` writes a `MASTER.md` under
+`design-system/`, with `pages/*.md` beside it where a page file overrides the
+master for that page. It can equally have been asked to write a `DESIGN.md`, in
+which case it is detected as one and its origin no longer matters.
+
+**Glob for it - never assume the depth:**
+
+```bash
+find design-system -name 'MASTER.md' 2>/dev/null
+```
+
+`ui-ux-pro-max` nests its output under a project name
+(`design-system/<project>/MASTER.md`, with `design-system/<project>/pages/`),
+and that layout is the advisor's business, not ours. A detector that looks only
+at `design-system/MASTER.md` reports "no design system" on a project that has
+one - and because `plan-with-feature` turns that into a **hard stop** pointing
+at `design-system-setup`, the user is told to redo the step they just finished.
+Match the file wherever under `design-system/` it sits.
 
 Because it is a tool, it coexists with everything: generating a palette for a
 project that already runs a component library is an ordinary request, and so is
@@ -111,9 +125,24 @@ A component library needs none - its tokens are already loadable code.
 | Stack | Detect by | Output |
 |---|---|---|
 | Plain CSS | no Tailwind, no SCSS, no CSS-in-JS | `styles/tokens.css` - `:root` custom properties |
-| Tailwind | `tailwind.config.*` | `theme.extend` in that config |
+| Tailwind v4 | `@import "tailwindcss"` in a CSS file, and **no** `tailwind.config.*` | the `@theme` block of that same CSS file |
+| Tailwind v3 | `tailwind.config.*` | `theme.extend` in that config |
 | SCSS | `*.scss` in the source tree | `_tokens.scss` |
 | CSS-in-JS | `styled-components` / `@emotion/react` | `theme.ts` |
+
+**Check the two Tailwind rows before the plain-CSS row.** Tailwind v4 is
+CSS-first and ships no config file, so it matches neither the v3 row (no
+`tailwind.config.*` to find) nor the plain-CSS row (Tailwind is present). Left
+unresolved, the nearest-looking answer is a new `styles/tokens.css` - a second
+file defining the same colours the project's own CSS already defines, which is
+exactly the competing source of truth section 3 of the SKILL forbids. On v4 the
+tokens belong in the CSS file that already imports Tailwind.
+
+Where a component library also lives in that file - shadcn/ui keeps its
+variables in `app/globals.css` or `src/index.css` - that file is the target.
+Put the primitives in their own block and bind the library's existing variable
+names to them, so the library's names stay the one place a value is decided.
+Do not add a parallel set of `--color-*` names next to them.
 
 What maps to what:
 

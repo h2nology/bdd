@@ -31,3 +31,23 @@ BDD要基于cucumber + Playwright + 多种开发语言支持。
 我想要对bdd plugin进行扩展（version 3）。
 
 1. 我想要添加一个草图UI功能，在完成feature文件之后，应该可以从feature中推演出UIUX。我想做一个HTML canvas的页面，就像Figma那样，然后把草图UI展示出来，并描绘出页面跳转图
+
+## v4
+
+我想要对bdd plugin进行扩展（version 4）。
+
+目前用bdd plugin开发UI页面有个硬伤：Phase 3.x只写"通过测试的最少代码"，
+而Gherkin只描述行为、sketch只画灰度线框、单元测试和cucumber场景断言的也全是行为，
+样式从来没有被指定过，所以产出的页面根本不能用。
+
+1. 用DESIGN.md（Google design.md格式）作为设计系统规格，不新造格式
+2. 三个来源任一即可：DESIGN.md / UI组件库（shadcn/ui等）/ 设计顾问plugin
+   （ui-ux-pro-max等）。都没有则用顾问plugin托底生成
+3. 把DESIGN.md编译成项目能用的token代码（tokens.css / tailwind theme / theme.ts）
+4. Phase 3.x的"最小"重新定义为**相对DESIGN.md的最小**，而不是相对空白的最小
+5. 把bootstrap skill拆开：`bdd-setup`（cucumber harness）+
+   `design-system-setup`（设计系统），再加一个`bootstrap` command调用这两个
+
+自动验证（拿DESIGN.md的期望值比对实际computed style）留到v5。
+
+方案见 docs/v4-design-system.md

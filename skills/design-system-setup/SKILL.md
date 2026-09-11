@@ -37,7 +37,11 @@ ls DESIGN.md
 cat components.json 2>/dev/null
 grep -E '"(tailwindcss|antd|@mui/material|bootstrap|@chakra-ui|@mantine/core)"' package.json 2>/dev/null
 ls tailwind.config.* app/globals.css src/index.css src/styles/ styles/ 2>/dev/null
-ls design-system/ 2>/dev/null
+# Tailwind v4 ships no config file - this import is what identifies it, and it
+# also names the CSS file the tokens have to be compiled into.
+grep -rl '@import "tailwindcss"' --include='*.css' . 2>/dev/null | grep -v node_modules
+# An advisor nests its output under a project name; glob, do not assume depth.
+find design-system -name 'MASTER.md' 2>/dev/null
 grep -E '"(playwright|@playwright/test|appium)"' package.json 2>/dev/null
 ```
 
