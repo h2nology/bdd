@@ -187,6 +187,15 @@ A scenario still `blocked` at Phase 7 means the Capability Queue was
 incomplete. Say that, and name the seam - never report the feature as done with
 a blocked row in its queue.
 
+**A feature only the suite can reach is not delivered.** When this is not the
+first `@web` feature, check that a person can get to it from what is already
+built: capture a run and generate the page flow (`flow-map`), then look for a
+page with no inbound edge. `page.goto` in a step definition reaches every page
+regardless, so a missing path never shows up as a failing scenario - two
+features stay green as two islands. Report it, and send the navigation back
+through `discover`; it is behaviour, and it needs a scenario that clicks rather
+than one that navigates.
+
 Name anything deliberately left undone, and name every assumption still marked
 `assumed - unconfirmed` in `findings.md`. A feature reported as done while a
 step definition encodes a guess nobody agreed to is worse than one reported as

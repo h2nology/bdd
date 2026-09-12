@@ -209,3 +209,31 @@ Driving something lower to make a scenario pass faster - calling the service
 class directly, asserting on a repository - gives a green scenario over a
 feature nobody can actually use. The suite then reports coverage the product
 does not have, which is worse than reporting none.
+
+## `page.goto` reaches pages a person cannot
+
+Navigating straight to a URL is the right way to *arrive* at the feature under
+test: a scenario about the roster should not have to log in and click through
+three screens first. But it means the suite can reach every page whether or not
+anything links to it.
+
+So two features can each be entirely green while the application has no path
+from one to the other - a roster with no way to reach the registration form, a
+form nobody can find. Neither feature file is wrong. The journey between them
+was never specified, and `page.goto` in the glue is what keeps that invisible.
+
+After the second `@web` feature, capture a run and generate the page flow
+(`flow-map`), then look at what links to what. **A page with no inbound edge is
+reachable by the test and by nobody else.**
+
+The fix is not a link quietly added to a template. Navigation is behaviour, so
+it goes back through `discover` and gets a scenario that **clicks**:
+
+```gherkin
+Scenario: 从名册进入登记页
+  When 我打开学生名册
+  And 我点击「登记学生」
+  Then 我在登记页
+```
+
+A step that clicks fails when the link is gone. A step that navigates does not.

@@ -52,10 +52,15 @@ usable rather than decorative:
   the scenario counts differ.
 - **The Scenario Queue's states come from the baseline run.** Some scenarios
   may already be `green`. Never fill the column from expectation.
+- **A `@web` feature names where its pages live.** Which route, and whether one
+  of them is the application's home. Gherkin never says, so unasked it gets
+  decided inside a step definition - a product decision taken in test glue. An
+  app named after one capability usually opens on it.
 - **A `@web` feature names what says how its pages should look.** Check all
-  three - a design plugin like `ui-ux-pro-max`, a UI component library, a
-  `DESIGN.md` at the project root - and record every one that is there in
-  Phase 0, with its path.
+  three - `DESIGN.md` for the values, a UI component library to carry them, a
+  design plugin like `ui-ux-pro-max` to compose pages out of both - and record
+  every one that is there in Phase 0, with its path. They do different jobs, so
+  finding one is not a reason to stop looking.
 
 If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
@@ -63,10 +68,14 @@ was introduced rather than found.
 
 **If any scenario here is tagged `@web` and none of the three is there, ask the
 user before planning any UI phase.** Do not plan around it and do not invent a
-look. Offer the three - install a component library, write a `DESIGN.md`, have a
-design plugin generate one - and say what declining costs: the pages get built
-unstyled and no later phase catches it, because the scenarios assert behaviour
-and pass on a page nobody could use.
+look. Ask **which to add** rather than which one to pick - they compose - and say
+what declining costs: the pages get built unstyled and no later phase catches
+it, because the scenarios assert behaviour and pass on a page nobody could use.
+
+Where two or three of them are present, they are used **together**: `DESIGN.md`
+decides the values, the component library carries them, and a design plugin
+composes the pages. A plugin that is installed but not enabled is present -
+say so and ask whether to enable it, rather than recording it as absent.
 
 The user may decline anyway. Record that in Phase 0 so it reads as a decision
 rather than a gap nobody noticed.

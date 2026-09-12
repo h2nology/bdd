@@ -66,8 +66,12 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       everything in it fails. If it does not, stop and use the `bdd-setup`
       skill.
 - [ ] Resolve this project's commands and fill the table below.
+- [ ] If any scenario in this feature is tagged `@web`, fill the Information
+      architecture table below - which routes, and whether one of them is the
+      home page. Ask the user rather than letting a step definition decide it.
 - [ ] If any scenario in this feature is tagged `@web`, fill the Design System
-      table below. If none of the three is there, **ask the user** before
+      table below. All three sources coexist and do different jobs, so record
+      every one that is there. If none of them is there, **ask the user** before
       planning any UI phase - do not plan around it.
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be
@@ -87,39 +91,80 @@ Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
 of them.
 
-### Design system
-
-Only for features that render UI. Leave it out for an API-only or CLI feature,
-and say that is why.
-
-Check for all three. They **coexist** - a project can have two, and finding one
-is not a reason to stop looking:
-
-| Source | Check for | Found? Where? |
-|---|---|---|
-| A UI/UX design plugin | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | |
-| A UI component library | shadcn/ui, Ant Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - the dependency, and where it keeps its tokens and component specs | |
-| `DESIGN.md` | project root, that exact filename | |
-
-**If any of them is there, Phase 3.x builds against it.** Record the path, so
-3.x has somewhere to look. Read the source in place - there is no compiled
-token file and nothing generates one. Where two of them define the same value
-differently, a hand-written `DESIGN.md` wins because someone decided it; say so
-rather than applying it silently.
-
-**If none of them is there, ask the user.** Offer the three - install a
-component library, write a `DESIGN.md`, have a design plugin generate one - and
-say what declining costs: Phase 3.x then writes unstyled pages, and **nothing
-in any later phase catches that**, because the scenarios assert behaviour and
-pass on a page nobody could use. The user may still decline; that is their
-call, but record it here so it was a decision and not a silent gap.
-
 **Confirm each one by the count it prints, not by the fact that it ran.**
 `<cucumber-feature>` especially: a runner config that pins the feature glob
 makes a path argument silently run the whole suite. If the recorded command is a
 tag union rather than a path, say so here - it is coupled to this feature's
 scenario list, and adding a scenario without updating it under-tests the feature
 with nothing to warn you.
+
+### Information architecture
+
+Only for features that render UI, like the design system below.
+
+**Which route does each of this feature's pages live at, and is one of them the
+application's home?** The feature file does not say - Gherkin describes what a
+page does, never where it sits - so if nobody decides, the route is decided
+inside a step definition by whoever writes `page.goto('/…')` first. That is a
+product decision taken in test glue, where the person who owns the requirement
+will never see it.
+
+| Question | Answer |
+|---|---|
+| Routes this feature's pages live at | |
+| Is one of them the home page (`/`)? | |
+| What the home page serves today | |
+
+**Ask the user when the repository does not already answer it.** An application
+named after one capability usually opens on it: "a student management system"
+opens on the student roster, not on a framework's starter page with the roster
+filed away under `/students`. That mistake produces a green suite and an
+application whose front door is still the template - and no scenario fails,
+because no scenario says where anything is.
+
+Keep each route in one place in the glue, so changing it is one edit.
+
+### Design system
+
+Only for features that render UI. Leave it out for an API-only or CLI feature,
+and say that is why.
+
+Check for all three. They **coexist and they do different jobs** - none of them
+replaces another, so finding one is not a reason to stop looking:
+
+| Source | Its job | Check for | Found? Where? |
+|---|---|---|---|
+| `DESIGN.md` | **The authority on values** - colours, type scale, radii, spacing, per-component specs | project root, that exact filename | |
+| A UI component library | **The carrier** - the components those values get applied to | shadcn/ui, Ant Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - the dependency, and where it keeps its tokens and component specs | |
+| A UI/UX design plugin | **The designer** - it composes pages out of the other two, which is the part `DESIGN.md` does not specify | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | |
+
+**Using them together is the normal case, not a special one.** They are not
+three ways to answer one question; they answer three.
+
+- **`DESIGN.md` with a component library**: its values have to *reach* the
+  library's components. A library's preset defaults are not the design system.
+  Map every token across, and where a component reaches for a different rung of
+  a scale than `DESIGN.md` specifies - an 8px button rendered at 12px because
+  the preset derives its radii from one number - change the component. The
+  library is copied into the repository so that it can be changed.
+- **A design plugin as well**: **use it**, and hand it both of the others as
+  input. It is what turns tokens and components into a page layout, and a layout
+  is precisely what `DESIGN.md` does not define. Having tokens already is not a
+  reason to skip it.
+- Where two of them define the same value differently, a hand-written
+  `DESIGN.md` wins because someone decided it; say so rather than applying it
+  silently.
+
+**A plugin that is installed but not enabled is present, not absent.** Say which
+it is and ask whether to enable it. Recording it as missing because this session
+cannot see its skills turns an available designer into a gap nobody noticed.
+
+**If none of them is there, ask the user** - and ask **which to add**, not which
+one to pick, because they compose. Say what declining costs: Phase 3.x then
+writes unstyled pages, and **nothing in any later phase catches that**, because
+the scenarios assert behaviour and pass on a page nobody could use. The user may
+still decline; that is their call, but record it here so it was a decision and
+not a silent gap.
 
 Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
 while that phase is `in_progress` - not in a batch when its status changes. A
@@ -348,6 +393,13 @@ what the breakdown missed.
 - [ ] Every row in the Capability Queue is `done`.
 - [ ] `<coverage>` run, and the requirement coverage report regenerated.
 - [ ] Every requirement tag in this feature shows as covered.
+- [ ] **If this is not the first `@web` feature, check a person can reach it from
+      the ones already built.** Capture a run with flow capture on and generate
+      the page flow (`flow-map`); a page with no inbound edge is reachable by the
+      suite and by nobody else. `page.goto` in a step definition hides this, so
+      it will not show up as a failing scenario. Missing navigation is
+      behaviour: it goes back through `discover` and needs a scenario that
+      **clicks**, not one that navigates.
 - [ ] Anything deliberately left undone is named here and in `findings.md`.
       Silence is not an acceptable way to drop scope.
 - [ ] Every assumption still marked `assumed - unconfirmed` in `findings.md` is
