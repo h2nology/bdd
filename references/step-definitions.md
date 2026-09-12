@@ -70,6 +70,35 @@ difference between the block above and `TimeoutError: page.click: Timeout
 30000ms exceeded`. The second one came from a `When` that could not act; it
 tells you the page is not reachable, not that the behaviour is wrong.
 
+## Build the skeleton before the first run, not after it
+
+A `When` that cannot act produces that bare timeout, and the run which produced
+it told you nothing you could not already read. The shape it could not find is
+written down - in the step definitions you have just finished writing.
+
+Read the skeleton off the glue: the routes its `goto` calls name, the labels it
+fills, the roles and names it clicks, the test ids it queries. That is a written
+artifact, which is what makes building it up front different from guessing at an
+implementation.
+
+Two conditions keep this honest.
+
+**Check what already exists first.** A feature is often partly built and a
+scenario may already be green. A skeleton must never overwrite working code:
+look before writing, and skeleton only what is genuinely absent.
+
+**The skeleton still has no behaviour**, and it must not satisfy a single
+assertion. If one passes against it anyway - a "nothing was added" check against
+a page that cannot add anything - that scenario is green without ever having been
+red. Say so in `progress.md` and observe it again at Phase 5. A green that cannot
+fail is not evidence.
+
+**The gate is unchanged.** Skipping the discovery run does not skip the RED run:
+you still need a run in which at least one scenario fails on an assertion naming
+the expected outcome against the actual one. What you skip is the pass whose only
+finding is "the page does not exist" - on a feature with a dozen scenarios that
+is minutes spent being told something you wrote yourself.
+
 ## Anti-patterns
 
 These produce a red run, or a green one, without either meaning anything.

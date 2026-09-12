@@ -118,12 +118,20 @@ in `progress.md`, and add that seam to the Capability Queue. Counting a blocked
 scenario as red overstates what has been proven; leaving it `undefined`
 pretends nobody has looked.
 
-**When every scenario dies in its `When` before any assertion runs** - the
-usual shape when the UI does not exist at all - the gate is not passed, and the
-honest fix is a **skeleton**: the shape the step definitions drive, with no
-behaviour behind it. An empty form, an empty list. Say in `progress.md` that it
-is a skeleton and what it deliberately does not do. A skeleton is not
-production code for the scope rule's purposes, and it is not progress either.
+**A scenario cannot fail on an assertion until the shape it drives exists.**
+When the UI is not there at all, every scenario dies in its `When` before any
+assertion runs and the gate is not passed. Build the **skeleton** in the same
+pass as the step definitions rather than spending a run to be told the page is
+missing: its shape is what the glue you just wrote addresses - the routes,
+labels and roles it names - not a guess. Look at what already exists before
+writing; a partly built feature must not be overwritten.
+
+A skeleton is the shape the step definitions drive, with no behaviour behind it:
+an empty form, an empty list. **It must not satisfy a single assertion** - one
+that passes against a skeleton is green without ever having been red, so name it
+in `progress.md` and observe it again at Phase 5. Say what the skeleton
+deliberately does not do. A skeleton is not production code for the scope rule's
+purposes, and it is not progress either.
 
 Until the gate is passed, **do not edit production code**. Everything the loop
 is worth rests here: without a scenario that fails for the right reason, there
