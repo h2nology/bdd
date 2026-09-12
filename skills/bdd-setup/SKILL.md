@@ -174,7 +174,10 @@ Scaffolding that has never run is not done. Always:
    with a static fixture.
 5. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs <features> --results bdd-artifacts/cucumber.ndjson`
    to confirm the results file is machine-readable end to end.
-6. Delete the throwaway smoke feature if the user does not want to keep it.
+6. Delete the throwaway smoke feature. It existed to prove the harness can
+   execute a scenario, and the report in the next paragraph is what survives
+   it - do not ask whether to keep it. Nothing to delete if step 3 used an
+   existing scenario.
 
 Report exactly what ran, what passed, and anything you could not verify. Do not
 report "set up successfully" when the suite has never executed a scenario.
