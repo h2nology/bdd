@@ -56,11 +56,20 @@ usable rather than decorative:
   of them is the application's home. Gherkin never says, so unasked it gets
   decided inside a step definition - a product decision taken in test glue. An
   app named after one capability usually opens on it.
-- **A `@web` feature names what says how its pages should look.** Check all
-  three - `DESIGN.md` for the values, a UI component library to carry them, a
-  design plugin like `ui-ux-pro-max` to compose pages out of both - and record
-  every one that is there in Phase 0, with its path. They do different jobs, so
-  finding one is not a reason to stop looking.
+- **A `@web` feature names what says how its pages should look, and carries a
+  phase that builds it.** Check all three - `DESIGN.md` for the values, a UI
+  component library to carry them, a design plugin like `ui-ux-pro-max` to
+  compose pages out of both - and record every one that is there in Phase 0,
+  with its path and its `State`. They do different jobs, so finding one is not a
+  reason to stop looking. **Search for each, rather than testing one path**
+  (`find . -name DESIGN.md -not -path '*/node_modules/*'`), and if you record
+  one as absent, say where you looked - `DESIGN.md` lives at the project root or
+  under `docs/`, and a source marked `to build` because nobody searched is how
+  Phase 0.1 comes to overwrite a file the user put there. Whatever the user
+  chooses and the project genuinely does not have goes to **Phase 0.1**, which
+  installs the library, maps `DESIGN.md`'s values into it, and shows the mapping
+  took effect. Naming a design system the repository does not contain is how
+  Phase 3.x ends up styling against nothing.
 
 If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
@@ -89,7 +98,8 @@ State, in the user's language:
 
 - Where the plan is, and what its Phase 0 recorded.
 - The six commands, as resolved.
-- The design system the plan will build against, or why the feature needs none.
+- The design system the plan will build against - which parts are `present` and
+  which Phase 0.1 has to build - or why the feature needs none.
 - The baseline: how many scenarios are `green` / `red` / `blocked` /
   `undefined` right now.
 - Anything Phase 0 could not resolve, named plainly.

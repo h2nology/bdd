@@ -70,9 +70,15 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       architecture table below - which routes, and whether one of them is the
       home page. Ask the user rather than letting a step definition decide it.
 - [ ] If any scenario in this feature is tagged `@web`, fill the Design System
-      table below. All three sources coexist and do different jobs, so record
-      every one that is there. If none of them is there, **ask the user** before
-      planning any UI phase - do not plan around it.
+      table below, including its `State` column. All three sources coexist and do
+      different jobs, so record every one that is there. **Search rather than
+      testing one path** - `find . -name DESIGN.md -not -path '*/node_modules/*'`
+      - and if you write that something is absent, write where you looked. A
+      source marked `to build` because nobody searched for it is how Phase 0.1
+      comes to overwrite a file the user put there. If none of the three is
+      there, **ask the user** before planning any UI phase - do not plan around
+      it. Deciding is all this phase does; **Phase 0.1 is what builds what the
+      decision names.**
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be
       `green` - the feature may be partly built.
@@ -132,11 +138,16 @@ and say that is why.
 Check for all three. They **coexist and they do different jobs** - none of them
 replaces another, so finding one is not a reason to stop looking:
 
-| Source | Its job | Check for | Found? Where? |
-|---|---|---|---|
-| `DESIGN.md` | **The authority on values** - colours, type scale, radii, spacing, per-component specs | project root, that exact filename | |
-| A UI component library | **The carrier** - the components those values get applied to | shadcn/ui, Ant Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - the dependency, and where it keeps its tokens and component specs | |
-| A UI/UX design plugin | **The designer** - it composes pages out of the other two, which is the part `DESIGN.md` does not specify | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | |
+| Source | Its job | Check for | Found? Where? | State |
+|---|---|---|---|---|
+| `DESIGN.md` | **The authority on values** - colours, type scale, radii, spacing, per-component specs | **that exact filename**, at the project root or under `docs/`. Search for it - `find . -name DESIGN.md -not -path '*/node_modules/*'` - rather than testing one path | | |
+| A UI component library | **The carrier** - the components those values get applied to | shadcn/ui, Ant Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - the dependency, and where it keeps its tokens and component specs | | |
+| A UI/UX design plugin | **The designer** - it composes pages out of the other two, which is the part `DESIGN.md` does not specify | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | | |
+
+`State` is one of `present` - it is there and usable as it stands;
+`to build in Phase 0.1` - the user chose it and it does not exist yet;
+`declined` - the user was asked and said no. Every row needs one. A row left
+blank is the gap this table exists to make visible.
 
 **Using them together is the normal case, not a special one.** They are not
 three ways to answer one question; they answer three.
@@ -165,6 +176,87 @@ writes unstyled pages, and **nothing in any later phase catches that**, because
 the scenarios assert behaviour and pass on a page nobody could use. The user may
 still decline; that is their call, but record it here so it was a decision and
 not a silent gap.
+
+### Phase 0.1: Design system in place
+
+Only for a feature with `@web` scenarios. An API-only or CLI feature marks this
+phase `complete` with one line saying it renders no UI - not `pending` forever,
+and not deleted, because a reader cannot tell a phase that did not apply from
+one nobody did.
+
+**Phase 0 decided what the design system is. This phase builds it.** The split
+exists because deciding was never enough on its own: a plan that records
+"shadcn/ui and a `DESIGN.md`" and then goes straight to Phase 1 arrives at Phase
+3.x with neither of them on disk, and Phase 3.x's instruction to style against
+the design system named in Setup has nothing to read. Nothing downstream
+complains - the scenarios assert behaviour, so they go green on an unstyled
+page, and the plan reports a feature that is done and unusable.
+
+**Look before you build. The order of the first three checks is the phase.**
+Every one of them runs before anything is created, because the cheapest way to
+destroy a design system is to write a second one next to it.
+
+- [ ] **Search for what already exists** - do not test one path, and do not
+      trust the table above to have searched. `find . -name DESIGN.md -not -path
+      '*/node_modules/*'` for the values; the dependency manifest plus the
+      component directory for the library; the plugin list for the designer.
+      **If you conclude something is absent, say where you looked.** A design
+      system reported missing because it sat one directory away is the failure
+      this check exists to prevent, and the step that follows such a report is
+      writing a competing copy.
+- [ ] **Reconcile the table with what the search found, before building
+      anything.** A row marked `to build in Phase 0.1` whose artefact turns out
+      to already exist becomes `present` - correct the row, say in `progress.md`
+      that Phase 0 recorded it wrongly and how, and **build nothing for it**.
+      The table is Phase 0's belief; the search is the fact. When they disagree
+      the fact wins, and a plan that builds from the stale belief overwrites
+      whatever was really there.
+- [ ] You know **whose** design system it is. A `DESIGN.md` describing another
+      product's brand may be exactly what the user intends - adopting an
+      existing design language is a normal choice - or it may be a sample nobody
+      meant to keep. **Ask; do not decide.** Writing a replacement because the
+      content looked wrong discards a file the user may have put there
+      deliberately, and the user finds out only when their own values stop
+      appearing on the page. Record the answer in `progress.md`.
+- [ ] Only now: every row still genuinely marked `to build in Phase 0.1` exists.
+      Rows marked `present` are re-checked, not assumed - a dependency in the
+      manifest is not the same as an initialised library.
+- [ ] Anything this project needs that `DESIGN.md` does not define is listed in
+      `progress.md` before any of it is invented. A brand spec written for
+      marketing surfaces routinely has no data-table, no form-error and no empty
+      state - and those are exactly what an internal tool is made of.
+- [ ] The component library is installed **and initialised**: its config file
+      and its components are in the repository, not just its name in the
+      dependency manifest.
+- [ ] **`DESIGN.md`'s values reach the library's components.** This is the check
+      that earns the phase. Installing a library gives you its preset defaults,
+      and a preset is not a design system - it is a different design system,
+      belonging to whoever wrote the library. Map every token across - colours,
+      type scale, radii, spacing - into wherever that library reads its theme
+      from, and where a component reaches for a different rung of a scale than
+      `DESIGN.md` specifies, change the component. A library whose components are
+      copied into the repository is copied there so that they can be changed.
+- [ ] **Show that the mapping took effect.** Take a value `DESIGN.md` defines,
+      find it in what the library actually resolves to, and paste both into
+      `progress.md`. Files existing is not values arriving: an install that
+      wrote its own defaults over the theme leaves every file exactly where this
+      phase expects it.
+- [ ] A design plugin that is installed but not enabled is enabled now, or
+      recorded here as declined. Enabling one may need the session reloaded
+      before its skills are usable - say so rather than reporting it as ready.
+- [ ] Record in `progress.md` what was installed, what was mapped, and anything
+      `DESIGN.md` specifies that the library cannot express. That last list is
+      the one Phase 3.x needs: it says where a page will have to depart from the
+      spec, before anyone discovers it one component at a time.
+- **Status:** `pending`
+
+Where the user declined a design system in Phase 0, this phase is `complete` as
+soon as that decision is written here with its date. Declining is an outcome;
+skipping is not.
+
+**Re-running this phase is an update, not a repair.** A changed `DESIGN.md`, a
+swapped library, one new token - all of them come back through here, because the
+mapping is the thing that goes stale and nothing else in the plan looks at it.
 
 Every phase's `- [ ]` lines are ticked to `- [x]` as each check is observed,
 while that phase is `in_progress` - not in a batch when its status changes. A
@@ -322,8 +414,9 @@ nothing more.
 #### Phase 3.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
-- [ ] If this capability renders UI, style it against the design system named in
-      Setup. **Minimum is measured against that spec, not against a blank page.**
+- [ ] If this capability renders UI, style it against the design system **built
+      in Phase 0.1** - the spec named in Setup, as it actually exists on disk.
+      **Minimum is measured against that spec, not against a blank page.**
       An element left to the browser's defaults is outside the spec, and
       following the spec costs no more code than ignoring it - a styled button
       and a bare one are the same line. Do not invent a value the spec does not

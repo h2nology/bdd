@@ -29,7 +29,12 @@ const g = require('./lib/gherkin.cjs');
 const { loadResults } = require('./lib/results.cjs');
 const { labelsFor } = require('./lib/labels.cjs');
 
-const ID_RE = /^[A-Za-z][A-Za-z0-9]*[-_:]?[A-Za-z0-9.]+$/;
+// Multi-segment on purpose: one separator was not enough. `tagging.md` documents
+// both slug ids (`@REQ-checkout-discount`) and project-prefixed ticket ids
+// (`@JIRA-PAY-88`), and a single-separator pattern silently rejects both - the
+// backlog file then parses as empty and coverage reports "no backlog file
+// supplied" while the file sits right there.
+const ID_RE = /^[A-Za-z][A-Za-z0-9]*(?:[-_:][A-Za-z0-9.]+)*$/;
 
 /**
  * Tags whose scenarios are never executed by design. They still count in the

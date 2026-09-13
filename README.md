@@ -54,16 +54,22 @@ working tree, so it runs when you ask for it and stops after each phase unless
 you pass `--auto`. That default is the point of the split - a phase boundary is
 where the evidence has just been written and is cheapest to disagree with.
 
-**The design system is not a setup step.** There is no skill that installs
-one. A project either already has something that says how its pages should look
-- a design plugin like `ui-ux-pro-max`, a UI component library, a `DESIGN.md` -
-or it has to decide, and that decision is the user's.
+**The design system is decided and built inside the plan, not at bootstrap.** A
+project either already has something that says how its pages should look - a
+design plugin like `ui-ux-pro-max`, a UI component library, a `DESIGN.md` - or
+it has to decide, and that decision is the user's.
 
-So the check lives in the plan, not in a bootstrap step. `plan-with-feature`
-records every source the project has, and asks when a `@web` feature has none.
-That is the first point where the question is answerable at all: before the
-feature files exist, nothing can tell whether the project has `@web` scenarios,
-or what product the pages would serve.
+So the check lives in the plan. `plan-with-feature` records every source the
+project has, and asks which to add when a `@web` feature has none. That is the
+first point where the question is answerable at all: before the feature files
+exist, nothing can tell whether the project has `@web` scenarios, or what
+product the pages would serve.
+
+Whatever the user chooses and the project lacks is then built by **Phase 0.1**
+of that plan, driven like every other phase: the component library installed,
+`DESIGN.md`'s values mapped into it, the mapping shown to have taken effect.
+Recording the choice and building it are two different things, and a plan that
+does only the first reaches Phase 3.x with nothing on disk to style against.
 
 **What the design system is not.** It says what the pages should look like;
 nothing checks that they do. The scenarios assert behaviour, so they go green on
@@ -133,13 +139,15 @@ coverage report detect requirements that have **no** scenario at all.
 
 **Design system**, for the web lane: three things can say how a page should
 look - a design plugin like `ui-ux-pro-max`, a UI component library, or a
-`DESIGN.md` at the project root - and they **coexist**. A `DESIGN.md` defining
+`DESIGN.md` (that exact filename, at the root or under `docs/`) - and they
+**coexist**. A `DESIGN.md` defining
 tokens beside a library supplying components is a normal pairing, not a conflict
 to resolve. Each stays in its own format and is read in place; nothing is copied
 into a second file and nothing is compiled. Precedence only arises where two of
 them define the same value, and then the hand-written `DESIGN.md` wins and the
-override is reported. `plan-with-feature` records what it finds in Phase 0, and
-asks the user when a `@web` feature has none of the three.
+override is reported. `plan-with-feature` records what it finds in Phase 0 with
+a `State` per source, asks the user which to add when a `@web` feature has none
+of the three, and leaves Phase 0.1 to build whatever is missing.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 

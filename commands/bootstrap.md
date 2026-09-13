@@ -29,9 +29,13 @@ for two reasons:
 
 `plan-with-feature` handles it instead, at the point where both are known: it
 records what the project already has - a design plugin, a component library, a
-`DESIGN.md` - and **asks the user** when a `@web` feature has none of them.
-There is no setup step to run; a design system is something the project has or
-decides on, not something this plugin installs.
+`DESIGN.md` - and **asks the user** which to add when a `@web` feature has none
+of them. What the user chooses is then built by **Phase 0.1 of that plan**,
+driven by `/bdd:implement`: the component library installed, `DESIGN.md`'s
+values mapped into it, the mapping shown to have taken effect.
+
+So the design system does get installed by this plugin - just not here, and not
+before there is a feature file to say the project needs one.
 
 ## Procedure
 
@@ -50,8 +54,9 @@ In the user's language:
 
 1. **The harness**: stack, lane, what was installed, and the result of the smoke
    run.
-2. **What is not covered**: the design system, and when it gets decided - see
-   above. Say it out loud; users assume `bootstrap` means everything.
+2. **What is not covered**: the design system, and when it gets decided and
+   built - see above. Say it out loud; users assume `bootstrap` means
+   everything.
 3. **What comes next**: `/bdd:discover` if there are no feature files yet,
    otherwise `/bdd:plan-with-feature`.
 

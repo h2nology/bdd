@@ -74,7 +74,21 @@ device, a review - say so plainly, name what is missing, and leave the phase
 
 ## 3. A BDD plan: the loop
 
-One pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
+**Phase 0.1 comes first, when the plan has one.** Planning leaves it `pending`:
+it is where the design system the plan names actually gets built - the component
+library installed, `DESIGN.md`'s values mapped into it, the mapping shown to
+have taken effect. Drive it before Phase 1 like any other phase, and do not skip
+it because the scenarios would pass without it. They would: they assert
+behaviour, and an unstyled page satisfies every one of them. A feature delivered
+that way is green and unusable, and no later phase in this plan looks at it
+again.
+
+A row the Design System table marks `declined` needs no work - write the
+decision and its date into `progress.md` and move the phase to `complete`. A
+feature that renders no UI is the same. What must not happen is Phase 0.1 left
+`pending` while Phase 1 starts.
+
+Then one pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
 Phase 3 expands into one sub-phase per capability, and those are the only thing
 that repeats:
 

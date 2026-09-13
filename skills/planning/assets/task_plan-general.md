@@ -85,11 +85,17 @@ never made, or it was made and never written down.
       a **UI/UX design plugin** (`ui-ux-pro-max` or its kind, and whether it
       has already written a spec), a **UI component library** (shadcn/ui, Ant
       Design, MUI, Bootstrap, Chakra, Mantine, Vuetify, an internal one - and
-      where it keeps its tokens), and **`DESIGN.md`** (project root, that exact
-      filename). Build against whatever is there, reading it in place; where
+      where it keeps its tokens), and **`DESIGN.md`** (that exact filename, at
+      the project root or under `docs/` - search for it rather than testing one
+      path, and say where you looked if you conclude it is absent). Build against whatever is there, reading it in place; where
       two disagree on a value, a hand-written `DESIGN.md` wins. **If none of
       them is there, ask the user** rather than inventing a look - and say that
       declining means unstyled pages that no later check catches.
+      **Whatever the user chooses to add needs a phase of its own**, before the
+      first phase that renders anything: installing the library, mapping
+      `DESIGN.md`'s values into it, and showing the mapping took effect is work,
+      and a plan that only records the choice arrives at the rendering phase
+      with nothing on disk to build against.
 - **Verifies:** <the build, plan, lint or typecheck command for this stack, and
   its expected result>
 - **Status:** `pending`

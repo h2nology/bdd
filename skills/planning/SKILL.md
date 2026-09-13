@@ -112,7 +112,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --fingerprint features/<n
 Translate the prose into the user's language as you fill it in. Leave a
 placeholder unfilled rather than inventing a value for it.
 
-## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline
+## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline (and Phase 0.1)
 
 A BDD plan cannot be written without this: the Scenario Queue's initial state
 has to be **observed**, not guessed, and the six commands have to be real.
@@ -125,7 +125,8 @@ a time.
 
 **Design system.** If any scenario in the feature is tagged `@web`, record what
 says how the pages should look. Check all three - a design plugin like
-`ui-ux-pro-max`, a UI component library, and a `DESIGN.md` at the project root -
+`ui-ux-pro-max`, a UI component library, and a `DESIGN.md` (that exact filename,
+at the project root or under `docs/` - search, do not test one path) -
 and record every one that is there, because they coexist. The template's Phase 0
 carries the table and the precedence rule.
 
@@ -133,6 +134,22 @@ If none of them is there, **ask the user** rather than planning around it.
 Unlike a missing harness, nothing downstream will complain: scenarios assert
 behaviour, so they go green on a page nobody could use. A feature that renders
 no UI needs none - record that it is why, rather than leaving the row blank.
+
+**Recording the decision is not the same as having a design system, and the
+plan has to carry both.** Give every row in the table a `State` - `present`,
+`to build in Phase 0.1`, or `declined` - and leave `Phase 0.1: Design system in
+place` for whatever is `to build`. Search before marking anything `to build`,
+and say where you looked when you mark something absent: Phase 0.1 builds what
+this table says is missing, so a source overlooked here is a source overwritten
+there. That phase installs the component library,
+maps `DESIGN.md`'s values into it, and shows the mapping took effect. Planning
+stops at a filled Phase 0 as before; Phase 0.1 is driven by `/bdd:implement`
+with every other phase.
+
+Without that split the plan names a design system that does not exist, and
+Phase 3.x - told to style against the one named in Setup - has nothing to read.
+That is the failure this is for: the scenarios still pass, so the plan reports a
+finished feature nobody can use.
 
 **Commands.** Resolve the six placeholders and write them into the plan's
 Phase 0 table. They differ per stack - this plugin supports TypeScript, Java,
