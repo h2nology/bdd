@@ -99,7 +99,10 @@ State, in the user's language:
 - Where the plan is, and what its Phase 0 recorded.
 - The six commands, as resolved.
 - The design system the plan will build against - which parts are `present` and
-  which Phase 0.1 has to build - or why the feature needs none.
+  which Phase 0.1 has to build - or why the feature needs none. Say which
+  routes' layouts the **Page layout** table is waiting on, and that the design
+  plugin is what fills them in Phase 3.x - a plan that names a designer and then
+  never uses it is the failure this table exists to make visible.
 - The baseline: how many scenarios are `green` / `red` / `blocked` /
   `undefined` right now.
 - Anything Phase 0 could not resolve, named plainly.

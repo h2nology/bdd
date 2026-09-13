@@ -177,6 +177,30 @@ the scenarios assert behaviour and pass on a page nobody could use. The user may
 still decline; that is their call, but record it here so it was a decision and
 not a silent gap.
 
+### Page layout
+
+Only for features that render UI. One row per route this feature renders.
+
+**Where the layout of each page came from.** `DESIGN.md` gives values and a
+component library gives components; neither of them says what goes where. That
+gap is the design plugin's job - "it composes pages out of the other two" - and
+it is the part most easily skipped, because a page composed by nobody still
+renders, still passes, and still looks like work.
+
+| Route | Layout composed by | Recorded when |
+|---|---|---|
+| | | |
+
+Phase 0 fills the `Route` column from the Information architecture table above.
+`Layout composed by` is filled in **Phase 3.x, as each page is first composed** -
+either the design plugin named in the Design System table, or `hand-written`
+with the reason. Phase 7 checks that no row is left blank.
+
+`hand-written` is a legitimate answer - there may be no design plugin, or the
+page may be one element. It is not legitimate to leave it blank, and it is not
+legitimate to write it while a design plugin sits installed and unused without
+saying why.
+
 ### Phase 0.1: Design system in place
 
 Only for a feature with `@web` scenarios. An API-only or CLI feature marks this
@@ -414,6 +438,12 @@ nothing more.
 #### Phase 3.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
+- [ ] Before writing this capability's code, read the **Development skills** the
+      plugin's `README.md` lists for this stack, and record in `progress.md`
+      what they changed. **"Read it, it changed nothing" is a different fact
+      from never having opened it**, and only one of them can be checked later.
+      A stack with no row in that table has no reference here - say so rather
+      than applying one written for a different stack.
 - [ ] If this capability renders UI, style it against the design system **built
       in Phase 0.1** - the spec named in Setup, as it actually exists on disk.
       **Minimum is measured against that spec, not against a blank page.**
@@ -421,6 +451,16 @@ nothing more.
       following the spec costs no more code than ignoring it - a styled button
       and a bare one are the same line. Do not invent a value the spec does not
       define either; that is outside it in the other direction.
+- [ ] If this capability renders a page **for the first time**, its layout comes
+      from the design plugin named in the Design System table - **not from you.**
+      Hand it the three things it needs: `DESIGN.md`, the component library, and
+      what this feature's scenarios say is on the page. Tokens and components are
+      not a layout; composing one is the job `DESIGN.md` explicitly does not do,
+      and writing the markup by hand while the designer sits installed is how a
+      page ends up correctly coloured and arranged by nobody.
+      Then record the source in the **Page layout** table in Setup. A later
+      capability on the same page follows what is recorded there rather than
+      composing again - a page gets one layout, not one per capability.
 - [ ] Stay inside this capability. The later rows have their own phases -
       writing them here means writing code no failing test asked for, and it
       will not be clear later which test proved which line.
@@ -493,6 +533,10 @@ what the breakdown missed.
       it will not show up as a failing scenario. Missing navigation is
       behaviour: it goes back through `discover` and needs a scenario that
       **clicks**, not one that navigates.
+- [ ] Every row of the **Page layout** table names where that page's layout came
+      from. A row still blank means nobody knows; a row saying `hand-written`
+      while a design plugin was available has to say why, so it reads as the
+      decision it was rather than as a step somebody forgot.
 - [ ] Anything deliberately left undone is named here and in `findings.md`.
       Silence is not an acceptable way to drop scope.
 - [ ] Every assumption still marked `assumed - unconfirmed` in `findings.md` is

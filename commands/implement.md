@@ -162,6 +162,25 @@ Do not run the whole suite in a `3.x` phase to see whether the feature works.
 That is Phase 5. What each sub-phase observes is its own capability's test, and
 that every previously passing test still passes.
 
+### The layout rule
+
+A capability that renders a page for the first time does not invent its layout.
+It comes from the design plugin the plan names, handed `DESIGN.md`, the
+component library and what the scenarios say is on the page - and the source
+goes in the plan's **Page layout** table.
+
+This is the one UI rule with no downstream check at all. A scenario asserts
+behaviour, so it passes on a page composed by nobody exactly as it passes on a
+designed one; `<unit-test>` never renders the page; Phase 5 only re-reads the
+same assertions. Tokens make it the right colour, the component library makes
+the parts real, and neither of them decides what goes where. If that decision is
+not taken by the designer, it is taken by whoever writes the markup - silently,
+and permanently, because nothing afterwards looks at it again.
+
+`hand-written` is an allowed answer when there is no design plugin, or the page
+is a single element. Writing it while a design plugin sits installed and unused
+needs a reason beside it.
+
 ### The test-integrity rule
 
 Every test is written in Phase 2, before any production code - with one

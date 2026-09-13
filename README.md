@@ -24,6 +24,29 @@ Each is invocable as `/bdd:<name>` and triggers automatically from a matching
 request. Use the namespaced form: the plugin's `run` shares its bare name with
 Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
+## Development skills
+
+Stack-specific guidance, read **while writing code**. These are not part of the
+BDD loop and no phase runs them: they are references the code in hand either
+needs or does not.
+
+| Skill | Applies when | What it carries |
+|---|---|---|
+| `react-best-practices` | The code being written or reviewed is React or Next.js | 69 performance rules from Vercel Engineering across 8 categories, ordered by impact |
+
+**Both task plan templates point at this table rather than at any skill in it.**
+That indirection is the whole design: this plugin drives TypeScript, Java,
+Python and .NET, so a phase naming one stack's guidance would be wrong for the
+other three. Adding a reference for another stack is an edit to this table and
+nothing else - no template changes, no phase changes.
+
+A stack with no row here has no reference in this plugin yet. Say so, rather
+than reaching for one written for a different stack: React's rendering rules
+are not advice about Spring.
+
+These carry `user-invocable: false` - they are read when the work brings them
+up, not run as a command.
+
 ## Commands
 
 | Command | Use it for |
