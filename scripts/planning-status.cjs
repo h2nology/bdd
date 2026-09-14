@@ -30,7 +30,17 @@ const crypto = require('crypto');
 const u = require('./lib/util.cjs');
 
 const DEFAULT_ROOT = path.join('docs', 'planning');
-const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+(?:\.[0-9]+)?)\s*[:.]?\s*(.*)$/;
+/**
+ * A phase heading: `### Phase 3: Write the code`, `#### Phase 3.1: <name>`.
+ *
+ * The lookahead is what stops `#### Phase 3.x 标准块` - a heading talking
+ * *about* the 3.x blocks rather than declaring one - from being read as a
+ * second Phase 3, carrying the example's unticked boxes with it. The number has
+ * to be followed by a colon, whitespace, the end of the line, or a period that
+ * is itself followed by one of those (`Phase 1. Outer RED`); a period glued to
+ * a non-digit is not a separator.
+ */
+const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+(?:\.[0-9]+)?)(?=[:\s]|$|\.(?:\s|$))\s*[:.]?\s*(.*)$/;
 const CHECKBOX_RE = /^\s*- \[( |x|X)\]/;
 /** A level-2 heading ends the phase it followed, so trailing prose is not counted into it. */
 const SECTION_RE = /^##\s+(?!#)/;
@@ -223,7 +233,11 @@ function daysSince(date) {
 function readPlan(dir) {
   const planFile = path.join(dir, 'task_plan.md');
   if (!fs.existsSync(planFile)) return null;
-  const md = fs.readFileSync(planFile, 'utf8');
+  // Fenced blocks are stripped once, here, so every parser below sees the same
+  // text. A plan quotes phase blocks, run output and example tables; none of
+  // that is a declaration, and each parser deciding that for itself is how one
+  // of them ends up disagreeing with the others.
+  const md = u.stripFences(fs.readFileSync(planFile, 'utf8'));
   const source = parseSource(md);
   const feature = source.feature && !/^\(none\)$/i.test(source.feature) ? source.feature : '';
   const phases = parsePhases(md);

@@ -181,6 +181,24 @@ and permanently, because nothing afterwards looks at it again.
 is a single element. Writing it while a design plugin sits installed and unused
 needs a reason beside it.
 
+### The stack-guidance rule
+
+Before writing a `Phase 3.x` capability's code, read the **Development skills**
+the plugin's `README.md` lists for this stack, and record in `progress.md` what
+they changed. A stack with no row in that table has no reference here - say so
+rather than reaching for one written for a different stack.
+
+**Do this even when the plan file does not ask for it.** The check belongs in
+every `Phase 3.x` block, but it is the first one a thin plan leaves out: it
+costs a round-trip, it changes nothing a reader can see, and no later phase
+looks for it. `<unit-test>` does not know what was read, Phase 5 re-reads the
+same assertions, and Phase 7 counts scenarios. If the plan in hand is missing
+it, add it to the remaining blocks and say so - a plan written without it is the
+reason to apply the rule, not a licence to skip it.
+
+**"Read it, it changed nothing" is a different fact from never having opened
+it**, and only one of them can be checked afterwards. Write down which.
+
 ### The test-integrity rule
 
 Every test is written in Phase 2, before any production code - with one

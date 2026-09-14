@@ -475,8 +475,23 @@ nothing more.
 
 #### Phase 3.2: <capability name>
 
-- [ ] <same seven checks>
+- [ ] Every check from the block above, written out in full.
 - **Status:** `pending`
+
+**Write them out. Do not abbreviate this block, and do not replace it with a
+pointer to the one above.** Nine checks, every one of them ticked individually
+as it is observed - a phase whose checks live somewhere else has nothing to
+tick, and the checks that are not on the page are the ones that do not happen.
+The first to go is always the same one: reading the stack's **Development
+skills** costs a round-trip and changes nothing visible, so it is the cheapest
+line to drop and the only one nothing downstream will miss.
+
+**This block survives planning intact.** `/bdd:plan-with-feature` stops at a
+filled Phase 0, so whoever writes the plan meets `<capability name>` with no
+capability to put there yet - Phase 2 has not run, and the queue is empty. Leave
+the placeholder and leave every check; do not collapse Phase 3 into a line
+saying Phase 2 will fill it in. Phase 2 copies this block per queue row, and it
+can only copy what is here.
 
 ### Phase 4: All units green
 

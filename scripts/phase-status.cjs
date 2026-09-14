@@ -87,6 +87,11 @@ function withLock(planDir, work) {
  */
 function rewrite(md, phase, status) {
   const lines = md.split('\n');
+  // A plan quotes phase blocks as examples - the BDD template's Phase 3 block,
+  // shown so Phase 2 can copy it per capability. Those lines are a picture of a
+  // phase, not one: writing a status into a fenced example changes nothing the
+  // plan tracks, and the phase the user asked about stays as it was.
+  const fenced = u.fencedLines(lines);
   const heading = new RegExp('^#{3,4}\\s+Phase\\s+'
     + phase.replace(/\./g, '\\.') + '(?![0-9.])');
   let inBlock = false;
@@ -94,6 +99,7 @@ function rewrite(md, phase, status) {
   let previous = '';
 
   for (let i = 0; i < lines.length; i += 1) {
+    if (fenced[i]) continue;
     const line = lines[i];
     if (/^#{3,4}\s+Phase\s/.test(line)) { inBlock = !changed && heading.test(line); continue; }
     if (!inBlock || changed) continue;

@@ -332,6 +332,52 @@ function readJsonMaybe(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
+/** Opening or closing fence of a code block: ``` or ~~~, indented up to 3 spaces. */
+const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})\s*\S*\s*$/;
+
+/**
+ * One boolean per line, true where that line is inside a fenced code block -
+ * the fence markers themselves included.
+ *
+ * Both plan scripts read a plan line by line, looking for `#### Phase n`
+ * headings, `- [ ]` boxes and `**Status:**` lines. A plan that *shows* one of
+ * those rather than declaring it - the BDD template's Phase 3 block, quoted so
+ * Phase 2 can copy it once per capability - would otherwise have its example
+ * read as the real thing: `planning-status.cjs` reports a phase nobody wrote,
+ * with unticked boxes nobody can tick, and `phase-status.cjs` can write a
+ * status line into the middle of the example.
+ *
+ * An unclosed fence swallows the rest of the document, which is what a markdown
+ * renderer does with it too.
+ */
+function fencedLines(lines) {
+  const inside = new Array(lines.length).fill(false);
+  let open = null;
+  for (let i = 0; i < lines.length; i += 1) {
+    const fence = lines[i].match(FENCE_RE);
+    if (!open) {
+      if (fence) { open = { char: fence[1][0], len: fence[1].length }; inside[i] = true; }
+      continue;
+    }
+    inside[i] = true;
+    // A fence closes on the same character, repeated at least as many times.
+    if (fence && fence[1][0] === open.char && fence[1].length >= open.len) open = null;
+  }
+  return inside;
+}
+
+/**
+ * The document with every fenced line blanked out.
+ *
+ * Blanked rather than removed so line numbers still match the file on disk -
+ * anything reporting a position stays honest.
+ */
+function stripFences(md) {
+  const lines = md.split(/\r?\n/);
+  const inside = fencedLines(lines);
+  return lines.map((line, i) => (inside[i] ? '' : line)).join('\n');
+}
+
 /** Read a file that is either a JSON array/object or newline-delimited JSON. */
 function readJsonOrNdjson(file) {
   const text = fs.readFileSync(file, 'utf8').trim();
@@ -361,4 +407,5 @@ module.exports = {
   parseArgs, asList, findFeatureFiles, loadFeatures, extractRequirements, REQ_TAG,
   escapeHtml, slug, exampleLabel, htmlPage, statCard, progressBar, renderTable,
   writeFileEnsured, readJsonMaybe, readJsonOrNdjson, pct, nowStamp, BASE_CSS, SKIP_DIRS,
+  fencedLines, stripFences,
 };
