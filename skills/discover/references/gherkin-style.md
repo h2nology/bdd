@@ -54,18 +54,20 @@ it was called from, which no other step does.
 
 ### Catching it before it reaches the step definitions
 
-Group the step text by its **effective** keyword - `And` and `But` inherit the
-keyword above them, so resolve those first - and look for any sentence that
-appears under both a setup keyword (`Given`, or a `Background` step) and
-`Then`. That intersection should be empty.
+`spec-report.cjs` checks this for you. Run it over the whole features root - not
+one file - and it warns on any sentence written as setup in one place and as an
+assertion in another, resolving `And`/`But` to the keyword they inherit and
+treating quoted values and numbers as the arguments a step definition would
+capture.
 
-It is worth doing deliberately, because the collision is invisible while the
-feature file is being read for its content: both lines look natural where they
-sit, and the problem only exists in the space between them. It usually surfaces
-at the worst moment - when someone is writing the glue and has to decide, alone,
-what the sentence means.
+Run it over the root rather than the file you just wrote, because step
+definitions are shared: the two halves of a collision can sit in different
+feature files and each look natural where it sits. The problem exists only in the
+space between them, which is why reading one file cannot find it, and why it
+otherwise surfaces at the worst moment - when someone is writing the glue and has
+to decide, alone, what the sentence means.
 
-Two habits keep the intersection empty:
+Two habits keep the warning from ever firing:
 
 - **Setup describes the world; assertions describe what is on the screen.**
   `我的待办清单是空的` is a fact about the system; `清单中没有任何待办` is an

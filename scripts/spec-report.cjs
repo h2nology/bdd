@@ -112,6 +112,9 @@ function build(features, opts) {
   }
   model.stats.requirements = Object.keys(model.requirements).length;
 
+  // Suite-wide, so it runs once every feature has been parsed.
+  for (const w of g.findStepCollisions(features)) model.warnings.push(w);
+
   // ---- HTML ----
   const title = typeof opts.title === 'string' ? opts.title : L.specReport;
   const html = [];

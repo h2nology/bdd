@@ -162,7 +162,7 @@ function extract(features, opts) {
       let touched = false;
 
       for (const inst of g.expandOutline(sc)) {
-        const steps = (sc.background ? sc.background.steps : []).concat(inst.steps);
+        const steps = (sc.backgroundSteps || []).concat(inst.steps);
         let current = null;
         let effective = null; // And/But continue whatever came before them
         for (const step of steps) {

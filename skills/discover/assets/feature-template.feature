@@ -2,7 +2,12 @@
 # - names, descriptions and step text - in the team's language, and keep the
 # keywords (Feature/Rule/Background/Scenario/Given/When/Then) and tags English.
 # No `# language:` header is needed when the keywords stay English.
-@<capability-tag> @REQ-<id>
+# Unfilled, this file reports placeholder warnings from spec-report.cjs; they go
+# away once the <placeholders> are replaced with real prose and table columns.
+# A feature-level requirement tag is inherited by every scenario below it. Use it
+# only when the whole file serves one requirement; otherwise tag per scenario.
+# Do not add a tag that restates the feature name - see references/tagging.md.
+@REQ-<id>
 Feature: <Capability, not a screen>
   As a <role>
   I want <capability>
@@ -14,7 +19,9 @@ Feature: <Capability, not a screen>
   Background:
     Given <shared, incidental setup - no assertions>
 
-  @REQ-<id> @smoke @ui
+  # Lane tags say which driver runs this: @web (Playwright) or @mobile (Appium).
+  # Untagged means the web lane. One file serves both lanes.
+  @REQ-<id> @smoke @web
   Scenario: <Outcome, stated in domain language>
     Given <state that is already true>
     When <the single behaviour under test>

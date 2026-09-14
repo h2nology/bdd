@@ -8,7 +8,7 @@
  *
  * Public API:
  *   parseFeature(text, uri)  -> feature AST (never throws; see feature.errors)
- *   flattenScenarios(feature) -> [{ ...scenario, inheritedTags, background }]
+ *   flattenScenarios(feature) -> [{ ...scenario, inheritedTags, backgroundSteps }]
  *   expandOutline(scenario)  -> [{ name, steps, exampleRow, ... }]
  *   stepCount(scenario)      -> number of steps incl. background
  */
@@ -517,7 +517,11 @@ function flattenScenarios(feature) {
       rule: rule ? { name: rule.name, tags: rule.tags, line: rule.line } : null,
       inheritedTags: inherited,
       allTags: Array.from(new Set(inherited.concat(sc.tags))),
-      background: (rule && rule.background) || feature.background || null,
+      // A Rule's Background runs in addition to the feature's, not instead of it,
+      // and the feature's runs first - so this is every step that precedes the
+      // scenario, in execution order.
+      backgroundSteps: (feature.background ? feature.background.steps : [])
+        .concat(rule && rule.background ? rule.background.steps : []),
       id: `${feature.uri}:${sc.line}`,
     }));
   };
@@ -574,14 +578,87 @@ function expandOutline(scenario) {
 }
 
 function stepCount(scenario) {
-  const bg = scenario.background ? scenario.background.steps.length : 0;
-  return bg + scenario.steps.length;
+  return (scenario.backgroundSteps ? scenario.backgroundSteps.length : 0) + scenario.steps.length;
 }
 
 /** Number of concrete cases a scenario contributes (outline rows count individually). */
 function caseCount(scenario) {
   if (scenario.type !== 'scenarioOutline') return 1;
   return scenario.examples.reduce((n, ex) => n + (ex.header ? ex.rows.length : 0), 0) || 1;
+}
+
+// A step definition is matched on the step text alone: `Given`, `When` and `Then`
+// are not part of the match, and the body cannot see which keyword invoked it. So
+// one sentence used as setup in one place and as an assertion in another cannot be
+// implemented - whichever the single definition does, the other reading is silently
+// wrong. The check spans the whole run because step definitions are shared across
+// feature files, which is also why it cannot be done reliably by reading one file.
+const STEP_ARGUMENT = /"[^"]*"|'[^']*'|<[^>]*>|\d+(?:[.,]\d+)*/g;
+
+// Returns '' for a step whose text is nothing but arguments. Such a step carries
+// no words for a step definition to match on, so two of them being equal is no
+// evidence that they would reach the same definition.
+function stepSignature(text) {
+  const sig = String(text || '').replace(STEP_ARGUMENT, '{}').trim().replace(/\s+/g, ' ');
+  return sig.replace(/\{\}/g, '').trim() ? sig : '';
+}
+
+function collectStepRoles(feature, setup, assertion) {
+  const record = (map, step, kind) => {
+    const sig = stepSignature(step.text);
+    if (!sig) return;
+    if (!map.has(sig)) map.set(sig, []);
+    map.get(sig).push({ uri: feature.uri, line: step.line, text: step.text, kind });
+  };
+  const walk = (steps) => {
+    let effective = null;
+    for (const step of steps) {
+      const kind = step.keywordType === 'and' || step.keywordType === 'but' ? effective : step.keywordType;
+      if (kind) effective = kind;
+      if (kind === 'given') record(setup, step, 'given');
+      else if (kind === 'then') record(assertion, step, 'then');
+    }
+  };
+  const containers = [feature].concat(feature.children.filter((c) => c.type === 'rule'));
+  for (const container of containers) {
+    if (container.background) walk(container.background.steps);
+    for (const child of container.children) {
+      if (child.type !== 'rule') walk(child.steps);
+    }
+  }
+}
+
+// Returns one warning per sentence that is written as setup somewhere and as an
+// assertion somewhere else, anchored at the assertion so the fix - give the check
+// its own wording - lands where it is needed.
+function findStepCollisions(features) {
+  const setup = new Map();
+  const assertion = new Map();
+  for (const feature of features) {
+    if (feature.name === null && feature.errors.length) continue;
+    collectStepRoles(feature, setup, assertion);
+  }
+
+  const warnings = [];
+  for (const [sig, asserts] of assertion) {
+    const setups = setup.get(sig);
+    if (!setups) continue;
+    const where = (list) => {
+      const seen = [];
+      for (const hit of list) {
+        const at = `${hit.uri}:${hit.line}`;
+        if (!seen.includes(at)) seen.push(at);
+      }
+      return seen.slice(0, 3).join(', ') + (seen.length > 3 ? `, +${seen.length - 3} more` : '');
+    };
+    const first = asserts[0];
+    warnings.push({
+      uri: first.uri,
+      line: first.line,
+      message: `"${first.text}" is used as setup (${where(setups)}) and as an assertion (${where(asserts)}); cucumber matches on the step text alone, so one step definition would have to both establish and check this state - give the assertion its own wording`,
+    });
+  }
+  return warnings;
 }
 
 module.exports = {
@@ -592,4 +669,5 @@ module.exports = {
   stepCount,
   caseCount,
   splitTableRow,
+  findStepCollisions,
 };

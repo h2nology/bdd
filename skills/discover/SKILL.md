@@ -19,11 +19,11 @@ The line is drawn at **who reads it**, not who wrote it.
   format: the people who own the requirement have to be able to read it back and
   say "no, that rule is wrong". A specification in a language its reviewers do
   not read cannot do that job.
-- **Keywords stay English.** `Feature:`, `Rule:`, `Background:`, `Scenario:`,
-  `Scenario Outline:`, `Examples:`, `Given`, `When`, `Then`, `And`, `But`. They
-  are syntax, not prose - and keeping them English means no `# language:` header
-  is needed, editor highlighting works, and every cucumber implementation is on
-  its best-supported path:
+- **Keywords and tags stay English.** `Feature:`, `Scenario:`, `Given`/`When`/
+  `Then` are syntax rather than prose; `@REQ-1042`, `@web`, `@wip` are keys the
+  reports match on. Neither may shift with the prose. Keeping the keywords
+  English also means no `# language:` header is needed, editor highlighting
+  works, and every cucumber implementation is on its best-supported path:
 
   ```gherkin
   Feature: 购物车结账
@@ -35,16 +35,6 @@ The line is drawn at **who reads it**, not who wrote it.
       Then 订单总额为 42.50 元
   ```
 
-  Some of these have synonyms - `Example:` for `Scenario:`, `Scenarios:` for
-  `Examples:` - and the suite uses neither: always `Scenario:`, including inside
-  a `Rule:`, and always `Examples:` for an outline's data table.
-  `references/gherkin-style.md` has the table.
-
-  Localized keywords are still parsed (`en`, `zh-CN`, `zh-TW`, `ja`). If the repo
-  already uses them, follow it and keep the `# language:` header; do not start a
-  new suite that way.
-- **Tags stay English.** `@REQ-1042`, `@web`, `@wip`, `@regression` are keys the
-  reports match on; they must not shift with the prose.
 - **Code and config stay English**: step definition bodies, file and directory
   names, commit messages, and any prompt sent to a model or subagent.
 - **Talk to the user in the language they use** - their message language, or the
@@ -53,6 +43,11 @@ The line is drawn at **who reads it**, not who wrote it.
   are in English, keep writing English and say why - a half-translated suite is
   worse than either language. If the existing files are inconsistent, ask which
   way the team wants to settle it.
+
+`references/gherkin-style.md` carries the rest: which keyword to pick when Gherkin
+offers synonyms (this suite always writes `Scenario:` and `Examples:`, never
+`Example:` or `Scenarios:`), and what to do in a repo that already uses localized
+keywords behind a `# language:` header.
 
 ## Workflow
 
@@ -74,23 +69,21 @@ Rules for this step:
 
 - Derive rules from the requirement text, the existing feature files, and the
   code if it already exists. Search the repo for related features before
-  inventing new vocabulary (`node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --json bdd-artifacts/spec.json`
+  inventing new vocabulary (`node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs <features-root> --json bdd-artifacts/spec.json`
   gives the current inventory of features, scenarios, tags and requirement ids).
 - Use realistic data, not `foo`/`bar`. Money, dates, ids and names should look
   like the domain's real values.
-- Cover the unhappy paths: boundary values, permissions, empty and maximal
-  states, concurrency, and error recovery. Ask `references/discovery-questions.md`
-  for the checklist.
-- **When the requirement puts something on a screen that is not there yet, how a
-  person reaches that screen is one of the rules, and it gets its own example.**
-  Not a note beside the other examples - an example, and one that clicks. This is
-  the easiest behaviour in the whole requirement to leave out, because every
-  other example can be written as though the reader were already standing on the
-  page. Settle it here, while the cost is one more green card: once the feature
-  file exists, the same gap costs a second discovery round, a second plan and a
-  second implementation cycle, and until somebody pays that, the application has
-  a screen only its tests can open. `references/discovery-questions.md` has the
-  questions under **Arrival and navigation**.
+- Cover the unhappy paths. `references/discovery-questions.md` is the checklist:
+  walk **every** category against every rule - actors and permissions, arrival and
+  navigation, preconditions and state, data boundaries, outcomes, failure and
+  recovery, time - not only the ones the requirement text happens to mention.
+  Missing scenarios cluster in the categories nobody raised.
+- **A screen that is not there yet needs an example for how a person reaches it**
+  - not a note beside the other examples, an example, and one that clicks. It is
+  the easiest behaviour in a requirement to leave out, because every other example
+  reads as though you were already standing on the page. One green card settles it
+  now; missed, it costs a second discovery round, and until somebody pays that the
+  application has a screen only its tests can open.
 - Every red question is a **blocking unknown**. Collect them in one batch (use
   `AskUserQuestion` when the answers change the scenarios). Step 2 decides what
   becomes of the ones nobody answers - do not resolve them by guessing here.
@@ -104,11 +97,9 @@ and in whatever the team builds against it. A wrong rule caught at this stage
 costs one line; the same rule caught after implementation costs three files and
 an argument about which one is right.
 
-**If the breakdown introduces a screen, it says how a person arrives at it, or
-it says out loud that nothing links to it.** A breakdown that is silent on this
-reads as complete to everybody at the table - nobody misses a question that was
-never asked - and the silence survives all the way to a delivered feature whose
-screen only the suite can open.
+If the breakdown introduces a screen, it has to say how a person arrives at it -
+or say out loud that nothing links to it yet. Silence on this reads as complete
+to everybody at the table, because nobody misses a question that was never asked.
 
 What matters is the **order**, not the waiting. If the user is there and a rule
 is disputed, settle it before writing. If nobody can answer - a batch run, an
@@ -144,33 +135,47 @@ Template: `assets/feature-template.feature`.
 
 ### 4. Validate what was written
 
-Always run the parser over the new files and fix every warning:
+Always run the parser over the **whole suite**, not just the file you wrote, and
+fix every warning:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --json bdd-artifacts/spec.json
+node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs <features-root> --json bdd-artifacts/spec.json
 ```
 
-The command prints feature/scenario/case/step counts, lists scenarios without a
-requirement tag, and prints parse warnings on stderr. Treat any warning as a
-defect in the feature file, and report the counts back to the user.
+`<features-root>` is the directory from step 3 - `features/` on most stacks,
+`src/test/resources/features/` on Java, `Features/` on .NET.
 
-The parser cannot see one defect, so check it by hand: **no step sentence may
-appear both as setup and as an assertion.** Resolve `And`/`But` to the keyword
-they inherit, then intersect the setup sentences (`Given`, `Background`) with
-the `Then` sentences - the result has to be empty. A collision here is not
-cosmetic: it cannot be implemented at all, because cucumber matches step
-definitions on the text alone. If a
-scenario the user asked for is missing from the counts, say so - never claim
-completion from the file you wrote alone.
+Pass the whole root rather than the new file because two of the checks are
+suite-wide: a step sentence used as setup in one file and as an assertion in
+another is just as unimplementable as the same collision inside one scenario, and
+neither is visible while reading a single file.
+
+The command prints feature/scenario/case/step counts, lists scenarios without a
+requirement tag, and prints warnings on stderr. Treat every warning as a defect
+in the feature file - a step-collision warning especially, because cucumber
+matches step definitions on the text alone, so one definition would have to both
+establish and check that state. The fix is wording, never a hook that branches on
+the keyword; `references/gherkin-style.md` explains why under "One sentence, one
+meaning".
+
+Report the counts back to the user. If a scenario they asked for is missing from
+the counts, say so - never claim completion from the file you wrote alone.
 
 ### 5. Offer the follow-ups
 
-After the feature files are agreed, tell the user which next step applies:
+After the feature files are agreed, tell the user which next step applies. The
+first three are the usual path; a feature file on its own is not yet runnable, so
+do not send anyone to `run` until something has been built:
 
-- Manager-ready HTML review document -> the `/bdd:spec-report` command
-- No test harness in the project yet -> `bdd-setup`
-- Harness exists, run and measure -> `run`
-- Data model implied by the scenarios -> `export-ddl`
+- Sign-off by people who do not read Gherkin -> `/bdd:spec-report` (HTML review document)
+- The features put things on screen, and nobody has seen what it would look like
+  -> `/bdd:sketch`, which derives every data state of every page from the
+  scenarios and renders a wireframe board - before any code exists
+- Build it -> `/bdd:plan-with-feature` to plan the work capability by capability,
+  then `/bdd:implement` to drive it to green. No test harness in the project yet?
+  `bdd-setup` (or `/bdd:bootstrap`) comes first, once per project.
+- Implementation exists; run it and measure requirement coverage -> `run`
+- Data model implied by the scenarios -> `export-ddl`; HTTP contract -> `/bdd:export-openapi`
 
 ## Working from a bug report
 
@@ -183,15 +188,12 @@ so coverage still attributes it to the original requirement.
 
 - **One sentence used for two meanings** - the same step text as setup in one
   place and as an assertion in another (`Given 清单是空的` … `Then 清单是空的`).
-  Cucumber matches on the text alone, so a single step definition would have to
-  both establish and check the state. Give the assertion its own wording; see
-  "One sentence, one meaning" in `references/gherkin-style.md`.
+  Step 4's parser run flags these across the suite; give the assertion its own
+  wording rather than arguing with the warning.
 - **A feature that puts up a new screen and never says how anyone reaches it.**
-  It specifies everything that happens *on* the screen and nothing about getting
-  there, so the screen is built, styled, and opened by nothing but `page.goto` in
-  a step definition. Every scenario passes; a person cannot get to the page at
-  all. Add the arrival example, or record that the screen is deep-link-only -
-  both are answers, and the missing question is not.
+  Every scenario passes while nothing but `page.goto` in a step definition ever
+  opens the page. Add the arrival example, or record that the screen is
+  deep-link-only - both are answers, and the missing question is not.
 - Scenarios that assert on implementation detail (SQL, class names, HTTP status
   codes) when the requirement is about business behaviour.
 - One scenario with ten `When` steps: split it, one behaviour per scenario.
