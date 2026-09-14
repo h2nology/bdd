@@ -55,10 +55,17 @@ function clean(value) {
     .replace(/`/g, '').replace(/\*\*/g, '').trim();
 }
 
-/** A value still holding its template placeholder, e.g. `<YYYY-MM-DD>`. */
+/**
+ * A value still holding its template placeholder - `<YYYY-MM-DD>`, but also
+ * `sha256:<hash of the feature file when this plan was created>`, where the
+ * template wraps the placeholder in fixed text. Matching only a whole-value
+ * `<...>` read that fingerprint as a real one, and an unfilled plan then
+ * reported as drift: the reader was sent to close a plan and open a new dated
+ * one, over a specification that never moved.
+ */
 function isPlaceholder(value) {
   const v = clean(value);
-  return !v || /^<.*>$/.test(v);
+  return !v || /<[^<>]*>/.test(v);
 }
 
 function fingerprintOf(file) {

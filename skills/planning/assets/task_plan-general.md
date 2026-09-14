@@ -63,7 +63,7 @@ never made, or it was made and never written down.
 - [ ] Record constraints and unknowns in `findings.md`.
 - **Verifies:** <what shows the scope is understood - e.g. the existing
   configuration is summarised in findings.md and matches what is deployed>
-- **Status:** `in_progress`
+- **Status:** `pending`
 
 ### Phase 2: Decide the approach
 

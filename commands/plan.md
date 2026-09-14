@@ -71,4 +71,7 @@ each one, anything already known to be unverifiable here, and that
 `/bdd:implement` drives it from here - pausing after each phase unless given
 `--auto`.
 
-Do not start Phase 1.
+Do not start Phase 1 - leave every phase `pending` and `## Next Step` naming
+Phase 1, so that `/bdd:implement` is what moves the first one to `in_progress`.
+A plan that arrives already `in_progress` claims a phase somebody began before
+anybody acted.

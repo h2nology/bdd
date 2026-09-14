@@ -112,7 +112,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --fingerprint features/<n
 Translate the prose into the user's language as you fill it in. Leave a
 placeholder unfilled rather than inventing a value for it.
 
-## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline (and Phase 1)
+## 4. BDD plans only: Phase 0 - harness, routes, design system, commands, baseline (and Phase 1)
 
 A BDD plan cannot be written without this: the Scenario Queue's initial state
 has to be **observed**, not guessed, and the six commands have to be real.
@@ -122,6 +122,17 @@ This is the last thing the planning skill does; Phase 1 onward is
 **Harness.** Run the suite. If it cannot execute at all, stop and use
 `bdd-setup`. A missing harness is not something to work around one capability at
 a time.
+
+**Information architecture.** If any scenario in the feature is tagged `@web`,
+record which route each of its pages lives at, and whether one of them is the
+application's home. The feature file does not say - Gherkin describes what a
+page does, never where it sits - so unasked, the route gets decided inside a
+step definition by whoever writes `page.goto('/…')` first. That is a product
+decision taken in test glue, where the person who owns the requirement will
+never see it. Ask the user when the repository does not already answer it: an
+application named after one capability usually opens on it, and getting that
+wrong produces a green suite whose front door is still the framework's starter
+page. The template's Phase 0 carries the table.
 
 **Design system.** If any scenario in the feature is tagged `@web`, record what
 says how the pages should look. Check all three - a design plugin like
@@ -150,6 +161,14 @@ Without that split the plan names a design system that does not exist, and
 Phase 4.x - told to style against the one named in Setup - has nothing to read.
 That is the failure this is for: the scenarios still pass, so the plan reports a
 finished feature nobody can use.
+
+**Page layout.** Put one row per route into the template's Page layout table,
+taken from the Information architecture table above. That is all Phase 0 owes
+it: `Layout composed by` is filled in Phase 4.x as each page is first composed -
+the design plugin that composed it, or `hand-written` with the reason - and
+Phase 8 checks that no row was left blank. Phase 0's job is to make the rows
+exist, because a page composed by nobody still renders, still passes, and still
+looks like work.
 
 **Commands.** Resolve the six placeholders and write them into the plan's
 Phase 0 table. They differ per stack - this plugin supports TypeScript, Java,
@@ -196,6 +215,25 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/<name>.feature --jso
 Fill the Scenario Queue from the JSON, and set each row's state from the run,
 not from expectation. Some scenarios may already be `green` - a feature is
 often partly built. Paste the run summary into `progress.md`.
+
+**Close the phase.** The template ships Phase 0 as `in_progress`, because
+copying it is what starts the phase - so planning is not finished until
+somebody ends it. Tick its boxes as each one is observed, write the evidence
+into `progress.md`, then:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/phase-status.cjs 0 complete --plan docs/planning/<dir>
+```
+
+and rewrite `## Next Step` to name Phase 1 (or Phase 2, where the feature
+renders no UI).
+
+Left `in_progress`, nothing downstream complains: `/bdd:implement` starts at
+Phase 1 regardless, and the checkbox warnings only catch a `complete` phase
+over an open box. What breaks is the record. `planning-status.cjs` reports the
+first phase that is not complete, so a plan handed over this way says the work
+is still in Phase 0 for the rest of its life - the status board describing
+setup while the capabilities are being built.
 
 ## Moving a phase
 

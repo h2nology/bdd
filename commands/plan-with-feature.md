@@ -109,4 +109,8 @@ State, in the user's language:
 - That `/bdd:implement` is what drives it from here, and that it pauses after
   each phase unless given `--auto`.
 
-Do not start Phase 1. Planning ends at a filled Phase 0.
+Do not start Phase 1. Planning ends at a filled Phase 0 that has been **moved to
+`complete`** - `phase-status.cjs 0 complete` - with `## Next Step` rewritten to
+name Phase 1. The template ships Phase 0 as `in_progress` because copying it
+starts the phase; left that way the plan reports itself as still in setup for
+the rest of its life, and nothing downstream notices.
