@@ -353,6 +353,7 @@ Two rules about `progress.md` that the templates cannot enforce:
 | `assets/progress-general.md` | What was run per phase, and what it printed |
 | `assets/findings-general.md` | Decisions, and where reality differed from what was assumed |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` | Where unit tests go, per stack - and why never beside the code |
+| `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md` | Stack-specific guidance the templates tell Phase 4.x / Phase 3 to read |
 
 | Script | What it is for |
 |---|---|

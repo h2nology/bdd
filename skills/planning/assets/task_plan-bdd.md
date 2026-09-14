@@ -438,10 +438,11 @@ nothing more.
 #### Phase 4.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
-- [ ] Before writing this capability's code, read the **Development skills** the
-      plugin's `README.md` lists for this stack, and record in `progress.md`
-      what they changed. **"Read it, it changed nothing" is a different fact
-      from never having opened it**, and only one of them can be checked later.
+- [ ] Before writing this capability's code, read the **Development skills**
+      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`
+      lists for this stack, and record in `progress.md` what they changed.
+      **"Read it, it changed nothing" is a different fact from never having
+      opened it**, and only one of them can be checked later.
       A stack with no row in that table has no reference here - say so rather
       than applying one written for a different stack.
 - [ ] If this capability renders UI, style it against the design system **built

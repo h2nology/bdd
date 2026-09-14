@@ -184,9 +184,10 @@ needs a reason beside it.
 ### The stack-guidance rule
 
 Before writing a `Phase 4.x` capability's code, read the **Development skills**
-the plugin's `README.md` lists for this stack, and record in `progress.md` what
-they changed. A stack with no row in that table has no reference here - say so
-rather than reaching for one written for a different stack.
+`${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`
+lists for this stack, and record in `progress.md` what they changed. A stack
+with no row in that table has no reference here - say so rather than reaching
+for one written for a different stack.
 
 **Do this even when the plan file does not ask for it.** The check belongs in
 every `Phase 4.x` block, but it is the first one a thin plan leaves out: it
