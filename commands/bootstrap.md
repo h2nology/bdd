@@ -30,7 +30,7 @@ for two reasons:
 `plan-with-feature` handles it instead, at the point where both are known: it
 records what the project already has - a design plugin, a component library, a
 `DESIGN.md` - and **asks the user** which to add when a `@web` feature has none
-of them. What the user chooses is then built by **Phase 0.1 of that plan**,
+of them. What the user chooses is then built by **Phase 1 of that plan**,
 driven by `/bdd:implement`: the component library installed, `DESIGN.md`'s
 values mapped into it, the mapping shown to have taken effect.
 

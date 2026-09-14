@@ -58,9 +58,9 @@ Keep tags, paths, commands and status values as they are.
 | nothing recorded for N days | The plan is open but nothing has been logged. | Ask whether it is still live. A plan nobody is working is worth closing. |
 | no next step recorded | The plan cannot be resumed without re-reading everything. | Fill in `## Next Step` before doing anything else. |
 | every phase is complete but not every scenario is green | The plan claims done while its own queue disagrees. | Trust the queue. Say the feature is not finished, and name the scenarios that are not green. |
-| capability "..." is done but Phase 3.x is ... | The Capability Queue and the phase statuses are two records of the same fact, and they disagree. | Say which two records disagree. There is no way to tell from the file which one was forgotten, so do not pick one - ask what actually happened. |
-| Phase 3.x is complete but capability "..." is still ... | Same contradiction, inverted. | As above. |
-| capability "..." names Phase 3.x, which the plan does not have | A queue row points at a phase nobody wrote. | The Phase 3.x block is missing, or the row's number is a typo. Both need a person. |
+| capability "..." is done but Phase 4.x is ... | The Capability Queue and the phase statuses are two records of the same fact, and they disagree. | Say which two records disagree. There is no way to tell from the file which one was forgotten, so do not pick one - ask what actually happened. |
+| Phase 4.x is complete but capability "..." is still ... | Same contradiction, inverted. | As above. |
+| capability "..." names Phase 4.x, which the plan does not have | A queue row points at a phase nobody wrote. | The Phase 4.x block is missing, or the row's number is a typo. Both need a person. |
 
 ## 4. Say what this cannot tell you
 

@@ -90,7 +90,7 @@ look before writing, and skeleton only what is genuinely absent.
 **The skeleton still has no behaviour**, and it must not satisfy a single
 assertion. If one passes against it anyway - a "nothing was added" check against
 a page that cannot add anything - that scenario is green without ever having been
-red. Say so in `progress.md` and observe it again at Phase 5. A green that cannot
+red. Say so in `progress.md` and observe it again at Phase 6. A green that cannot
 fail is not evidence.
 
 **The gate is unchanged.** Skipping the discovery run does not skip the RED run:

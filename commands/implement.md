@@ -30,7 +30,7 @@ not remove the RED gate, the scope rule, the test-integrity rule, or any of the
 stop conditions. A phase whose checks were not observed does not become
 complete because nobody was watching.
 
-A BDD plan's `Phase 3` expands into one sub-phase per capability, and each of
+A BDD plan's `Phase 4` expands into one sub-phase per capability, and each of
 those is a phase for pausing purposes. A nine-capability feature therefore
 pauses nine times in the default mode. If the queue is long and the user is not
 watching, say so and suggest `--auto` rather than quietly running on.
@@ -74,10 +74,10 @@ device, a review - say so plainly, name what is missing, and leave the phase
 
 ## 3. A BDD plan: the loop
 
-**Phase 0.1 comes first, when the plan has one.** Planning leaves it `pending`:
+**Phase 1 comes first, when the plan has one.** Planning leaves it `pending`:
 it is where the design system the plan names actually gets built - the component
 library installed, `DESIGN.md`'s values mapped into it, the mapping shown to
-have taken effect. Drive it before Phase 1 like any other phase, and do not skip
+have taken effect. Drive it before Phase 2 like any other phase, and do not skip
 it because the scenarios would pass without it. They would: they assert
 behaviour, and an unstyled page satisfies every one of them. A feature delivered
 that way is green and unusable, and no later phase in this plan looks at it
@@ -85,25 +85,25 @@ again.
 
 A row the Design System table marks `declined` needs no work - write the
 decision and its date into `progress.md` and move the phase to `complete`. A
-feature that renders no UI is the same. What must not happen is Phase 0.1 left
-`pending` while Phase 1 starts.
+feature that renders no UI is the same. What must not happen is Phase 1 left
+`pending` while Phase 2 starts.
 
 Then one pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
-Phase 3 expands into one sub-phase per capability, and those are the only thing
+Phase 4 expands into one sub-phase per capability, and those are the only thing
 that repeats:
 
 ```
-per feature   1 outer RED (every scenario)
-           -> 2 break into capabilities + write every failing unit test
-           -> 3.1 -> 3.2 -> ... -> 3.N   (code, in dependency order)
-           -> 4 all units green
-           -> 5 outer GREEN (every scenario) -> 6 refactor -> 7 delivery
+per feature   2 outer RED (every scenario)
+           -> 3 break into capabilities + write every failing unit test
+           -> 4.1 -> 4.2 -> ... -> 4.N   (code, in dependency order)
+           -> 5 all units green
+           -> 6 outer GREEN (every scenario) -> 7 refactor -> 8 delivery
 ```
 
 Nothing resets. Every capability keeps its own numbered phase and its own
 status, so `task_plan.md` shows the whole shape of the work at once.
 
-Phase 2 comes **after** the outer RED, never before: the failures are what say
+Phase 3 comes **after** the outer RED, never before: the failures are what say
 which capabilities are missing. A breakdown written earlier is a guess about
 code nobody has run.
 
@@ -112,7 +112,7 @@ four things the plan cannot enforce on its own.
 
 ### The RED gate
 
-Phase 1 is not complete until at least one scenario fails **on an assertion
+Phase 2 is not complete until at least one scenario fails **on an assertion
 whose message names the expected outcome against the actual one**, and every
 other scenario is classified from what the run printed.
 
@@ -143,7 +143,7 @@ writing; a partly built feature must not be overwritten.
 A skeleton is the shape the step definitions drive, with no behaviour behind it:
 an empty form, an empty list. **It must not satisfy a single assertion** - one
 that passes against a skeleton is green without ever having been red, so name it
-in `progress.md` and observe it again at Phase 5. Say what the skeleton
+in `progress.md` and observe it again at Phase 6. Say what the skeleton
 deliberately does not do. A skeleton is not production code for the scope rule's
 purposes, and it is not progress either.
 
@@ -154,12 +154,12 @@ feature says.
 
 ### The scope rule
 
-Inside a `Phase 3.x`, write only what that capability's failing test asked for.
+Inside a `Phase 4.x`, write only what that capability's failing test asked for.
 Code for a later capability belongs to its own phase. Code no capability asks
 for should not be written without saying so and getting an answer.
 
-Do not run the whole suite in a `3.x` phase to see whether the feature works.
-That is Phase 5. What each sub-phase observes is its own capability's test, and
+Do not run the whole suite in a `4.x` phase to see whether the feature works.
+That is Phase 6. What each sub-phase observes is its own capability's test, and
 that every previously passing test still passes.
 
 ### The layout rule
@@ -171,7 +171,7 @@ goes in the plan's **Page layout** table.
 
 This is the one UI rule with no downstream check at all. A scenario asserts
 behaviour, so it passes on a page composed by nobody exactly as it passes on a
-designed one; `<unit-test>` never renders the page; Phase 5 only re-reads the
+designed one; `<unit-test>` never renders the page; Phase 6 only re-reads the
 same assertions. Tokens make it the right colour, the component library makes
 the parts real, and neither of them decides what goes where. If that decision is
 not taken by the designer, it is taken by whoever writes the markup - silently,
@@ -183,16 +183,16 @@ needs a reason beside it.
 
 ### The stack-guidance rule
 
-Before writing a `Phase 3.x` capability's code, read the **Development skills**
+Before writing a `Phase 4.x` capability's code, read the **Development skills**
 the plugin's `README.md` lists for this stack, and record in `progress.md` what
 they changed. A stack with no row in that table has no reference here - say so
 rather than reaching for one written for a different stack.
 
 **Do this even when the plan file does not ask for it.** The check belongs in
-every `Phase 3.x` block, but it is the first one a thin plan leaves out: it
+every `Phase 4.x` block, but it is the first one a thin plan leaves out: it
 costs a round-trip, it changes nothing a reader can see, and no later phase
-looks for it. `<unit-test>` does not know what was read, Phase 5 re-reads the
-same assertions, and Phase 7 counts scenarios. If the plan in hand is missing
+looks for it. `<unit-test>` does not know what was read, Phase 6 re-reads the
+same assertions, and Phase 8 counts scenarios. If the plan in hand is missing
 it, add it to the remaining blocks and say so - a plan written without it is the
 reason to apply the rule, not a licence to skip it.
 
@@ -201,7 +201,7 @@ it**, and only one of them can be checked afterwards. Write down which.
 
 ### The test-integrity rule
 
-Every test is written in Phase 2, before any production code - with one
+Every test is written in Phase 3, before any production code - with one
 exception, which has to be declared rather than worked around: a capability the
 stack genuinely cannot unit-test (an `async` server component a unit runner
 cannot render, say). Give that row `**no unit test**` in the queue, quote the
@@ -213,28 +213,28 @@ column, and never let such a row absorb logic a neighbour could have tested.
 `${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` has the per-stack locations
 and the reasons.
 
-Phase 2's own gate is that **every** test fails. A test that passes against a
+Phase 3's own gate is that **every** test fails. A test that passes against a
 skeleton has not been shown to test anything. When placeholder return values
 make some tests pass for free - a skeleton returning `[]`, `null` or `false`
 happens to satisfy assertions expecting exactly that - make the skeleton throw
 instead, and record why in `progress.md`.
 
-When a Phase 2 test turns out to have guessed wrong - the interface it assumed
+When a Phase 3 test turns out to have guessed wrong - the interface it assumed
 is not the interface that emerged - change it and record it under **Predictions
 that were wrong** in `progress.md`, with what replaced it. Never quietly
 reshape a test to match code that was just written: that inverts the order the
 whole method depends on, and nothing in the files would show it happened. The
-same goes for deleting, skipping or loosening a test to reach Phase 4; that
+same goes for deleting, skipping or loosening a test to reach Phase 5; that
 phase asks about it directly.
 
 ### Delivery
 
-Phase 7 closes the feature: every row in the Scenario Queue `green`, every row
+Phase 8 closes the feature: every row in the Scenario Queue `green`, every row
 in the Capability Queue `done`, `<coverage>` regenerated, every requirement tag
 covered. Then report the way `run` does: the numbers, then what they do not
 cover.
 
-A scenario still `blocked` at Phase 7 means the Capability Queue was
+A scenario still `blocked` at Phase 8 means the Capability Queue was
 incomplete. Say that, and name the seam - never report the feature as done with
 a blocked row in its queue.
 
@@ -284,7 +284,7 @@ These halt the run even under `--auto`:
   the error, name what is unclear. Do not open a fourth.
 - Making the scenario pass would require a change nobody asked for - a schema
   migration, a new dependency, a change to another feature's behaviour.
-- Phase 2 cannot enumerate the capabilities because the feature's scenarios
+- Phase 3 cannot enumerate the capabilities because the feature's scenarios
   disagree with each other, or because a `blocked` scenario needs a seam whose
   shape nobody has decided.
 - The plan has drifted from the feature file.

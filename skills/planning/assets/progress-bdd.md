@@ -15,7 +15,7 @@ still proves the work after the context is gone and the commits are squashed.
 
 | Date | Capability worked on | Ended at |
 |---|---|---|
-| `<YYYY-MM-DD>` | `3.<n>` <name> | <phase, or what blocked it> |
+| `<YYYY-MM-DD>` | `4.<n>` <name> | <phase, or what blocked it> |
 
 ## Baseline
 
@@ -38,7 +38,45 @@ along.
 
 ---
 
-## Phase 1: Outer RED
+## Phase 1: Design system in place
+
+What the design system actually is on disk, once this phase has run. A feature
+that renders no UI gets one line saying so, and nothing else.
+
+**What the search found, before anything was built.** One row per source, and a
+row saying where you looked is what makes an absence a fact rather than an
+assumption:
+
+| Source | Where you looked | Found? |
+|---|---|---|
+| `DESIGN.md` | `find . -name DESIGN.md -not -path '*/node_modules/*'` | |
+| Component library | <manifest, component directory> | |
+| Design plugin | <plugin list> | |
+
+- **Corrections to Phase 0's table:** <none, or which row said `to build` and
+  turned out to exist, and what was therefore not built>
+- **Whose design system it is:** <asked and answered, for a `DESIGN.md` that
+  describes another product>
+- **Installed:** <library and version, and the config file it wrote>
+- **Mapped:** <which token groups were carried from `DESIGN.md` into the
+  library's theme, and any component changed to match a value it disagreed with>
+
+**The mapping took effect.** One value `DESIGN.md` defines, beside what the
+library actually resolves to. Files existing is not values arriving:
+
+```
+<the DESIGN.md line, and the resolved theme value beside it>
+```
+
+- **Design plugin:** <enabled, declined, or enabled-but-needs-a-session-reload>
+- **`DESIGN.md` does not define, and this project needs:** <the list, written
+  before any of it was invented - data tables, form errors, empty states>
+- **`DESIGN.md` specifies, and the library cannot express:** <the list Phase 4.x
+  needs, so a page departing from the spec is a known departure>
+
+---
+
+## Phase 2: Outer RED
 
 The whole feature at once.
 
@@ -62,15 +100,15 @@ Each `blocked` row names a seam. Every one of those seams is now a row in the
 Capability Queue - if it is not, this table is claiming a cause the plan does
 not carry.
 
-## Phase 2: Capabilities, and every failing test
+## Phase 3: Capabilities, and every failing test
 
 The breakdown, and the tests that prove it. Both were written before any
 production code.
 
 | # | Phase | Capability | Needs | Test |
 |---|---|---|---|---|
-| 1 | `3.1` | <capability> | — | `<path::name>` |
-| 2 | `3.2` | <capability> | 1 | `<path::name>` |
+| 1 | `4.1` | <capability> | — | `<path::name>` |
+| 2 | `4.2` | <capability> | 1 | `<path::name>` |
 
 - **Command:** `<unit-test>`
 - **Result:** <n tests, all n failed>
@@ -88,11 +126,11 @@ mistakes it for work already done.
 
 ---
 
-## Capability `3.<n>`: <name>
+## Capability `4.<n>`: <name>
 
 Repeat this block per capability, in queue order.
 
-- **Phase 3.<n> - code:** `<paths>` - <what was added>
+- **Phase 4.<n> - code:** `<paths>` - <what was added>
 - **Command:** `<unit-test>`
 - **This capability's test:** PASS
 - **Everything else:** <n passed, n failed>
@@ -106,13 +144,13 @@ Repeat this block per capability, in queue order.
   regression, and it goes in the Errors table.>
 
 A capability whose test was never seen failing is not a capability. If its test
-was written or changed during this phase rather than in Phase 2, say so here
+was written or changed during this phase rather than in Phase 3, say so here
 with the reason - a test written after the code it checks proves nothing about
 whether the code was needed.
 
 ---
 
-## Phase 4: All units green
+## Phase 5: All units green
 
 - **Command:** `<unit-test>`
 - **Result:** <n passed, 0 failed, 0 skipped>
@@ -123,10 +161,10 @@ whether the code was needed.
 
 - **Count against the queue:** <n> rows, <n> passing tests, plus <n> the
   project already had.
-- **Tests deleted, skipped or loosened since Phase 2:** <none, or each one with
+- **Tests deleted, skipped or loosened since Phase 3:** <none, or each one with
   the reason>
 
-## Phase 5: Outer GREEN
+## Phase 6: Outer GREEN
 
 - **Feature:** `<cucumber-feature>` -> PASSED
 
@@ -142,7 +180,7 @@ whether the code was needed.
 
 - **Commit:** `<sha>` <subject>
 
-## Phase 6: Refactor
+## Phase 7: Refactor
 
 - **What changed:** <duplication removed, names improved - or "none needed">
 - **Units after:** `<unit-test>` -> <n passed, 0 failed>
@@ -166,7 +204,7 @@ attempt on your own.
 
 ## Predictions that were wrong
 
-Writing every test in Phase 2 means betting on interfaces that do not exist
+Writing every test in Phase 3 means betting on interfaces that do not exist
 yet. Some of those bets lose. Each one gets a row - not a silent edit.
 
 | Date | What was predicted | What turned out to be true | What changed |

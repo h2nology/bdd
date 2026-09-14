@@ -65,11 +65,11 @@ usable rather than decorative:
   (`find . -name DESIGN.md -not -path '*/node_modules/*'`), and if you record
   one as absent, say where you looked - `DESIGN.md` lives at the project root or
   under `docs/`, and a source marked `to build` because nobody searched is how
-  Phase 0.1 comes to overwrite a file the user put there. Whatever the user
-  chooses and the project genuinely does not have goes to **Phase 0.1**, which
+  Phase 1 comes to overwrite a file the user put there. Whatever the user
+  chooses and the project genuinely does not have goes to **Phase 1**, which
   installs the library, maps `DESIGN.md`'s values into it, and shows the mapping
   took effect. Naming a design system the repository does not contain is how
-  Phase 3.x ends up styling against nothing.
+  Phase 4.x ends up styling against nothing.
 
 If the harness cannot execute at all, stop and use `bdd-setup`. If the project
 has no unit test framework, say so, agree one with the user, and record that it
@@ -99,9 +99,9 @@ State, in the user's language:
 - Where the plan is, and what its Phase 0 recorded.
 - The six commands, as resolved.
 - The design system the plan will build against - which parts are `present` and
-  which Phase 0.1 has to build - or why the feature needs none. Say which
+  which Phase 1 has to build - or why the feature needs none. Say which
   routes' layouts the **Page layout** table is waiting on, and that the design
-  plugin is what fills them in Phase 3.x - a plan that names a designer and then
+  plugin is what fills them in Phase 4.x - a plan that names a designer and then
   never uses it is the failure this table exists to make visible.
 - The baseline: how many scenarios are `green` / `red` / `blocked` /
   `undefined` right now.

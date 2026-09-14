@@ -30,7 +30,7 @@ changes or the current capability moves on.>
 
 ## Current Capability
 
-<`Phase 3.x` and the capability name, copied from the queue below>
+<`Phase 4.x` and the capability name, copied from the queue below>
 
 ## Scenario Queue
 
@@ -74,10 +74,10 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       different jobs, so record every one that is there. **Search rather than
       testing one path** - `find . -name DESIGN.md -not -path '*/node_modules/*'`
       - and if you write that something is absent, write where you looked. A
-      source marked `to build` because nobody searched for it is how Phase 0.1
+      source marked `to build` because nobody searched for it is how Phase 1
       comes to overwrite a file the user put there. If none of the three is
       there, **ask the user** before planning any UI phase - do not plan around
-      it. Deciding is all this phase does; **Phase 0.1 is what builds what the
+      it. Deciding is all this phase does; **Phase 1 is what builds what the
       decision names.**
 - [ ] Run the whole suite once and record the output in `progress.md`.
 - [ ] Fill the Scenario Queue from that run. Some scenarios may already be
@@ -145,7 +145,7 @@ replaces another, so finding one is not a reason to stop looking:
 | A UI/UX design plugin | **The designer** - it composes pages out of the other two, which is the part `DESIGN.md` does not specify | `ui-ux-pro-max` or its kind is installed, and whether it has already written a spec | | |
 
 `State` is one of `present` - it is there and usable as it stands;
-`to build in Phase 0.1` - the user chose it and it does not exist yet;
+`to build in Phase 1` - the user chose it and it does not exist yet;
 `declined` - the user was asked and said no. Every row needs one. A row left
 blank is the gap this table exists to make visible.
 
@@ -171,7 +171,7 @@ it is and ask whether to enable it. Recording it as missing because this session
 cannot see its skills turns an available designer into a gap nobody noticed.
 
 **If none of them is there, ask the user** - and ask **which to add**, not which
-one to pick, because they compose. Say what declining costs: Phase 3.x then
+one to pick, because they compose. Say what declining costs: Phase 4.x then
 writes unstyled pages, and **nothing in any later phase catches that**, because
 the scenarios assert behaviour and pass on a page nobody could use. The user may
 still decline; that is their call, but record it here so it was a decision and
@@ -192,16 +192,16 @@ renders, still passes, and still looks like work.
 | | | |
 
 Phase 0 fills the `Route` column from the Information architecture table above.
-`Layout composed by` is filled in **Phase 3.x, as each page is first composed** -
+`Layout composed by` is filled in **Phase 4.x, as each page is first composed** -
 either the design plugin named in the Design System table, or `hand-written`
-with the reason. Phase 7 checks that no row is left blank.
+with the reason. Phase 8 checks that no row is left blank.
 
 `hand-written` is a legitimate answer - there may be no design plugin, or the
 page may be one element. It is not legitimate to leave it blank, and it is not
 legitimate to write it while a design plugin sits installed and unused without
 saying why.
 
-### Phase 0.1: Design system in place
+### Phase 1: Design system in place
 
 Only for a feature with `@web` scenarios. An API-only or CLI feature marks this
 phase `complete` with one line saying it renders no UI - not `pending` forever,
@@ -210,8 +210,8 @@ one nobody did.
 
 **Phase 0 decided what the design system is. This phase builds it.** The split
 exists because deciding was never enough on its own: a plan that records
-"shadcn/ui and a `DESIGN.md`" and then goes straight to Phase 1 arrives at Phase
-3.x with neither of them on disk, and Phase 3.x's instruction to style against
+"shadcn/ui and a `DESIGN.md`" and then goes straight to Phase 2 arrives at Phase
+4.x with neither of them on disk, and Phase 4.x's instruction to style against
 the design system named in Setup has nothing to read. Nothing downstream
 complains - the scenarios assert behaviour, so they go green on an unstyled
 page, and the plan reports a feature that is done and unusable.
@@ -229,7 +229,7 @@ destroy a design system is to write a second one next to it.
       this check exists to prevent, and the step that follows such a report is
       writing a competing copy.
 - [ ] **Reconcile the table with what the search found, before building
-      anything.** A row marked `to build in Phase 0.1` whose artefact turns out
+      anything.** A row marked `to build in Phase 1` whose artefact turns out
       to already exist becomes `present` - correct the row, say in `progress.md`
       that Phase 0 recorded it wrongly and how, and **build nothing for it**.
       The table is Phase 0's belief; the search is the fact. When they disagree
@@ -242,7 +242,7 @@ destroy a design system is to write a second one next to it.
       content looked wrong discards a file the user may have put there
       deliberately, and the user finds out only when their own values stop
       appearing on the page. Record the answer in `progress.md`.
-- [ ] Only now: every row still genuinely marked `to build in Phase 0.1` exists.
+- [ ] Only now: every row still genuinely marked `to build in Phase 1` exists.
       Rows marked `present` are re-checked, not assumed - a dependency in the
       manifest is not the same as an initialised library.
 - [ ] Anything this project needs that `DESIGN.md` does not define is listed in
@@ -270,7 +270,7 @@ destroy a design system is to write a second one next to it.
       before its skills are usable - say so rather than reporting it as ready.
 - [ ] Record in `progress.md` what was installed, what was mapped, and anything
       `DESIGN.md` specifies that the library cannot express. That last list is
-      the one Phase 3.x needs: it says where a page will have to depart from the
+      the one Phase 4.x needs: it says where a page will have to depart from the
       spec, before anyone discovers it one component at a time.
 - **Status:** `pending`
 
@@ -290,15 +290,15 @@ never made, or it was made and never written down.
 ## The Loop
 
 One pass over the whole feature. Phases 1, 2, 4, 5, 6 and 7 run once each;
-Phase 3 expands into one sub-phase per capability, and those are the only thing
+Phase 4 expands into one sub-phase per capability, and those are the only thing
 that repeats:
 
 ```
-per feature   1 outer RED (every scenario)
-           -> 2 break into capabilities + write every failing unit test
-           -> 3.1 -> 3.2 -> ... -> 3.N   (code, in dependency order)
-           -> 4 all units green
-           -> 5 outer GREEN (every scenario) -> 6 refactor -> 7 delivery
+per feature   2 outer RED (every scenario)
+           -> 3 break into capabilities + write every failing unit test
+           -> 4.1 -> 4.2 -> ... -> 4.N   (code, in dependency order)
+           -> 5 all units green
+           -> 6 outer GREEN (every scenario) -> 7 refactor -> 8 delivery
 ```
 
 Nothing resets. Each capability has its own numbered phase with its own status,
@@ -306,7 +306,7 @@ so the file shows the whole shape of the work at once and the history does not
 have to be reconstructed from `progress.md`.
 
 **What this ordering costs, stated up front.** Writing every unit test in Phase
-2 is a bigger up-front bet than writing them one at a time. A test written for
+3 is a bigger up-front bet than writing them one at a time. A test written for
 capability 5 can turn out to be wrong once capability 2 actually exists - the
 interface it guessed at was not the interface that emerged. When that happens,
 change the test and record it in `progress.md` as a prediction that was wrong,
@@ -314,7 +314,7 @@ with what replaced it. **Never quietly rewrite a test to match code that just
 got written**; that inverts the whole point, and nothing in the file would show
 it happened.
 
-### Phase 1: Outer RED
+### Phase 2: Outer RED
 
 Every scenario in the feature, not one of them.
 
@@ -341,13 +341,13 @@ assertion first.
 A `blocked` scenario is not RED either, and it must not be counted as one. It
 is an honest state with a named cause: the fixture seam it needs is not built.
 Recording it as `blocked` and turning its cause into a capability is what keeps
-the gap visible - Phase 5 will not accept it.
+the gap visible - Phase 6 will not accept it.
 
 **Do not edit production code until this phase is `complete`.** This is the
 gate the whole loop rests on: without a red scenario, nothing proves the code
 written next was needed, or that it does what the feature says.
 
-### Phase 2: Break the feature into capabilities, and write every failing test
+### Phase 3: Break the feature into capabilities, and write every failing test
 
 Only now, after the outer RED. The failures say what is missing; before seeing
 them, any breakdown is a guess about code nobody has run.
@@ -355,7 +355,7 @@ them, any breakdown is a guess about code nobody has run.
 - [ ] List every capability the feature needs, across all its scenarios.
 - [ ] Give each one a `Needs` - the capabilities it cannot be built before.
 - [ ] Order the queue so nothing comes before what it needs, and number the
-      rows `3.1`, `3.2`, ... in that order.
+      rows `4.1`, `4.2`, ... in that order.
 - [ ] Write one failing unit test for every capability in the queue - except a
       capability the stack genuinely cannot unit-test (see below). Name each
       exception in `progress.md` with the reason; never invent a test to fill
@@ -367,7 +367,7 @@ them, any breakdown is a guess about code nobody has run.
       in `progress.md`.
 - [ ] Every test's **first failing assertion is about its own capability**, not
       about something in its `Needs`. With the whole queue unbuilt a dependent
-      test will otherwise trip on its prerequisite, and `Phase 3.x` will not be
+      test will otherwise trip on its prerequisite, and `Phase 4.x` will not be
       able to tell a real RED from a missing one. The fix is to open the test on
       the surface this capability adds - reorder the queue only if the order is
       genuinely wrong.
@@ -376,19 +376,19 @@ them, any breakdown is a guess about code nobody has run.
 
 #### Capability Queue
 
-The feature's whole breakdown. One row per capability, one `Phase 3.x` each,
+The feature's whole breakdown. One row per capability, one `Phase 4.x` each,
 ordered by dependency. This is the spine of the plan - it is filled once, in
 this phase, and rows are only marked `done` afterwards.
 
 | # | Phase | Capability | Needs | Test | State |
 |---|---|---|---|---|---|
-| 1 | `3.1` | <the thing to build> | — | `<path::name>` | `done` |
-| 2 | `3.2` | <thing> | 1 | `<path::name>` | `in_progress` |
-| 3 | `3.3` | <thing> | 1, 2 | `<path::name>` | `todo` |
+| 1 | `4.1` | <the thing to build> | — | `<path::name>` | `done` |
+| 2 | `4.2` | <thing> | 1 | `<path::name>` | `in_progress` |
+| 3 | `4.3` | <thing> | 1, 2 | `<path::name>` | `todo` |
 
 `todo` - no code yet. Normally its failing test is already written; a row that
-Phase 1 appended for a `blocked` scenario's missing seam carries `todo` from the
-moment it is recorded and gets its failing test in Phase 2, like every other row.
+Phase 2 appended for a `blocked` scenario's missing seam carries `todo` from the
+moment it is recorded and gets its failing test in Phase 3, like every other row.
 `in_progress` - being built.
 `done` - its test passes, and so does everything that passed before it.
 
@@ -397,7 +397,7 @@ test - an `async` server component several frameworks cannot render in a unit
 runner, a wiring layer whose only observable behaviour is the page it produces.
 Write `**no unit test**` in its `Test` column, say in `progress.md` which
 framework limitation forces it and quote the source, and keep the row: its
-verification is the outer scenario in Phase 5, and until then **nothing covers
+verification is the outer scenario in Phase 6, and until then **nothing covers
 it**. Two things this is not a licence for. Do not invent a test that asserts
 nothing to fill the column - that is worse than the empty column, because the
 row then looks covered. Do not let the row absorb logic that *could* be tested:
@@ -412,30 +412,30 @@ mirroring the source tree.
 
 Order is a claim about dependency, not preference. If capability 3 needs
 capability 2, it comes after it - otherwise its test fails for a reason that
-has nothing to do with capability 3, and Phase 3.3 cannot tell a real RED from
+has nothing to do with capability 3, and Phase 4.3 cannot tell a real RED from
 a missing prerequisite.
 
 Keep capabilities small. One that cannot be driven by one failing test is two
 capabilities. A capability that no scenario in this feature needs does not
 belong in the queue at all - say so rather than building it.
 
-Adding a row after Phase 2 is allowed and has to be visible: append it with the
-next free `3.x` number, write its failing test, watch it fail, and record in
-`progress.md` why the Phase 2 breakdown missed it. Renumbering existing rows is
+Adding a row after Phase 3 is allowed and has to be visible: append it with the
+next free `4.x` number, write its failing test, watch it fail, and record in
+`progress.md` why the Phase 3 breakdown missed it. Renumbering existing rows is
 not allowed - their phases are already on the record.
 
-### Phase 3: Write the code
+### Phase 4: Write the code
 
 One sub-phase per capability, in queue order. Copy the block below once per
 row, and delete the spares.
 
 Do not run the whole suite in these phases to see whether the feature works.
-That is Phase 5. What each sub-phase observes is its own capability's test, and
+That is Phase 6. What each sub-phase observes is its own capability's test, and
 nothing more.
 
 - **Status:** `pending`
 
-#### Phase 3.1: <capability name>
+#### Phase 4.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
 - [ ] Before writing this capability's code, read the **Development skills** the
@@ -445,7 +445,7 @@ nothing more.
       A stack with no row in that table has no reference here - say so rather
       than applying one written for a different stack.
 - [ ] If this capability renders UI, style it against the design system **built
-      in Phase 0.1** - the spec named in Setup, as it actually exists on disk.
+      in Phase 1** - the spec named in Setup, as it actually exists on disk.
       **Minimum is measured against that spec, not against a blank page.**
       An element left to the browser's defaults is outside the spec, and
       following the spec costs no more code than ignoring it - a styled button
@@ -473,7 +473,7 @@ nothing more.
       `## Current Capability` to the next row whose `Needs` are all `done`.
 - **Status:** `pending`
 
-#### Phase 3.2: <capability name>
+#### Phase 4.2: <capability name>
 
 - [ ] Every check from the block above, written out in full.
 - **Status:** `pending`
@@ -488,19 +488,19 @@ line to drop and the only one nothing downstream will miss.
 
 **This block survives planning intact.** `/bdd:plan-with-feature` stops at a
 filled Phase 0, so whoever writes the plan meets `<capability name>` with no
-capability to put there yet - Phase 2 has not run, and the queue is empty. Leave
-the placeholder and leave every check; do not collapse Phase 3 into a line
-saying Phase 2 will fill it in. Phase 2 copies this block per queue row, and it
+capability to put there yet - Phase 3 has not run, and the queue is empty. Leave
+the placeholder and leave every check; do not collapse Phase 4 into a line
+saying Phase 3 will fill it in. Phase 3 copies this block per queue row, and it
 can only copy what is here.
 
-### Phase 4: All units green
+### Phase 5: All units green
 
 One run over everything, once every row in the Capability Queue is `done`.
 
 - [ ] `<unit-test>` - every unit test passes, none skipped.
 - [ ] The count matches the Capability Queue: one passing test per row, plus
       whatever the project had before this feature.
-- [ ] Every test written in Phase 2 still exists and still asserts what it
+- [ ] Every test written in Phase 3 still exists and still asserts what it
       asserted then. A test that was deleted, skipped, or loosened to get here
       is named in `progress.md` with the reason.
 - [ ] Record the run in `progress.md`.
@@ -509,7 +509,7 @@ One run over everything, once every row in the Capability Queue is `done`.
 The third check is the one that matters. Everything above it can be satisfied
 by weakening a test, and nothing else in this file would notice.
 
-### Phase 5: Outer GREEN
+### Phase 6: Outer GREEN
 
 - [ ] `<cucumber-feature>` - every scenario in this feature passes, including
       every `Examples` row of every outline.
@@ -525,7 +525,7 @@ unit tests all pass and the behaviour still is not there. Append the missing
 capability rather than patching the step definition, and say in `progress.md`
 what the breakdown missed.
 
-### Phase 6: Refactor
+### Phase 7: Refactor
 
 - [ ] Remove duplication in the production code and in the step definitions.
 - [ ] `<unit-test>` still green.
@@ -535,7 +535,7 @@ what the breakdown missed.
 
 ## Delivery
 
-### Phase 7: Feature complete
+### Phase 8: Feature complete
 
 - [ ] Every row in the Scenario Queue is `green`.
 - [ ] Every row in the Capability Queue is `done`.

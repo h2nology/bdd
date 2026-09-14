@@ -9,7 +9,7 @@
 
 用 bdd plugin 开发 UI 页面，产出的页面没有 CSS，不能用。
 
-表面上看是 Phase 3.x 的「Write the minimum production code that satisfies this
+表面上看是 Phase 4.x 的「Write the minimum production code that satisfies this
 capability's test」太克制。实际不是。TDD 的「最小代码」只在**测试覆盖了你在乎的
 一切**时才成立，而这条链路上：
 
@@ -17,24 +17,24 @@ capability's test」太克制。实际不是。TDD 的「最小代码」只在**
 |---|---|---|
 | `discover` → Gherkin | 系统该做什么 | 它长什么样 |
 | `sketch` → 线框板 | 页面上有哪些元素、点了会怎样 | 明确拒绝谈样式 |
-| Phase 2 单元测试 | 一个能力的行为 | 无 |
-| Phase 5 cucumber | 场景的行为 | 无 |
+| Phase 3 单元测试 | 一个能力的行为 | 无 |
+| Phase 6 cucumber | 场景的行为 | 无 |
 
 **样式从来没有被指定过**，所以「最小代码」正确地产出了零样式。
-把 Phase 3.x 改成「写好看的代码」不解决问题：TDD 纪律会失效，而仍然没有任何
+把 Phase 4.x 改成「写好看的代码」不解决问题：TDD 纪律会失效，而仍然没有任何
 东西定义「好看」是什么。缺的是**规格**。
 
 ## 2. v4 做什么，不做什么
 
 **做**：让每个 UI 项目都有一份设计系统规格，并把它编译成代码真能用的 token，
-然后让 Phase 3.x 照着它写。
+然后让 Phase 4.x 照着它写。
 
 **不做**：自动验证。原方案设计过两道关卡（静态 lint、渲染检查），
 v4 全部去掉 —— 静态 lint 只能做正则扫描，意义不大；UA 默认值探测又太绕。
 **留到 v5**，届时的正确形态见第 4 节。
 
 **因此要说清楚**：v4 把第 1 节的根因解决了一半。规格有了，
-但「Phase 3.x 没照做」仍然不会让任何东西变红。这是 v4 已知的、故意留下的缺口，
+但「Phase 4.x 没照做」仍然不会让任何东西变红。这是 v4 已知的、故意留下的缺口，
 不是疏漏（Rule 12）。
 
 ## 3. 设计系统
@@ -100,7 +100,7 @@ Google `design.md` 格式的 `DESIGN.md` 是**结构化、机器可读**的：
 `padding` / `rounded` 这种精确到组件的规格。硬转会丢掉它的 pages 覆盖机制，
 缺的部分还得凭空编。
 
-**所以统一的是指针，不是格式。** Phase 3.x 需要的是「我该照着什么写」，
+**所以统一的是指针，不是格式。** Phase 4.x 需要的是「我该照着什么写」，
 这条记录写进 `task_plan.md` —— `planning` skill 已经在那里记项目的六个测试命令，
 加一行「设计系统在哪、是什么形态」是自然延伸，不需要新文件。
 
@@ -139,7 +139,7 @@ skill 该做的只是确认它装好了、样式真的生效，而不是再产�
 2. **都没有 → 顾问 plugin 托底生成**，用它自己的格式，不转换。
 3. **不生成抄本**（3.3）。已有的来源就用它原样。
 4. **按需编译 token**（3.4）。shadcn 这类自带 token 的栈跳过这步。
-5. **把指针写进 `task_plan.md`**：设计系统在哪、是什么形态，供 Phase 3.x 查。
+5. **把指针写进 `task_plan.md`**：设计系统在哪、是什么形态，供 Phase 4.x 查。
 6. **自证可用**：生成一个 demo 页，把这套设计系统的主要 token 和组件都用上
    一次，跑起来截图给用户看。没跑过的设计系统不算建立 ——
    装了依赖不等于样式真的生效了。
@@ -179,7 +179,7 @@ Playwright 抓： 实际 background-color = rgb(239,239,239)
 feature 带 `@web` 标签、但项目没有任何设计系统来源 → 停下，指向
 `design-system-setup`。不静默降级成「先做着，样式以后补」。
 
-**b. `skills/planning/assets/task_plan-bdd.md` 的 Phase 3.x 第一条**，
+**b. `skills/planning/assets/task_plan-bdd.md` 的 Phase 4.x 第一条**，
 在现有的 "Write the minimum production code that satisfies this capability's
 test." 之后补一句限定：
 
@@ -192,7 +192,7 @@ test." 之后补一句限定：
 关键在于：这**不放宽** TDD 纪律。跟着规格写和不跟着写，代码量是一样的，
 但一个能用一个不能用。
 
-**c. Phase 5 不加检查** —— v4 没有可加的自动检查（第 4 节）。
+**c. Phase 6 不加检查** —— v4 没有可加的自动检查（第 4 节）。
 v5 补上验证时，这里加一条。
 
 ## 6. sketch 不进实现链路
@@ -211,7 +211,7 @@ reviewer 争论内容而不是颜色。
 - 耦合方向反了：设计系统是项目级长期资产，`sketch` 是每 feature 一次性的评审
   产物
 
-Phase 3.x 要的确定性由项目的设计系统提供，它与 `sketch` 跑没跑过无关。
+Phase 4.x 要的确定性由项目的设计系统提供，它与 `sketch` 跑没跑过无关。
 
 ## 7. skill 与 command 的划分
 
@@ -248,7 +248,7 @@ Phase 3.x 要的确定性由项目的设计系统提供，它与 `sketch` 跑没
 | `skills/design-system-setup/SKILL.md` | **新增** —— 三来源探测、顾问托底、按需编译、写指针、demo 自证 |
 | `skills/design-system-setup/references/design-sources.md` | **新增** —— 三种来源各自的探测判据、`design.md` 格式要点、各栈的编译产物形式 |
 | `commands/bootstrap.md` | **新增** —— 按序调用两个 skill |
-| `skills/planning/assets/task_plan-bdd.md` | Phase 3.x 措辞；新增「设计系统在哪」一行 |
+| `skills/planning/assets/task_plan-bdd.md` | Phase 4.x 措辞；新增「设计系统在哪」一行 |
 | `commands/plan-with-feature.md` | `@web` 无设计系统 → 阻塞，指向 `design-system-setup` |
 | `README.md` | 技能表、命令表、典型流程 |
 

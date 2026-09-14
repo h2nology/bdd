@@ -341,8 +341,8 @@ const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})\s*\S*\s*$/;
  *
  * Both plan scripts read a plan line by line, looking for `#### Phase n`
  * headings, `- [ ]` boxes and `**Status:**` lines. A plan that *shows* one of
- * those rather than declaring it - the BDD template's Phase 3 block, quoted so
- * Phase 2 can copy it once per capability - would otherwise have its example
+ * those rather than declaring it - the BDD template's Phase 4 block, quoted so
+ * Phase 3 can copy it once per capability - would otherwise have its example
  * read as the real thing: `planning-status.cjs` reports a phase nobody wrote,
  * with unticked boxes nobody can tick, and `phase-status.cjs` can write a
  * status line into the middle of the example.

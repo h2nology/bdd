@@ -88,11 +88,11 @@ first point where the question is answerable at all: before the feature files
 exist, nothing can tell whether the project has `@web` scenarios, or what
 product the pages would serve.
 
-Whatever the user chooses and the project lacks is then built by **Phase 0.1**
+Whatever the user chooses and the project lacks is then built by **Phase 1**
 of that plan, driven like every other phase: the component library installed,
 `DESIGN.md`'s values mapped into it, the mapping shown to have taken effect.
 Recording the choice and building it are two different things, and a plan that
-does only the first reaches Phase 3.x with nothing on disk to style against.
+does only the first reaches Phase 4.x with nothing on disk to style against.
 
 **What the design system is not.** It says what the pages should look like;
 nothing checks that they do. The scenarios assert behaviour, so they go green on
@@ -170,7 +170,7 @@ into a second file and nothing is compiled. Precedence only arises where two of
 them define the same value, and then the hand-written `DESIGN.md` wins and the
 override is reported. `plan-with-feature` records what it finds in Phase 0 with
 a `State` per source, asks the user which to add when a `@web` feature has none
-of the three, and leaves Phase 0.1 to build whatever is missing.
+of the three, and leaves Phase 1 to build whatever is missing.
 
 **Artifacts** all land in `bdd-artifacts/` (git-ignore it).
 

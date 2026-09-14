@@ -112,7 +112,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --fingerprint features/<n
 Translate the prose into the user's language as you fill it in. Leave a
 placeholder unfilled rather than inventing a value for it.
 
-## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline (and Phase 0.1)
+## 4. BDD plans only: Phase 0 - harness, commands, design system, baseline (and Phase 1)
 
 A BDD plan cannot be written without this: the Scenario Queue's initial state
 has to be **observed**, not guessed, and the six commands have to be real.
@@ -137,17 +137,17 @@ no UI needs none - record that it is why, rather than leaving the row blank.
 
 **Recording the decision is not the same as having a design system, and the
 plan has to carry both.** Give every row in the table a `State` - `present`,
-`to build in Phase 0.1`, or `declined` - and leave `Phase 0.1: Design system in
+`to build in Phase 1`, or `declined` - and leave `Phase 1: Design system in
 place` for whatever is `to build`. Search before marking anything `to build`,
-and say where you looked when you mark something absent: Phase 0.1 builds what
+and say where you looked when you mark something absent: Phase 1 builds what
 this table says is missing, so a source overlooked here is a source overwritten
 there. That phase installs the component library,
 maps `DESIGN.md`'s values into it, and shows the mapping took effect. Planning
-stops at a filled Phase 0 as before; Phase 0.1 is driven by `/bdd:implement`
+stops at a filled Phase 0 as before; Phase 1 is driven by `/bdd:implement`
 with every other phase.
 
 Without that split the plan names a design system that does not exist, and
-Phase 3.x - told to style against the one named in Setup - has nothing to read.
+Phase 4.x - told to style against the one named in Setup - has nothing to read.
 That is the failure this is for: the scenarios still pass, so the plan reports a
 finished feature nobody can use.
 
@@ -214,12 +214,12 @@ prevent, and nobody can tell afterwards which way round it happened.
 Set it with the script rather than editing the markdown:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/phase-status.cjs 3.2 complete --plan docs/planning/<dir>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/phase-status.cjs 4.2 complete --plan docs/planning/<dir>
 ```
 
-A capability's phase is addressed by its sub-number - `3.2`, not `3`. Asking
-for `3` moves the parent Phase 3 status and leaves every capability alone;
-asking for `3.2` moves that one capability and nothing else. The difference is
+A capability's phase is addressed by its sub-number - `4.2`, not `4`. Asking
+for `4` moves the parent Phase 4 status and leaves every capability alone;
+asking for `4.2` moves that one capability and nothing else. The difference is
 silent, so read the confirmation line the script prints rather than assuming.
 
 It rejects a status outside `pending|in_progress|complete`, rejects a phase
@@ -308,7 +308,7 @@ Two rules about `progress.md` that the templates cannot enforce:
 
 | File | What it is for |
 |---|---|
-| `assets/task_plan-bdd.md` | The feature-wide loop, one `Phase 3.x` per capability |
+| `assets/task_plan-bdd.md` | The feature-wide loop, one `Phase 4.x` per capability |
 | `assets/progress-bdd.md` | What was run per capability, and what it printed |
 | `assets/findings-bdd.md` | Decisions, and the specification problems implementing exposed |
 | `assets/task_plan-general.md` | Phase plan for work with no feature file |

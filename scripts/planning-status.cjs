@@ -31,13 +31,13 @@ const u = require('./lib/util.cjs');
 
 const DEFAULT_ROOT = path.join('docs', 'planning');
 /**
- * A phase heading: `### Phase 3: Write the code`, `#### Phase 3.1: <name>`.
+ * A phase heading: `### Phase 4: Write the code`, `#### Phase 4.1: <name>`.
  *
- * The lookahead is what stops `#### Phase 3.x 标准块` - a heading talking
- * *about* the 3.x blocks rather than declaring one - from being read as a
- * second Phase 3, carrying the example's unticked boxes with it. The number has
+ * The lookahead is what stops `#### Phase 4.x 标准块` - a heading talking
+ * *about* the 4.x blocks rather than declaring one - from being read as a
+ * second Phase 4, carrying the example's unticked boxes with it. The number has
  * to be followed by a colon, whitespace, the end of the line, or a period that
- * is itself followed by one of those (`Phase 1. Outer RED`); a period glued to
+ * is itself followed by one of those (`Phase 2. Outer RED`); a period glued to
  * a non-digit is not a separator.
  */
 const PHASE_RE = /^#{3,4}\s+Phase\s+([0-9]+(?:\.[0-9]+)?)(?=[:\s]|$|\.(?:\s|$))\s*[:.]?\s*(.*)$/;
@@ -71,7 +71,7 @@ function fingerprintOf(file) {
  * or shallower.
  *
  * The level range matters: the BDD template puts `#### Capability Queue` inside
- * Phase 2, and a `##`-only lookup returned nothing for it - which silently
+ * Phase 3, and a `##`-only lookup returned nothing for it - which silently
  * disabled every cross-check that reads that table.
  */
 function section(md, heading) {
@@ -137,7 +137,7 @@ function parseSource(md) {
 
 /**
  * The Capability Queue: the feature's whole breakdown, one row per capability,
- * each one owning a `Phase 3.x`. Absent from older per-scenario plans, which is
+ * each one owning a `Phase 4.x`. Absent from older per-scenario plans, which is
  * why every caller treats an empty result as "this plan does not use it".
  */
 function parseCapabilities(md) {

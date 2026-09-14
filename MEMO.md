@@ -36,7 +36,7 @@ BDD要基于cucumber + Playwright + 多种开发语言支持。
 
 我想要对bdd plugin进行扩展（version 4）。
 
-目前用bdd plugin开发UI页面有个硬伤：Phase 3.x只写"通过测试的最少代码"，
+目前用bdd plugin开发UI页面有个硬伤：Phase 4.x只写"通过测试的最少代码"，
 而Gherkin只描述行为、sketch只画灰度线框、单元测试和cucumber场景断言的也全是行为，
 样式从来没有被指定过，所以产出的页面根本不能用。
 
@@ -44,7 +44,7 @@ BDD要基于cucumber + Playwright + 多种开发语言支持。
 2. 三个来源任一即可：DESIGN.md / UI组件库（shadcn/ui等）/ 设计顾问plugin
    （ui-ux-pro-max等）。都没有则用顾问plugin托底生成
 3. 把DESIGN.md编译成项目能用的token代码（tokens.css / tailwind theme / theme.ts）
-4. Phase 3.x的"最小"重新定义为**相对DESIGN.md的最小**，而不是相对空白的最小
+4. Phase 4.x的"最小"重新定义为**相对DESIGN.md的最小**，而不是相对空白的最小
 5. 把bootstrap skill拆开：`bdd-setup`（cucumber harness）+
    `design-system-setup`（设计系统），再加一个`bootstrap` command调用这两个
 
