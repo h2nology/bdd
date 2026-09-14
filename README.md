@@ -26,9 +26,10 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 ## Development skills
 
-Stack-specific guidance, read **while writing code** - React and Next.js today,
-other stacks as they are added. These are not part of the BDD loop and no phase
-runs them: they are references the code in hand either needs or does not.
+Stack-specific guidance, read **while writing code** - React, Vue, Nuxt and
+React Native today, other stacks as they are added. These are not part of the
+BDD loop and no phase runs them: they are references the code in hand either
+needs or does not.
 
 `references/development-skills.md` is the table - which skill applies to which
 stack, and what each one carries. Both task plan templates and `/bdd:implement`
