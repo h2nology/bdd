@@ -243,9 +243,21 @@ first `@web` feature, check that a person can get to it from what is already
 built: capture a run and generate the page flow (`flow-map`), then look for a
 page with no inbound edge. `page.goto` in a step definition reaches every page
 regardless, so a missing path never shows up as a failing scenario - two
-features stay green as two islands. Report it, and send the navigation back
-through `discover`; it is behaviour, and it needs a scenario that clicks rather
-than one that navigates.
+features stay green as two islands.
+
+**This check is the backstop, not where navigation gets decided.** How a person
+arrives at a screen is behaviour; `discover` asks for it before the feature file
+exists, and the answer is supposed to be one of the scenarios you have just made
+pass. So a page with no inbound edge here is not a discovery, it is the receipt
+for a question nobody asked - and by now the screen is built, styled, and
+committed, which is why it cannot be fixed from inside this plan.
+
+Report it that way. Say which screen, say that its arrival was never specified,
+and send it to `discover` as a requirement that was missed rather than as a
+tidy-up. Before writing the scenario, work out how it got past `discover`: a
+second feature that skips the same question leaves a second island, and the
+report alone has never stopped that - it is written into a plan that closes, and
+the next plan starts somewhere else.
 
 Name anything deliberately left undone, and name every assumption still marked
 `assumed - unconfirmed` in `findings.md`. A feature reported as done while a

@@ -10,6 +10,31 @@ whose answers change the scenarios - batch them in one message.
 - What happens for an unauthenticated visitor, a logged-in non-owner, an admin?
 - Does the action need approval by a second person?
 
+## Arrival and navigation
+
+Only for a requirement that puts something on a screen. Ask it **before** the
+feature file exists: how a person reaches a screen is behaviour, so it is a rule
+and an example like any other, not stage directions around the examples that
+follow.
+
+- Does this requirement introduce a screen that is not there yet? Run
+  `spec-report.cjs features/` for the inventory of what already exists rather
+  than assuming.
+- **From which existing screen does a person reach it, and by clicking what?**
+  "From the roster" is not an answer; "the 登记新生 button on the roster" is.
+- Where does a person land on success? On cancel? Can they get back?
+- Is it reachable only by a direct URL - a deep link, an emailed link, a
+  bookmark? **That is a legitimate answer.** The reason to ask is that it has to
+  be said, rather than left as the default nobody chose.
+- Does something that already exists now need a new way in or out? A new screen
+  usually adds a control to an old one.
+
+Each answer becomes its own example, and that example has to **click**. A
+scenario that arrives by navigating to a URL exercises the page and proves
+nothing about whether a person could have got there: a step definition reaches
+every route regardless of what the application links to, so a screen nobody can
+navigate to still goes green.
+
 ## Preconditions and state
 
 - What must already exist for this to be possible?

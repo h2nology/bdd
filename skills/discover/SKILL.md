@@ -81,6 +81,16 @@ Rules for this step:
 - Cover the unhappy paths: boundary values, permissions, empty and maximal
   states, concurrency, and error recovery. Ask `references/discovery-questions.md`
   for the checklist.
+- **When the requirement puts something on a screen that is not there yet, how a
+  person reaches that screen is one of the rules, and it gets its own example.**
+  Not a note beside the other examples - an example, and one that clicks. This is
+  the easiest behaviour in the whole requirement to leave out, because every
+  other example can be written as though the reader were already standing on the
+  page. Settle it here, while the cost is one more green card: once the feature
+  file exists, the same gap costs a second discovery round, a second plan and a
+  second implementation cycle, and until somebody pays that, the application has
+  a screen only its tests can open. `references/discovery-questions.md` has the
+  questions under **Arrival and navigation**.
 - Every red question is a **blocking unknown**. Collect them in one batch (use
   `AskUserQuestion` when the answers change the scenarios). Step 2 decides what
   becomes of the ones nobody answers - do not resolve them by guessing here.
@@ -93,6 +103,12 @@ ask for corrections. This is cheap now and expensive later: once a rule is in a
 and in whatever the team builds against it. A wrong rule caught at this stage
 costs one line; the same rule caught after implementation costs three files and
 an argument about which one is right.
+
+**If the breakdown introduces a screen, it says how a person arrives at it, or
+it says out loud that nothing links to it.** A breakdown that is silent on this
+reads as complete to everybody at the table - nobody misses a question that was
+never asked - and the silence survives all the way to a delivered feature whose
+screen only the suite can open.
 
 What matters is the **order**, not the waiting. If the user is there and a rule
 is disputed, settle it before writing. If nobody can answer - a batch run, an
@@ -170,6 +186,12 @@ so coverage still attributes it to the original requirement.
   Cucumber matches on the text alone, so a single step definition would have to
   both establish and check the state. Give the assertion its own wording; see
   "One sentence, one meaning" in `references/gherkin-style.md`.
+- **A feature that puts up a new screen and never says how anyone reaches it.**
+  It specifies everything that happens *on* the screen and nothing about getting
+  there, so the screen is built, styled, and opened by nothing but `page.goto` in
+  a step definition. Every scenario passes; a person cannot get to the page at
+  all. Add the arrival example, or record that the screen is deep-link-only -
+  both are answers, and the missing question is not.
 - Scenarios that assert on implementation detail (SQL, class names, HTTP status
   codes) when the requirement is about business behaviour.
 - One scenario with ten `When` steps: split it, one behaviour per scenario.
