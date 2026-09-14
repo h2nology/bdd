@@ -1,6 +1,7 @@
 ---
 name: discover
 description: This skill should be used when the user wants to turn a requirement, user story, feature idea, change request, or bug report into Gherkin - for example "write a feature file for this", "break this requirement into scenarios", "do BDD on this requirement", "run example mapping", "refine these acceptance criteria", "turn this ticket into cucumber scenarios", or when a one-line requirement must be mined into rules, examples and open questions before any code is written.
+argument-hint: "<the requirement, user story, ticket or bug report to mine>"
 ---
 
 # Requirement discovery to Gherkin

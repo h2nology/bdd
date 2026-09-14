@@ -1,6 +1,7 @@
 ---
 name: flow-map
 description: This skill should be used when screenshots taken during a cucumber run must be turned into a page or screen transition overview - for example "capture screenshots during the BDD run", "generate a page flow diagram", "show me the screen transitions our tests cover", "which pages do our scenarios visit", "draw the app's screen flow", "make a screenshot gallery of the test run", or when a stakeholder wants to see the user journeys the suite exercises. Works for both the Playwright web lane and the Appium mobile lane.
+argument-hint: "[capture directory or records] [web|mobile]"
 ---
 
 # Page / screen flow map from a cucumber run

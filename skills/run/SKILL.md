@@ -1,6 +1,7 @@
 ---
 name: run
 description: This skill should be used when a cucumber suite must be executed and measured - for example "run the BDD tests", "run the cucumber scenarios", "run the mobile app tests", "what is our requirement coverage", "which requirements are not covered by tests", "why is this scenario undefined", "generate the coverage report", "gate CI on BDD coverage", or when the user asks how much of the specified behaviour is actually verified. Covers both the Playwright web lane and the Appium mobile lane.
+argument-hint: "[feature paths or tags] [web|mobile]"
 ---
 
 # Run the cucumber suite and measure requirement coverage

@@ -1,6 +1,7 @@
 ---
 name: export-openapi
 description: This skill should be used when an HTTP API contract must be derived from Gherkin, or when the BDD suite must be checked against an existing one - for example "generate an OpenAPI spec from the feature files", "export our scenarios to swagger", "what API do these acceptance criteria imply", "which endpoints have no scenario covering them", "check our API tests against openapi.yaml", "document the REST API from our cucumber tests", or when someone wants a machine-readable contract out of the behaviour the suite already specifies. Emits OpenAPI 3.1 (or matches the project's existing document) and reports operation coverage both ways.
+argument-hint: "[extract|coverage] [feature paths]"
 ---
 
 # Gherkin and OpenAPI
