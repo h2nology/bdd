@@ -249,9 +249,11 @@ phase asks about it directly.
 ### Delivery
 
 Phase 8 closes the feature: every row in the Scenario Queue `green`, every row
-in the Capability Queue `done`, `<coverage>` regenerated, every requirement tag
-covered. Then report the way `run` does: the numbers, then what they do not
-cover.
+in the Capability Queue `done`, and every scenario carrying this feature's
+requirement tag passing in a full, unfiltered run. **Nothing computes that last
+one** - this plugin has no requirement coverage report; the runner counts
+scenarios, so read the tags against the run's per-scenario results. Then report
+the way `run` does: the numbers, then what they do not cover.
 
 A scenario still `blocked` at Phase 8 means the Capability Queue was
 incomplete. Say that, and name the seam - never report the feature as done with

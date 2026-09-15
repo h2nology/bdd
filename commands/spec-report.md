@@ -63,10 +63,13 @@ Give the user, in their language:
 1. Features, scenarios, cases, steps, distinct requirement ids.
 2. Scenarios carrying no requirement tag — behaviour nobody can trace to a
    requirement, and the most actionable thing in the report.
-3. Requirements from their backlog missing from the matrix entirely, if a backlog
-   is available (`docs/requirements.md`).
-4. Parse warnings, and confirmation that none remain.
-5. The output path, and that the file opens offline and prints cleanly to PDF.
+3. Parse warnings, and confirmation that none remain.
+4. The output path, and that the file opens offline and prints cleanly to PDF.
+
+The matrix is built from the tags in `features/` alone, so it cannot show a
+requirement that no scenario mentions. Say so when reporting: an empty gap list
+means "every tagged requirement has a scenario", not "every requirement has
+one".
 
 Never claim completion from the file you wrote alone — if a scenario the user asked
 about is missing from the counts, say so.

@@ -246,7 +246,6 @@ Python and .NET, so nothing may assume `npm`:
 | `<cucumber-feature>` | run every scenario in one feature |
 | `<unit-test>` | run the unit tests |
 | `<unit-test-one>` | run one unit test file or test name |
-| `<coverage>` | regenerate the requirement coverage report |
 
 **Confirm `<cucumber-feature>` actually filters, by counting the scenarios it
 runs.** A runner config that pins the feature glob makes the runner ignore a

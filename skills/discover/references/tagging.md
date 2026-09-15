@@ -14,7 +14,7 @@ Recognized automatically by the reporting scripts - the prefix, an optional
 Project-specific prefixes work too, by passing them to the scripts:
 
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs features/ --req-prefix PAY --req-prefix OPS
+node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs features/ --req-prefix PAY --req-prefix OPS
 ```
 
 Rules:
@@ -28,16 +28,25 @@ Rules:
 - One scenario may carry several requirement tags when it genuinely satisfies
   several acceptance criteria.
 - Never invent a requirement id. If the user has no backlog id, ask; if they
-  confirm there is none, use a stable slug id (`@REQ-checkout-discount`) and
-  record it in the requirement backlog file.
+  confirm there is none, use a stable slug id (`@REQ-checkout-discount`).
 
-## Requirement backlog file (recommended)
+## The tag is the only trace, so tag everything
 
-Coverage can only report "a requirement with no scenario at all" when it knows
-the full backlog. Keep a file - `docs/requirements.md` or wherever the team
-already keeps it - listing every requirement. It belongs in version control next
-to the specs: it is a source document, not a generated one, so never put it in
-`bdd-artifacts/`, which is git-ignored and cleared between runs.
+**Nothing in this plugin knows about requirements that have no scenario.** The
+spec report reads the ids off the tags in `features/`, and the runner counts
+scenarios - so a requirement nobody has written a scenario for is invisible
+everywhere, and looks exactly like a requirement that does not exist.
+
+That is a deliberate limit, not an oversight: the alternative is a hand-kept
+backlog file, and a list that is only ever filled in *after* the feature file
+exists can never report the gap it was created to report. If the team wants that
+gap reported, the backlog has to be where requirements are born - an issue
+tracker with an export, not a markdown file in the repo - and reconciling it
+against the tags is work outside this plugin.
+
+What follows from that: **a scenario with no requirement tag is untraceable
+behaviour**, and it is the one gap the spec report *can* find. It lists them;
+treat that list as the actionable one.
 
 ```markdown
 - REQ-1042 | Shopper can pay with a credit card
@@ -45,8 +54,8 @@ to the specs: it is a source document, not a generated one, so never put it in
 - REQ-1044 | Shopper can apply a discount code
 ```
 
-`.json` (array of strings or `{id,title}` objects), `.csv`, `.txt` and `.md`
-lists all parse. Pass it as `--requirements <file>`.
+A list in that shape is still worth keeping for people to read - it is just not
+something this plugin reads.
 
 ## Lane tags
 

@@ -703,14 +703,10 @@ BDD_DRIVER=appium BDD_PLATFORM=ios BDD_APP=./build/App.app BDD_DEVICE_NAME="iPho
   npx cucumber-js -p mobile
 ```
 
-Keep the two lanes' results in separate files and pass both to coverage:
-
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs features/ \
-  --results bdd-artifacts/cucumber.ndjson \
-  --results bdd-artifacts/cucumber-mobile.ndjson \
-  --requirements docs/requirements.md
-```
+Keep the two lanes' results in separate files. One file per lane is what lets a
+scenario that passes on the web and fails on mobile be seen as two results
+rather than one overwriting the other - the results file is overwritten by every
+run, so a shared path silently loses a lane.
 
 ## 10. Locators and gestures
 

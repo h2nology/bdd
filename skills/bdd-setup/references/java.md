@@ -108,8 +108,10 @@ cucumber.publish.quiet=true
 cucumber.execution.parallel.enabled=false
 ```
 
-`message:` produces the ndjson that `coverage.cjs` reads. `StepTracker` is the
-listener from section 6 - it must be registered as a plugin.
+`message:` produces the ndjson - the machine-readable record of the run, and the
+only format carrying per-scenario results a script can join back to the feature
+files. `StepTracker` is the listener from section 6 - it must be registered as a
+plugin.
 
 ## 4. Runner - `RunCucumberTest.java`
 
@@ -511,8 +513,6 @@ public class CheckoutSteps {
 ```bash
 BDD_BASE_URL=http://localhost:8080 mvn test
 BDD_FLOW_CAPTURE=1 BDD_DEVICE="iPhone 15" mvn test -Dcucumber.filter.tags='@smoke'   # responsive web
-node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" src/test/resources/features \
-  --results bdd-artifacts/cucumber.ndjson
 ```
 
 Gradle: `./gradlew test` with the same environment variables.

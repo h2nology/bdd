@@ -3,7 +3,7 @@
 Take a one-line requirement to working, traceable code: mine it into Gherkin,
 review it as an HTML document, scaffold cucumber + Playwright in the project's
 language, give the UI work a design system to build against, drive each scenario
-to green with outside-in TDD, run the suite with requirement coverage, derive a
+to green with outside-in TDD, run the suite and read what it reports, derive a
 page flow map from the run's screenshots, and generate database DDL from the
 same specs.
 
@@ -14,7 +14,7 @@ same specs.
 | `discover` | Mine a requirement, story, or bug into rules, examples and questions, then write `.feature` files |
 | `bdd-setup` | Set up (or repair) a cucumber harness in TypeScript/JavaScript, Java, Python or C#/.NET - Playwright for web, Appium for mobile |
 | `planning` | Keep the plan, the evidence and the decisions on disk - `task_plan.md`, `progress.md`, `findings.md` per plan, for feature work and for work with no feature file |
-| `run` | Execute the suite and report requirement coverage, execution coverage and pass rate; gate CI |
+| `run` | Execute the suite, report what passed, what never ran and what has no step definition, and triage failures |
 | `flow-map` | Turn per-step screenshots into a page (web) or screen (mobile) transition diagram, transition table and screenshot gallery |
 | `export-ddl` | Derive a data model from the scenarios and emit DDL for PostgreSQL, MySQL, Oracle, SQL Server or SQLite |
 | `export-openapi` | Derive an HTTP contract from the scenarios, or report which documented operations no scenario covers |
@@ -101,7 +101,7 @@ requirement
   -> /bdd:plan-with-feature  docs/planning/<date>-<feature>/  (the plan, and a real baseline)
        @web and nothing says how the pages should look? -> it asks you
   -> /bdd:implement     the code                          (capability by capability, to green)
-  -> /bdd:run           bdd-artifacts/coverage.html      (what is verified)
+  -> /bdd:run           bdd-artifacts/cucumber.html      (what is verified)
   -> /bdd:flow-map      bdd-artifacts/flow-map.html      (which screens were exercised)
   -> /bdd:export-ddl    migrations/                       (schema implied by the specs)
   -> /bdd:export-openapi openapi.yaml                     (HTTP contract implied by the specs)
@@ -116,7 +116,6 @@ inside Java, Python and .NET projects too. Node 14+.
 |---|---|
 | `scripts/spec-report.cjs` | Gherkin -> HTML specification report + JSON model |
 | `scripts/sketch.cjs` | Sketch spec JSON -> wireframe canvas (pan/zoom board, state-variant groups, action callouts leader-lined to their control) |
-| `scripts/coverage.cjs` | Feature files + test results -> requirement coverage report, with CI gating |
 | `scripts/flow-map.cjs` | Step captures -> Mermaid page flow diagram, transition table, gallery |
 | `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |
 | `scripts/planning-status.cjs` | Planning files -> what is in progress, and which plans have drifted, stalled or blocked |
@@ -131,7 +130,6 @@ Run any of them directly:
 
 ```bash
 node scripts/spec-report.cjs features/ --out out.html --labels zh-CN
-node scripts/coverage.cjs features/ --results bdd-artifacts/cucumber.ndjson --requirements docs/requirements.md
 node scripts/flow-map.cjs --input bdd-artifacts/flow --out out.html
 node scripts/openapi.cjs extract features/ --json extract.json
 node scripts/openapi.cjs coverage features/ --spec openapi.yaml --out cov.html

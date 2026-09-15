@@ -224,10 +224,12 @@ _RESULTS: dict = {}
 
 
 def pytest_sessionfinish(session, exitstatus):
-    """Emit legacy cucumber JSON so coverage.cjs can read tags and step statuses.
+    """Emit legacy cucumber JSON, which carries tags and per-step statuses.
 
-    pytest's own --junitxml also works but carries no tags, which makes
-    requirement attribution fall back to the spec files only.
+    pytest's own --junitxml also works but carries no tags, so a scenario's
+    requirement ids can then only be read off the spec files, never off the
+    run - which is exactly what you need when asking which requirement a
+    failure belongs to.
     """
     if not _RESULTS:
         return
@@ -286,7 +288,6 @@ def products_exist(datatable):
 ```bash
 BDD_BASE_URL=http://localhost:8000 pytest -m "not wip"
 BDD_FLOW_CAPTURE=1 BDD_DEVICE="iPhone 15" pytest -k checkout   # responsive web viewport
-node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" features/ --results bdd-artifacts/cucumber.json
 ```
 
 Tag filtering: pytest-bdd converts Gherkin tags into pytest markers, so

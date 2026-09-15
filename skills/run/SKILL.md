@@ -1,20 +1,25 @@
 ---
 name: run
-description: This skill should be used when a cucumber suite must be executed and measured - for example "run the BDD tests", "run the cucumber scenarios", "run the mobile app tests", "what is our requirement coverage", "which requirements are not covered by tests", "why is this scenario undefined", "generate the coverage report", "gate CI on BDD coverage", or when the user asks how much of the specified behaviour is actually verified. Covers both the Playwright web lane and the Appium mobile lane.
+description: This skill should be used when a cucumber suite must be executed and its results read honestly - for example "run the BDD tests", "run the cucumber scenarios", "run the mobile app tests", "how many scenarios actually pass", "why is this scenario undefined", "which scenarios never ran", or when the user asks how much of the specified behaviour is actually verified. Covers both the Playwright web lane and the Appium mobile lane.
 argument-hint: "[feature paths or tags] [web|mobile]"
 ---
 
-# Run the cucumber suite and measure requirement coverage
+# Run the cucumber suite and read what it reports
 
-Execute the suite in whichever language stack the project uses, then turn the
-results into a requirement coverage report that answers the only question
-stakeholders ask: *which requirements are verified, and which are not?*
+Execute the suite in whichever language stack the project uses, then report what
+the run actually establishes - and, just as important, what it does not.
+
+**What this skill does not do: requirement-level coverage.** There is no
+requirement coverage report in this plugin. The runner counts scenarios, not
+requirements, so "which requirements are verified" can only be answered by
+reading `@REQ-*` tags against the run's per-scenario results by hand. Say that
+plainly rather than presenting a scenario pass rate as if it answered the
+requirement question.
 
 ## Communication policy
 
 - Commands, tags and any generated code in **English**.
-- Explain results and next steps to the user in **their** language; pass
-  `--labels` to localize the HTML report for its readers.
+- Explain results and next steps to the user in **their** language.
 
 ## 1. Run the suite
 
@@ -77,61 +82,68 @@ For both lanes:
   a scenario that sends a real notification or payment cannot be undone.
 
 Add `--tags '@smoke'` for the fast loop, and run the full suite before reporting
-coverage numbers - a filtered run makes everything else look "not executed".
+any numbers - a filtered run makes everything else look like it does not exist.
 
 The results file is overwritten by every run, so **the last run wins**: one
-filtered run after a full one leaves a partial file behind, and coverage read
-from it understates the suite. `coverage.cjs` warns on stderr when scenarios
-have no result and are not `@wip`/`@manual` - believe it, and re-run unfiltered
-rather than reporting the numbers underneath it.
+filtered run after a full one leaves a partial file behind, and anything read
+from it understates the suite. Nothing checks this for you, so check it
+yourself: if the scenario total is lower than the number of scenarios in
+`features/`, the run was filtered - re-run unfiltered rather than reporting the
+numbers underneath it.
 
-## 2. Build the coverage report
+## 2. Read the run's own output
 
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs features/ \
-  --results bdd-artifacts/cucumber.ndjson \
-  --results bdd-artifacts/cucumber-mobile.ndjson \
-  --requirements docs/requirements.md \
-  --out bdd-artifacts/coverage.html \
-  --json bdd-artifacts/coverage.json \
-  --labels zh-CN
+The runner is the only thing that reports here. For cucumber-js the summary
+formatter prints the two lines that matter:
+
+```
+21 scenarios (9 passed, 12 undefined)
+146 steps (106 passed, 16 skipped, 24 undefined)
 ```
 
-Pass every lane's results file. A requirement covered by a web scenario and a
-mobile scenario shows both, and its status is worst-wins across them - which is
-the honest answer to "is this requirement verified".
+Where the stack emits one, the runner's own HTML report
+(`bdd-artifacts/cucumber.html` for cucumber-js, via the `html:` formatter) gives
+the per-scenario breakdown, with the failure message and any attached screenshot.
+That file is the runner's, not this plugin's - its layout is not configurable
+from here.
 
-| Option | Effect |
-|---|---|
-| `[featurePaths...]` | Feature files/directories (same defaults as the spec report) |
-| `--results <file>` | Repeatable. Cucumber messages ndjson, cucumber JSON, or JUnit XML |
-| `--requirements <file>` | The requirement backlog: **without it, requirements that have no scenario at all cannot be detected** |
-| `--out` / `--json` | HTML and structured model outputs |
-| `--labels <tag>` | Report chrome language: `en` \| `zh-CN` \| `zh-TW` \| `ja` |
-| `--req-prefix <p>` | Extra requirement tag prefix, repeatable |
-| `--fail-under <pct>` | Exit 1 when requirement coverage is below the threshold |
-| `--fail-on-failed` | Exit 1 when any executed case failed |
+For anything the runner does not print - which scenarios are in which state,
+grouped by feature - read the results file. **Do not hand-roll the parser**:
+`${CLAUDE_PLUGIN_ROOT}/scripts/lib/results.cjs` already reads all four formats
+the supported stacks emit (cucumber messages ndjson, legacy cucumber JSON, JUnit
+XML) and normalizes them, including taking the worst status per scenario when a
+retry produced several executions.
 
-Run it with no `--results` to get the specification-side picture only (which
-requirements have scenarios) - useful before any test exists.
+```bash
+node -e '
+const { loadResults } = require(process.env.CLAUDE_PLUGIN_ROOT + "/scripts/lib/results.cjs");
+const { cases } = loadResults(["bdd-artifacts/cucumber.ndjson"]);
+const byFile = {};
+for (const c of cases) (byFile[c.uri] ||= []).push(c);
+for (const [uri, rows] of Object.entries(byFile).sort()) {
+  const pass = rows.filter(r => r.status === "passed").length;
+  console.log(`\n${uri}  ${pass}/${rows.length} passed`);
+  for (const r of rows) console.log(`  ${r.status.padEnd(10)} ${r.scenarioName}`);
+}'
+```
+
+Each case carries `uri`, `scenarioName`, `tags`, `line`, `status`, `durationMs`
+and `steps` - `tags` is what lets you answer a question about `@REQ-*` ids by
+hand, since nothing computes that for you.
 
 ## 3. Read the numbers correctly
 
-`references/coverage-model.md` defines each metric precisely. The short version:
-
-- **Requirement coverage** = requirements with at least one scenario ÷ all known
-  requirements. Only meaningful when a `--requirements` backlog is supplied;
-  otherwise the denominator is just the tags found in the specs, and the number
-  is always 100%. Say which case applies when reporting.
-- **Execution coverage** = scenarios with at least one execution ÷ all scenarios.
-- **Pass rate** = passed case results ÷ executed case results.
-- **Requirement status** is worst-wins across its scenarios:
-  `uncovered` (no scenario) → `not-executed` → `partial` → `undefined`
-  (unimplemented steps) → `failed` → `passed`.
-
-A feature-level requirement tag is inherited by every scenario in the file, so
-one failing scenario marks the whole requirement failed. That is intended - but
-mention it when a requirement looks worse than the user expects.
+- **Pass rate** = passed scenarios ÷ executed scenarios.
+- **Execution coverage** = executed scenarios ÷ all scenarios in `features/`.
+  The runner does not compute this: it only knows what it ran. Count the
+  `Scenario:` / `Example:` blocks in the specs yourself when a filter was used.
+- **`undefined` is not a pass and not a skip.** It means no step definition
+  claims those sentences - the scenario is written and nothing implements it.
+  Count it as unverified behaviour, every time.
+- **`@wip`, `@manual`, `@flaky` and quarantined scenarios are not covered.**
+  They still count in the specification's denominator.
+- **A `Scenario Outline` is one case per `Examples` row**, so its scenario count
+  is larger than the number of blocks in the file.
 
 ## 4. Report honestly
 
@@ -139,11 +151,18 @@ Always report, in the user's language:
 
 1. Executed / total scenarios, and the tag filter that was applied.
 2. Passed, failed, undefined, pending, skipped counts.
-3. Requirements with no scenario at all (the real coverage gap).
-4. Requirements whose scenarios exist but never ran.
-5. Scenarios with no requirement tag (untraceable behaviour).
-6. Executed cases that matched no scenario (stale results file, or renamed scenario).
-7. The path of the HTML report.
+3. Which scenarios are `undefined` - by name, and which feature they are in.
+   This is the real gap, and a bare count hides it.
+4. Scenarios excluded by the tag filter, by name or by tag.
+5. Scenarios with no requirement tag, if the project uses them - that behaviour
+   is untraceable back to why it exists.
+6. The path of the runner's report, where the stack produces one.
+
+**Do not report a requirement coverage percentage.** Nothing here computes one.
+If the user asks which requirements are verified, read the `@REQ-*` tags off the
+scenarios and answer per requirement from the per-scenario results - and say
+that a requirement with no scenario at all cannot be detected this way, because
+nothing in the repository lists the requirements that have no scenario yet.
 
 Say what the suite was pointed at. The web lane tests whatever `BDD_BASE_URL`
 serves, which in practice is a development server - so behaviour that only
@@ -193,18 +212,19 @@ page flow; the mobile lane produces a screen flow from the same generator.
 
 ## 7. Gate CI
 
+The runner's own exit code is the gate: cucumber-js exits non-zero when any
+scenario failed **or** any step was undefined, which is the behaviour you want -
+an unimplemented step is not a pass.
+
 ```bash
-node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs features/ \
-  --results bdd-artifacts/cucumber.ndjson \
-  --requirements docs/requirements.md \
-  --fail-under 90 --fail-on-failed
+npx cucumber-js --tags 'not @wip and not @manual'
 ```
 
-Exit codes: `0` pass, `1` gate failed, `2` no feature files found. Suggest a
-gate only when the user asks for one, and start the threshold at the current
-measured coverage, not at an aspirational number.
+There is no coverage threshold to gate on. If the user wants one - "fail the
+build when fewer than N% of scenarios pass" - say that it would have to be built
+from the results file, and that a threshold on a filtered run measures nothing.
+Suggest a gate only when the user asks for one.
 
 ## Reference files
 
-- `references/coverage-model.md` - exact definition of every metric, matching rules, and their limits
 - `references/troubleshooting.md` - symptom-to-cause table for runs, matching failures and flakiness

@@ -317,8 +317,8 @@ coverage matcher falls back to matching on scenario name alone.
 
 ## 8. `Support/CucumberJsonWriter.cs`
 
-Reqnroll does not emit cucumber messages, so write legacy cucumber JSON, which
-`coverage.cjs` parses natively (tags and per-step statuses included).
+Reqnroll does not emit cucumber messages, so write legacy cucumber JSON - it
+carries tags and per-step statuses, which a bare JUnit XML does not.
 
 ```csharp
 using System.Text.Json;
@@ -464,7 +464,6 @@ public class CheckoutSteps
 ```bash
 BDD_BASE_URL=http://localhost:5000 dotnet test
 BDD_FLOW_CAPTURE=1 BDD_DEVICE="iPhone 15" dotnet test --filter "TestCategory=smoke"   # responsive web
-node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" Features/ --results bdd-artifacts/cucumber.json
 ```
 
 Gherkin tags become NUnit/xUnit categories, so `@smoke` filters as

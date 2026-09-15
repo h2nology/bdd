@@ -124,7 +124,7 @@ and `BDD_DEVICE_NAME` (Appium capability) are different variables; do not mix th
 
 ```
 bdd-artifacts/
-  cucumber.ndjson        # cucumber messages - the input for coverage.cjs (web lane)
+  cucumber.ndjson        # cucumber messages - the machine-readable run record (web lane)
   cucumber-mobile.ndjson # the mobile lane's results, kept separate
   cucumber.html          # the runner's own report, where the stack provides one
   flow/
@@ -132,7 +132,6 @@ bdd-artifacts/
     <scenario-slug>/000-<step-slug>.png
   traces/                # Playwright traces
   spec-report.html       # written by spec-report
-  coverage.html          # written by run
   flow-map.html          # written by flow-map
 ```
 
@@ -152,9 +151,12 @@ bdd-artifacts/
    tracing and close the context, closing the browser in the run-level teardown;
    **mobile**: end the Appium session.
 
-**Emit cucumber messages.** `coverage.cjs` reads richest data from the
-`message` formatter (ndjson). Where a stack cannot emit it, legacy cucumber JSON
-or JUnit XML also work, with less precision - note the limitation to the user.
+**Emit cucumber messages.** The `message` formatter (ndjson) is the richest
+record of a run, and the only one that carries per-scenario results a script can
+join back to the feature files - `flow-map` reads it, and so does anything that
+has to answer "which scenarios are undefined". Where a stack cannot emit it,
+legacy cucumber JSON or JUnit XML also work, with less precision - note the
+limitation to the user.
 
 ### 5. Prove it works before reporting success
 
@@ -172,8 +174,9 @@ Scaffolding that has never run is not done. Always:
 4. Run the suite. If the app under test is not running (web) or the binary is
    missing (mobile), say so and either start/build it as the user directs or run
    with a static fixture.
-5. Run `node ${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs <features> --results bdd-artifacts/cucumber.ndjson`
-   to confirm the results file is machine-readable end to end.
+5. Confirm the results file is machine-readable end to end: it exists, it is
+   valid ndjson (or JSON/XML for the stack), and it contains one record per
+   scenario the run executed.
 6. Delete the throwaway smoke feature. It existed to prove the harness can
    execute a scenario, and the report in the next paragraph is what survives
    it - do not ask whether to keep it. Nothing to delete if step 3 used an
@@ -201,7 +204,7 @@ Diagnose in this order, and fix only what is broken:
 | `Undefined. Implement with the following snippet` | Step text has no definition | Add the step definition, or fix the step text to match an existing one |
 | Steps found but `page` is undefined | World/context not wired to the hooks | Fix `Before`/World construction |
 | Scenarios leak state into each other | Context reused across scenarios | Create a fresh browser context per scenario |
-| `coverage.cjs` finds 0 executions | No results file, or names differ from the specs | Emit `message:` ndjson; check the orphan list it prints |
+| Results file has no executions in it | The run never started, or the formatter is not configured | Emit `message:` ndjson and check the run actually reached a scenario |
 | Flow map empty | `BDD_FLOW_CAPTURE` not set, or hooks missing | See `flow-map` |
 | `Ambiguous step definition` after adding the mobile lane | Web and mobile definitions for one phrasing loaded together | Split the glue paths and select one per runner profile (`appium.md` section 9) |
 | `ECONNREFUSED 127.0.0.1:4723` | Appium server not running | Start `appium`; check `BDD_APPIUM_URL` |

@@ -57,9 +57,8 @@ the gate, and tell the user that the behaviour is now unverified.
 
 | Complaint | Likely explanation |
 |---|---|
-| "Coverage is 100% but we have 50 requirements" | No `--requirements` backlog; the denominator is only the tagged ids |
-| "This requirement is failed but the scenario I care about passes" | A feature-level requirement tag is inherited by every scenario in the file |
+| "We have 50 requirements, why is nothing said about them?" | Nothing in this plugin measures requirements. The runner counts scenarios; `@REQ-*` tags have to be read against the results by hand, and a requirement with no scenario at all cannot be detected at all |
 | "One scenario shows 5 cases" | It is a `Scenario Outline`; outline rows are counted individually |
-| "The pass rate dropped but nothing changed" | Retries: a scenario that fails then passes counts worst-wins |
-| "A scenario I deleted still appears" | Stale `--json` or HTML output; regenerate, and delete `bdd-artifacts/` if unsure |
-| "Manual tests drag the number down" | `@manual` scenarios count as not executed; report them as a separate line |
+| "The pass rate dropped but nothing changed" | Retries: a scenario that fails then passes reports both executions - take the worst |
+| "A scenario I deleted still appears" | Stale results file; delete `bdd-artifacts/` and re-run |
+| "Manual tests drag the number down" | `@manual` scenarios are excluded from execution but still count in the specification; report them as a separate line |

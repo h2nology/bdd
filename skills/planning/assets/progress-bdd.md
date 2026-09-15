@@ -216,7 +216,8 @@ yet. Some of those bets lose. Each one gets a row - not a silent edit.
 - **Date:** `<YYYY-MM-DD>`
 - **Every scenario green:** `<cucumber>` -> <n passed, 0 failed>
 - **Every capability done:** <n>/<n>
-- **Coverage:** `<coverage>` -> <requirement coverage figures>
+- **Every scenario with this feature's requirement tag:** <n>/<n> passed, 0
+  undefined - read off the run, not computed by anything
 - **Left undone:** <named here and in findings.md, or "nothing">
 - **Still assumed, unconfirmed:** <every `assumed - unconfirmed` row in
   findings.md, repeated here - or "none">

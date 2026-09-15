@@ -91,7 +91,6 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
 | `<cucumber-feature>` | <run every scenario in this feature> |
 | `<unit-test>` | <run the unit tests> |
 | `<unit-test-one>` | <run one unit test file or name> |
-| `<coverage>` | <requirement coverage report> |
 
 Resolve these once, here, and use the placeholders everywhere below. This
 plugin supports TypeScript, Java, Python and .NET; nothing below may assume one
@@ -540,8 +539,10 @@ what the breakdown missed.
 
 - [ ] Every row in the Scenario Queue is `green`.
 - [ ] Every row in the Capability Queue is `done`.
-- [ ] `<coverage>` run, and the requirement coverage report regenerated.
-- [ ] Every requirement tag in this feature shows as covered.
+- [ ] `<cucumber>` re-read scenario by scenario: every scenario carrying this
+      feature's requirement tag is `passed`, and none is `undefined`, excluded
+      by a tag filter, or quarantined. **Nothing computes this** - the runner
+      counts scenarios, not requirements, so read the tags against the results.
 - [ ] **If this is not the first `@web` feature, check a person can reach it from
       the ones already built.** Capture a run with flow capture on and generate
       the page flow (`flow-map`); a page with no inbound edge is reachable by the

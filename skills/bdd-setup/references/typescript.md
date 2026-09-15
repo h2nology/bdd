@@ -74,12 +74,15 @@ export default {
   `/bdd:implement` command needs one that runs exactly one feature; the
   alternative - a union of tags - has to be edited by hand every time a scenario
   is added, and under-tests the feature when somebody forgets.
-- `message:` ndjson is the input `coverage.cjs` prefers - always keep it.
+- `message:` ndjson is the only machine-readable record of the run - `flow-map`
+  reads it, and so does anything that has to say which scenarios are undefined.
+  Always keep it.
 - Raise `parallel` only after the suite is stable; the flow capture appends to a
   single ndjson file, which is append-safe per line but interleaves scenarios
   (flow-map re-groups them by scenario, so this is fine).
-- `retry` > 0 produces several executions of one scenario; coverage aggregates
-  them worst-wins, so a flaky-passing scenario still shows its failure.
+- `retry` > 0 produces several executions of one scenario, and the results file
+  keeps all of them - take the worst when reading it, or a flaky-passing
+  scenario reads as a clean pass.
 
 ## 5. `features/support/env.ts`
 
@@ -352,12 +355,12 @@ the support code:
 ```bash
 mkdir -p bdd-artifacts
 npx cucumber-js --tags '@smoke' || true
-node "${CLAUDE_PLUGIN_ROOT}/scripts/coverage.cjs" features/ --results bdd-artifacts/cucumber.ndjson
+test -s bdd-artifacts/cucumber.ndjson && grep -c '"testCaseFinished"' bdd-artifacts/cucumber.ndjson
 ```
 
-The second command must report a non-zero number of executed cases. If it
-reports orphan cases, the scenario names in the results do not match the specs -
-usually a stale ndjson from a previous run; delete `bdd-artifacts/` and re-run.
+That must report a non-zero number of finished cases. If the scenario names in
+the results do not match the specs, it is usually a stale ndjson from a previous
+run; delete `bdd-artifacts/` and re-run.
 
 ## 13. Non-English step text
 
