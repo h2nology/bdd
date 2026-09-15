@@ -40,6 +40,7 @@ The line is drawn at **who reads it**, not who wrote it.
 
 ```
 docs/planning/
+  .current                      <- which plan is being driven right now
   2026-09-08-checkout/          <- features/checkout.feature
     task_plan.md
     progress.md
@@ -56,11 +57,63 @@ the day the plan was opened and never changes afterwards.
 
 Committed, not ignored. `bdd-artifacts/` holds generated reports and is
 throwaway; this is the record of how the code came to exist, and it belongs in
-the repository next to it.
+the repository next to it. `.current` is committed with the rest.
 
 **A second round on the same feature gets a new dated directory.** Do not
 reopen a finished plan when the feature grows - the old one is the record of
 what was true then.
+
+## `.current` - which plan is being driven
+
+A project with several feature files grows several plans, and then "the open
+plan" stops identifying anything. `.current` names the one being driven now:
+
+```
+# Which plan /bdd:implement drives when no plan is named.
+# One line: the plan directory, relative to this file. Written by
+# current-plan.cjs - see the planning skill for the rules around it.
+2026-09-08-checkout
+```
+
+**Never hand-edit it**, for the same reason `**Status:**` lines are written by
+`phase-status.cjs`. The script checks the target is a real plan before pointing
+at it, so a typo fails loudly here rather than surfacing later as a plan nobody
+can find.
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs                  # read it
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs --set docs/planning/<dir>
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs --clear
+```
+
+Its exit codes separate the three states a caller has to tell apart: `0` set and
+resolves, `3` not set, `4` set but dangling.
+
+### The rules
+
+| When | What happens to the pointer |
+|---|---|
+| A plan is created (`/bdd:plan-with-feature`, `/bdd:plan`) | Point at the new plan, and say so. |
+| `/bdd:implement` is given a plan directory | Drive that one, **and move the pointer to it**. The pointer states what is being driven; a run that drove something else would leave it lying. |
+| `/bdd:implement` is given nothing | Drive the plan the pointer names. |
+| Nothing is set, and exactly one plan is open | Drive it, and set the pointer so the next session does not have to work it out again. |
+| Nothing is set, and several plans are open | Ask which, then set it. Do not pick. |
+| The pointer is dangling | **Stop.** It was renamed or it was deleted; the file cannot say which and the two fixes are opposite. Ask. |
+| A plan finishes | Point at the next plan, or `--clear`. A pointer left on a finished plan reads as "this is what I am working on". |
+
+`phase-status.cjs` reads it too, so once a pointer is set, `--plan` is only
+needed to act on some *other* plan.
+
+**It is a pointer, not a lock.** Nothing stops work on a plan it does not name -
+`--plan` still addresses any of them. What it buys is that a session, a hook, or
+a person picking the work back up gets the same answer to "which one", instead
+of each guessing from whatever happens to be open.
+
+**Committed, which means shared.** Two people driving two different plans will
+overwrite each other's line, and the diff reads as one of them changing the
+other's plan. That is the accepted cost of keeping the answer in the repository;
+a team that hits it often wants one of them on a branch, not an uncommitted
+pointer that silently disagrees between machines.
 
 ## 1. Look before creating
 
@@ -75,7 +128,11 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs
 | A plan `in_progress` for what the user asked | Resume it - read all three files, then `git diff --stat` for code they may not know about. |
 | A plan `in_progress` for something else | Say so before starting a second one. Two open plans is a choice, not an accident. |
 | A drift warning on a plan | Stop. See **Drift** below. |
+| A warning about `.current` | Settle it first - see the pointer's rules above. A dangling pointer means a plan was renamed or deleted, and neither is something to work around. |
 | Nothing relevant | Create a plan. |
+
+Its header line says which plan is current, and the plan it names is marked
+`<- current`.
 
 ## 2. Pick the template set, and be honest about it
 
@@ -95,7 +152,15 @@ mkdir -p docs/planning/$(date +%Y-%m-%d)-<slug>
 
 Copy all three files of the chosen set into it, dropping the suffix:
 `task_plan-<set>.md` becomes `task_plan.md`, and the same for `progress.md` and
-`findings.md`.
+`findings.md`. Then point `.current` at it, so the plan that was just created is
+the one the next command drives:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs --set docs/planning/<dir>
+```
+
+Say what it moved from, especially when it moved off an unfinished plan - that
+is a decision to put the other one down, and it should not happen silently.
 
 **Never mix the two sets.** A BDD plan with a general `progress.md` has nowhere
 to record the RED evidence, and a general plan with a BDD `findings.md` asks
@@ -359,3 +424,4 @@ Two rules about `progress.md` that the templates cannot enforce:
 |---|---|
 | `scripts/planning-status.cjs` | Read the plans: what is in progress, what needs attention |
 | `scripts/phase-status.cjs` | Write one phase's status, safely |
+| `scripts/current-plan.cjs` | Read and move `.current`, the pointer at the plan being driven |

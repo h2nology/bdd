@@ -10,7 +10,8 @@
  * Options:
  *   --root <dir>        Planning root (default docs/planning)
  *   --plan <dir>        Report one plan in full instead of the summary
- *   --json <file>       Also write the structured model as JSON
+ *   --json <file>       Also write the structured model as JSON - an array of
+ *                       plans, each carrying `current: true|false`
  *   --stale-days <n>    Warn when an in_progress plan has not moved (default 14)
  *   --warnings-only     Print only the plans that need attention, and nothing
  *                       at all when none do. For hooks, where silence is the
@@ -22,6 +23,12 @@
  * plan that disagrees with them is the finding, not a thing to quietly correct.
  * That includes the phase checkboxes: a `complete` phase with an open box, or a
  * `pending` one with a ticked box, is reported and left alone.
+ *
+ * That extends to the `.current` pointer. This marks which plan it names and
+ * reports it when it has gone wrong, but moving it is `current-plan.cjs`'s job:
+ * which plan is current is a decision, and a status command that quietly
+ * repointed it would be making that decision on the reader's behalf, in the one
+ * command they ran precisely to find out where things stand.
  */
 
 const fs = require('fs');
@@ -351,6 +358,45 @@ function findPlans(root) {
     .sort((a, b) => (a.name < b.name ? 1 : -1));
 }
 
+/**
+ * What the `.current` pointer says, and whether it still means anything.
+ *
+ * Checked here rather than left to each caller because every one of them needs
+ * the same three answers - set or not, resolves or not, finished or not - and a
+ * caller that skipped the middle one would drive a plan directory that no
+ * longer exists.
+ */
+function checkPointer(root, plans) {
+  const value = u.readPlanPointer(root);
+  if (!value) {
+    const open = plans.filter((p) => !p.complete);
+    return {
+      value: '',
+      dir: '',
+      warnings: open.length > 1
+        ? ['no current plan is set and ' + open.length + ' plans are open - say '
+          + 'which one is being driven: current-plan.cjs --set ' + open[0].dir]
+        : [],
+    };
+  }
+  const dir = u.resolvePlanPointer(root, value);
+  if (!dir) {
+    return {
+      value,
+      dir: '',
+      warnings: ['the current plan "' + value + '" is not a plan - it was renamed '
+        + 'or deleted; settle which, then current-plan.cjs --set or --clear'],
+    };
+  }
+  const plan = plans.find((p) => path.resolve(p.dir) === path.resolve(dir));
+  const warnings = [];
+  if (plan && plan.complete) {
+    warnings.push('the current plan "' + value + '" has every phase complete - '
+      + 'point at the next one, or clear it');
+  }
+  return { value, dir, plan: plan || null, warnings };
+}
+
 function queueSummary(queue) {
   if (!queue.length) return '';
   const count = (state) => queue.filter((r) => r.state === state).length;
@@ -382,9 +428,10 @@ function field(label, value) {
   return value ? '    ' + label.padEnd(9) + value + '\n' : '';
 }
 
-function renderPlan(plan, warnings, verbose) {
+function renderPlan(plan, warnings, verbose, isCurrent) {
   const mark = warnings.length ? '! ' : '  ';
-  let out = mark + plan.name + '  [' + plan.kind + (plan.label ? ' ' + plan.label : '') + ']\n';
+  let out = mark + plan.name + '  [' + plan.kind + (plan.label ? ' ' + plan.label : '') + ']'
+    + (isCurrent ? '  <- current' : '') + '\n';
   out += field('phase', phaseLine(plan));
   if (plan.currentCapability) out += field('building', plan.currentCapability);
   if (plan.currentScenario) out += field('scenario', plan.currentScenario);
@@ -437,13 +484,21 @@ function main() {
   const reports = plans.map((plan) => ({ plan, warnings: checkPlan(plan, staleDays) }));
   const open = reports.filter((r) => !r.plan.complete);
   const warned = reports.filter((r) => r.warnings.length);
+  // The pointer is checked against every plan under the root, so `--plan` - which
+  // reports one plan in full - still says whether that one is the current plan.
+  const pointer = checkPointer(root, single ? findPlans(root) : plans);
+  const isCurrent = (plan) => Boolean(pointer.dir)
+    && path.resolve(plan.dir) === path.resolve(pointer.dir);
 
-  if (opts.warningsOnly && !warned.length) return;
+  if (opts.warningsOnly && !warned.length && !pointer.warnings.length) return;
 
   const shown = opts.warningsOnly ? warned : reports;
   let out = (single ? '' : root + ' - ' + reports.length + ' plan'
-    + (reports.length === 1 ? '' : 's') + ', ' + open.length + ' open\n\n');
-  for (const r of shown) out += renderPlan(r.plan, r.warnings, single) + '\n';
+    + (reports.length === 1 ? '' : 's') + ', ' + open.length + ' open'
+    + ', current: ' + (pointer.value || '(none set)') + '\n\n');
+  for (const w of pointer.warnings) out += '! ' + w + '\n';
+  if (pointer.warnings.length) out += '\n';
+  for (const r of shown) out += renderPlan(r.plan, r.warnings, single, isCurrent(r.plan)) + '\n';
   if (warned.length) {
     out += warned.length + (warned.length === 1 ? ' plan needs' : ' plans need')
       + ' attention - marked ! above.\n';
@@ -451,14 +506,19 @@ function main() {
   process.stdout.write(out);
 
   if (opts.json) {
+    // Still an array of plans. The pointer adds one boolean per plan rather than
+    // wrapping the whole document, because a dangling pointer already reaches a
+    // caller two other ways - the warning on stdout, and --strict's exit 1 - and
+    // neither is worth breaking every existing reader of this file for.
     u.writeFileEnsured(String(opts.json), JSON.stringify(
       reports.map((r) => Object.assign({}, r.plan, {
         touched: r.plan.touched ? r.plan.touched.toISOString() : null,
+        current: isCurrent(r.plan),
         warnings: r.warnings,
       })), null, 2));
   }
 
-  if (opts.strict && warned.length) process.exit(1);
+  if (opts.strict && (warned.length || pointer.warnings.length)) process.exit(1);
 }
 
 main();

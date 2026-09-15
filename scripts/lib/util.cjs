@@ -332,6 +332,47 @@ function readJsonMaybe(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return null; }
 }
 
+/** Name of the pointer file that says which plan is being driven right now. */
+const POINTER_FILE = '.current';
+
+/**
+ * The pointer's raw value - the first line that is neither blank nor a comment -
+ * or '' when no pointer is set.
+ *
+ * Comments are allowed because the file is committed and read by people. A
+ * pointer nobody can annotate gets explained in a commit message instead, where
+ * the next reader will not look.
+ */
+function readPlanPointer(root) {
+  let text;
+  try {
+    text = fs.readFileSync(path.join(root, POINTER_FILE), 'utf8');
+  } catch { return ''; }
+  for (const line of text.split(/\r?\n/)) {
+    const value = line.trim();
+    if (value && !value.startsWith('#')) return value;
+  }
+  return '';
+}
+
+/**
+ * Resolve a pointer value to a plan directory, or '' when it does not resolve.
+ *
+ * A bare name is relative to the root, which is what the file normally holds. A
+ * path is taken as given, so a pointer written by hand as the full
+ * `docs/planning/<dir>` still works rather than resolving to
+ * `docs/planning/docs/planning/<dir>` and reporting itself dangling.
+ */
+function resolvePlanPointer(root, value) {
+  if (!value) return '';
+  const isPlan = (dir) => fs.existsSync(path.join(dir, 'task_plan.md'));
+  const direct = path.normalize(value);
+  if (isPlan(direct)) return direct;
+  const underRoot = path.join(root, value);
+  if (isPlan(underRoot)) return underRoot;
+  return '';
+}
+
 /** Opening or closing fence of a code block: ``` or ~~~, indented up to 3 spaces. */
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})\s*\S*\s*$/;
 
@@ -408,4 +449,5 @@ module.exports = {
   escapeHtml, slug, exampleLabel, htmlPage, statCard, progressBar, renderTable,
   writeFileEnsured, readJsonMaybe, readJsonOrNdjson, pct, nowStamp, BASE_CSS, SKIP_DIRS,
   fencedLines, stripFences,
+  POINTER_FILE, readPlanPointer, resolvePlanPointer,
 };

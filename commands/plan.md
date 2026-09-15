@@ -64,12 +64,23 @@ Where verification needs something unavailable in this session - credentials, a
 cluster, a device, a human review - say so in the plan now rather than
 discovering it at the end.
 
-## 4. Report
+## 4. Point `.current` at it
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs --set docs/planning/<dir>
+```
+
+The plan just created is the one `/bdd:implement` should drive, so record that
+on disk rather than leaving the next command to work it out. If this moved the
+pointer off an **unfinished** plan, name it - that is a decision to put the
+other work down, and it should not pass as a line of tool output.
+
+## 5. Report
 
 State, in the user's language: where the plan is, the phases and what verifies
-each one, anything already known to be unverifiable here, and that
-`/bdd:implement` drives it from here - pausing after each phase unless given
-`--auto`.
+each one, anything already known to be unverifiable here, which plan `.current`
+now names, and that `/bdd:implement` drives it from here - pausing after each
+phase unless given `--auto`.
 
 Do not start Phase 1 - leave every phase `pending` and `## Next Step` naming
 Phase 1, so that `/bdd:implement` is what moves the first one to `in_progress`.

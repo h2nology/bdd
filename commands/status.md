@@ -38,6 +38,10 @@ anything here.
 Do not paste the script's output verbatim. Read it and say, in the language the
 user is speaking:
 
+- **Which plan is current** - the one `.current` names, marked `<- current` in
+  the script's output and echoed on its header line. Say this first when more
+  than one plan is open: it is the answer to "what am I working on", and
+  everything else is context around it.
 - **Which plan is open**, and for a feature plan, which capability is in hand
   (`building` in the script's output), how many capabilities are `done`, and how
   many of the feature's scenarios are green.
@@ -61,6 +65,9 @@ Keep tags, paths, commands and status values as they are.
 | capability "..." is done but Phase 4.x is ... | The Capability Queue and the phase statuses are two records of the same fact, and they disagree. | Say which two records disagree. There is no way to tell from the file which one was forgotten, so do not pick one - ask what actually happened. |
 | Phase 4.x is complete but capability "..." is still ... | Same contradiction, inverted. | As above. |
 | capability "..." names Phase 4.x, which the plan does not have | A queue row points at a phase nobody wrote. | The Phase 4.x block is missing, or the row's number is a typo. Both need a person. |
+| no current plan is set and N plans are open | Nothing on disk says which plan is being driven, so every command that needs one has to guess. | Ask which, then `current-plan.cjs --set`. Do not pick on the user's behalf - that is the decision the pointer exists to record. |
+| the current plan "..." is not a plan | `.current` points at a directory that was renamed or deleted. | Stop and ask which it was. The fixes are opposite - `--set` the new name, or `--clear` - and the file cannot say which happened. Never offer the nearest match. |
+| the current plan "..." has every phase complete | The pointer still names finished work. | Ask what is next and `--set` it, or `--clear` when nothing is. Until then the pointer claims work that is done. |
 
 ## 4. Say what this cannot tell you
 

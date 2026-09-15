@@ -41,12 +41,30 @@ watching, say so and suggest `--auto` rather than quietly running on.
 node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs
 ```
 
-| Argument | Behaviour |
-|---|---|
-| A plan directory | Use it. |
-| Nothing, one plan open | Use it. |
-| Nothing, several open | List them and ask which. |
-| Nothing, no plans | Stop. Point at `/bdd:plan-with-feature` or `/bdd:plan`. |
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs
+```
+
+`.current` is what says which plan is being driven. Its exit code separates the
+three states: `0` set and resolves, `3` none set, `4` set but dangling.
+
+| Argument | `.current` says | Behaviour |
+|---|---|---|
+| A plan directory | the same plan | Use it. |
+| A plan directory | a different plan, or nothing | Use the argument, **and move the pointer onto it** - `current-plan.cjs --set <dir>`. Name the plan it moved off. |
+| Nothing | set, and resolves | Drive that plan. |
+| Nothing | not set, one plan open | Drive it, and set the pointer to it. |
+| Nothing | not set, several open | List them and ask which. Set the pointer to the answer. |
+| Nothing | dangling | **Stop and ask.** It was renamed or it was deleted; the file cannot say which and the two fixes are opposite. Never pick the nearest match. |
+| Nothing | no plans at all | Stop. Point at `/bdd:plan-with-feature` or `/bdd:plan`. |
+
+The pointer is **moved**, not consulted and then ignored, because it is a claim
+about what is being worked on. A run that drove one plan while `.current` still
+named another would leave the next session - and the `Stop` hook, and anyone
+reading the repository - trusting a pointer that is simply false.
+
+Moving it off an **unfinished** plan is a decision to put that one down. Say so
+plainly rather than letting it happen inside a line of tool output.
 
 Then **read all three files** and run `git diff --stat` to see code the plan
 may not know about yet. `progress.md` has a **Reboot check** table for this.
@@ -264,6 +282,12 @@ Name anything deliberately left undone, and name every assumption still marked
 `assumed - unconfirmed` in `findings.md`. A feature reported as done while a
 step definition encodes a guess nobody agreed to is worse than one reported as
 unfinished.
+
+**Then deal with `.current`.** A pointer left on a finished plan still reads as
+"this is what I am working on", and the next session believes it. Ask what comes
+next and `current-plan.cjs --set` it, or `--clear` when nothing does.
+`planning-status.cjs` warns about this, which is a backstop, not a substitute
+for closing the plan properly here.
 
 ## 4. Moving statuses and ticking boxes
 

@@ -24,9 +24,82 @@ The argument is a feature file name or path. Resolve it:
 - Several matches - list them and ask which.
 - No match - say so and stop. Do not create a feature file here; that is
   `discover`, where the people who own the requirement can see it.
-- No argument at all - list the feature files that have no plan yet and ask.
+- No argument at all - **work out which feature to build first and recommend
+  it**, following section 2. Do not just list the unplanned files: the order is
+  the whole question, and a list hands it back unanswered.
 
-## 2. Check for an existing plan
+## 2. Which feature comes first
+
+Skip this when the argument named a feature **and** every feature it depends on
+is already built or planned. Otherwise it is the most useful thing this command
+does: a suite is written in whatever order the requirements arrived, and that is
+almost never the order it can be built in.
+
+Start from what exists:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/spec-report.cjs <features-root> --json bdd-artifacts/spec.json
+node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs
+```
+
+That gives the inventory and which features already have a plan. The ordering
+itself is **not** in the JSON and cannot be computed from it - it is read out of
+the step text, so read the `.feature` files themselves.
+
+### What counts as a dependency
+
+Feature B depends on feature A when **B's scenarios cannot be driven until A's
+screens or behaviour exist**. Four things establish that. Weigh them in this
+order:
+
+1. **Arrival.** B's scenarios start on a screen A owns - `Given 我在学生名单页上`
+   in a registration feature, where the roster feature is what puts that page on
+   screen. This is the strongest signal and the most common, because `discover`
+   asks every feature how a person reaches its screens, so the answer is sitting
+   in the `Given` lines.
+2. **The front door.** Whichever feature owns the route the application opens on
+   comes first regardless, because every other plan's Phase 0 has to record its
+   routes relative to one that exists.
+3. **The shell.** A feature that builds the page other features hang controls on
+   - a roster whose rows later grow an `编辑` and a `删除` button. The later
+   features add to it; they cannot create it.
+4. **Shared step sentences.** Not a dependency, a cost: the feature that defines
+   the most sentences the others reuse should go first, or the same glue gets
+   written twice and the second copy has to be reconciled with the first.
+
+### What does not count - and is mistaken for it constantly
+
+- **A `Given` that seeds data is not a dependency on the feature that creates
+  that data through the UI.** `Given 系统中登记了以下学生:` seeds through a test
+  seam. A deletion feature does **not** need the registration feature built.
+  Reading it as a dependency is what produces a strict create-read-update-delete
+  order that nothing in the specification asked for.
+- **CRUD naming order is not a build order.** Read usually comes first, because
+  the list is what everything else is reached from - not create, despite the C.
+- **Requirement id order, file order and alphabetical order are not
+  dependencies.** They record when somebody wrote the requirement down.
+- **A shared step sentence is not a dependency by itself.** Two features
+  asserting `Then 名单中显示以下学生:` tells you the glue is shared, not that one
+  needs the other.
+
+### Recommend it, with the evidence
+
+Give the order, and for each feature **one line of why plus the file and line
+that shows it** - `features/student_registration.feature:10` for the `Given`
+that puts the user on another feature's page. A recommendation nobody can check
+is a guess wearing a table, and the user is the one who knows whether the
+dependency is real.
+
+Say explicitly which features depend on **nothing** - those can be built in any
+order, or in parallel, and that is worth knowing before someone builds them in
+the order a list happened to print.
+
+Then **ask**, rather than proceeding on the recommendation. Getting this wrong
+costs a whole plan's work, and the user often knows a constraint the feature
+files do not record - a demo, a dependency on another team, a page somebody has
+already half-built.
+
+## 3. Check for an existing plan
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs
@@ -37,7 +110,7 @@ where it is and what it says happens next, and offer `/bdd:implement` instead.
 A finished plan for a feature that has since grown gets a **new dated
 directory** - never reopen the old one.
 
-## 3. Build the plan
+## 4. Build the plan
 
 Follow the `planning` skill, using the **BDD template set** (`assets/*-bdd.md`).
 It covers: the directory name, the Source table and fingerprint, Phase 0
@@ -92,11 +165,28 @@ rather than a gap nobody noticed.
 An API-only or CLI feature needs no design system. Say that is why the table is
 empty rather than leaving the reader to guess.
 
-## 4. Report
+## 5. Point `.current` at it
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/scripts/current-plan.cjs --set docs/planning/<dir>
+```
+
+The plan just created is the one `/bdd:implement` should drive, and with one
+plan per feature there will soon be several to choose between. Record the answer
+on disk now rather than leaving the next command to work it out.
+
+If this moved the pointer off an **unfinished** plan, name that plan and say it
+is being put down. With a multi-feature suite this is the normal case - the
+previous feature's plan is often still open - and it is a decision, not
+bookkeeping.
+
+## 6. Report
 
 State, in the user's language:
 
 - Where the plan is, and what its Phase 0 recorded.
+- Which plan `.current` now names, and - when it moved off an unfinished one -
+  which plan that was.
 - The six commands, as resolved.
 - The design system the plan will build against - which parts are `present` and
   which Phase 1 has to build - or why the feature needs none. Say which

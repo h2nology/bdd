@@ -121,6 +121,7 @@ inside Java, Python and .NET projects too. Node 14+.
 | `scripts/openapi.cjs` | Gherkin -> stated HTTP operations + inferred schemas; and OpenAPI operation coverage |
 | `scripts/planning-status.cjs` | Planning files -> what is in progress, and which plans have drifted, stalled or blocked |
 | `scripts/phase-status.cjs` | Set one phase's status in a plan - validated, locked, atomic |
+| `scripts/current-plan.cjs` | Read and move `docs/planning/.current`, the pointer at the plan being driven |
 | `scripts/lib/gherkin.cjs` | Gherkin parser (dialects: `en`, `zh-CN`, `zh-TW`, `ja`) |
 | `scripts/lib/results.cjs` | Reads cucumber messages ndjson, legacy cucumber JSON, or JUnit XML |
 | `scripts/lib/labels.cjs` | Localized report chrome |
@@ -135,6 +136,7 @@ node scripts/flow-map.cjs --input bdd-artifacts/flow --out out.html
 node scripts/openapi.cjs extract features/ --json extract.json
 node scripts/openapi.cjs coverage features/ --spec openapi.yaml --out cov.html
 node scripts/planning-status.cjs --root docs/planning
+node scripts/current-plan.cjs --set docs/planning/2026-09-08-checkout
 ```
 
 ## Conventions the whole plugin shares

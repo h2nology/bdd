@@ -10,7 +10,8 @@
  * coding phase.
  *
  * Options:
- *   --plan <dir>   The plan directory. Required when more than one plan is open.
+ *   --plan <dir>   The plan directory. Defaults to the plan `.current` names,
+ *                  and falls back to the only open plan when no pointer is set.
  *   --root <dir>   Planning root to search (default docs/planning)
  *
  * The only sanctioned writer of a `**Status:**` line. Editing the markdown by
@@ -133,13 +134,28 @@ function main() {
   let planDir = typeof opts.plan === 'string' ? opts.plan : '';
 
   if (!planDir) {
-    const open = openPlans(root);
-    if (open.length === 0) fail('no open plan under ' + root + '. Name one with --plan.');
-    if (open.length > 1) {
-      fail('more than one plan is open - say which:\n  '
-        + open.map((d) => '--plan ' + d).join('\n  '));
+    // The `.current` pointer answers "which plan" before guessing has to. It
+    // wins over "there is only one open plan" because it is a statement someone
+    // made, and it keeps holding the moment a second plan opens - which is the
+    // point at which this script used to start refusing to run at all.
+    const pointed = u.readPlanPointer(root);
+    if (pointed) {
+      planDir = u.resolvePlanPointer(root, pointed);
+      if (!planDir) {
+        fail('the current plan "' + pointed + '" in ' + path.join(root, u.POINTER_FILE)
+          + ' is not a plan.\nIt was renamed or deleted - settle which with '
+          + 'current-plan.cjs --set or --clear, or name one here with --plan.');
+      }
+    } else {
+      const open = openPlans(root);
+      if (open.length === 0) fail('no open plan under ' + root + '. Name one with --plan.');
+      if (open.length > 1) {
+        fail('more than one plan is open and none is marked current - either set '
+          + 'the pointer:\n  current-plan.cjs --set ' + open[0]
+          + '\nor name one here:\n  ' + open.map((d) => '--plan ' + d).join('\n  '));
+      }
+      planDir = open[0];
     }
-    planDir = open[0];
   }
 
   const planFile = path.join(planDir, 'task_plan.md');
