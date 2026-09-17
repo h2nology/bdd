@@ -7,6 +7,13 @@ to green with outside-in TDD, run the suite and read what it reports, derive a
 page flow map from the run's screenshots, and generate database DDL from the
 same specs.
 
+## Install
+
+```
+/plugin marketplace add h2nology/h2nology-marketplace
+/plugin install bdd@h2nology
+```
+
 ## Skills
 
 | Skill | Use it for |
