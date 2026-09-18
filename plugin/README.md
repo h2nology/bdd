@@ -33,17 +33,25 @@ Claude Code's built-in `/run`, so `/bdd:run` is what reaches this plugin.
 
 ## Development skills
 
-Stack-specific guidance, read **while writing code** - React, Vue, Nuxt and
-React Native today, other stacks as they are added. These are not part of the
+Stack-specific guidance, read **while writing code**. These are not part of the
 BDD loop and no phase runs them: they are references the code in hand either
 needs or does not.
 
-`references/development-skills.md` is the table - which skill applies to which
-stack, and what each one carries. Both task plan templates and `/bdd:implement`
-point at that file rather than at any skill in it, because this plugin drives
-TypeScript, Java, Python and .NET and a phase naming one stack's guidance would
-be wrong for the other three. Adding a reference for another stack is an edit to
-that one table.
+**This plugin ships none of them.** Official scaffolds already install the right
+one - `create-expo-app` enables `expo@claude-plugins-official` and writes a
+`CLAUDE.md`, and others do the same - so a copy carried here would be a second,
+staler answer to a question the project has already answered. Instead, Phase 0
+of a BDD plan (Phase 3 of a general one) **detects what the project has
+configured** - enabled plugins, project-local skills, the root `CLAUDE.md`,
+documentation MCP servers - records it in the plan's **Development plugins**
+table, and each `Phase 4.x` reads what that table names before writing code.
+
+`references/development-skills.md` is that procedure: every source to check, how
+to tell an installed-but-disabled plugin from an absent one, and what to do when
+the stack has nothing. Both task plan templates and `/bdd:implement` point at
+that file rather than naming any plugin, because this plugin drives TypeScript,
+Java, Python and .NET and a phase naming one stack's guidance would be wrong for
+the other three.
 
 ## Commands
 

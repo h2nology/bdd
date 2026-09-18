@@ -177,7 +177,7 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/planning-status.cjs --fingerprint features/<n
 Translate the prose into the user's language as you fill it in. Leave a
 placeholder unfilled rather than inventing a value for it.
 
-## 4. BDD plans only: Phase 0 - harness, routes, design system, commands, baseline (and Phase 1)
+## 4. BDD plans only: Phase 0 - harness, plugins, routes, design system, commands, baseline (and Phase 1)
 
 A BDD plan cannot be written without this: the Scenario Queue's initial state
 has to be **observed**, not guessed, and the six commands have to be real.
@@ -187,6 +187,24 @@ This is the last thing the planning skill does; Phase 1 onward is
 **Harness.** Run the suite. If it cannot execute at all, stop and use
 `bdd-setup`. A missing harness is not something to work around one capability at
 a time.
+
+**Development plugins.** Record which stack-specific guidance this project has
+configured, for every feature and not only the web ones. This plugin ships none
+of it: a scaffold has usually installed the right one already - `create-expo-app`
+enables `expo@claude-plugins-official` and writes a `CLAUDE.md` - and a copy
+carried here would be a staler second answer. Follow
+`${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`: check the enabled
+plugins in `.claude/settings.json`, this session's own skill list,
+`.claude/skills/`, the root `CLAUDE.md` / `AGENTS.md` and the documentation MCP
+servers, and give every row a `State` - `enabled`, `installed, not enabled`, or
+`none found`. The template's Phase 0 carries the table.
+
+**Detecting once is the point.** Phase 4.x is told to read what this table
+names, so a table nobody filled reads exactly like a project with nothing
+installed - and the difference is invisible afterwards, because no later phase
+looks. Say where you looked for anything marked `none found`, and name the
+framework's official plugin if it has one rather than quietly substituting
+generic advice for this project's conventions.
 
 **Information architecture.** If any scenario in the feature is tagged `@web`,
 record which route each of its pages lives at, and whether one of them is the
@@ -417,7 +435,7 @@ Two rules about `progress.md` that the templates cannot enforce:
 | `assets/progress-general.md` | What was run per phase, and what it printed |
 | `assets/findings-general.md` | Decisions, and where reality differed from what was assumed |
 | `${CLAUDE_PLUGIN_ROOT}/references/test-layout.md` | Where unit tests go, per stack - and why never beside the code |
-| `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md` | Stack-specific guidance the templates tell Phase 4.x / Phase 3 to read |
+| `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md` | How to detect the stack-specific plugins this project has configured, which Phase 0 / Phase 3 records and Phase 4.x reads |
 
 | Script | What it is for |
 |---|---|

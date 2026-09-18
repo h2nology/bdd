@@ -66,6 +66,13 @@ A `Scenario Outline` is one row: it is done when every `Examples` row passes.
       everything in it fails. If it does not, stop and use the `bdd-setup`
       skill.
 - [ ] Resolve this project's commands and fill the table below.
+- [ ] Detect the development plugins this project has configured and fill the
+      Development plugins table below, following
+      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`. Check every
+      source it lists - the scaffold's plugin, project-local skills, the root
+      `CLAUDE.md`, the documentation servers - and record where you looked for
+      anything you mark `none found`. Detecting is all this phase does;
+      **`Phase 4.x` is what reads what this table names.**
 - [ ] If any scenario in this feature is tagged `@web`, fill the Information
       architecture table below - which routes, and whether one of them is the
       home page. Ask the user rather than letting a step definition decide it.
@@ -102,6 +109,31 @@ makes a path argument silently run the whole suite. If the recorded command is a
 tag union rather than a path, say so here - it is coupled to this feature's
 scenario list, and adding a scenario without updating it under-tests the feature
 with nothing to warn you.
+
+### Development plugins
+
+For every feature, UI or not. **Which stack-specific guidance this project has
+configured** - the plugin its scaffold installed, the skills the team wrote, the
+documentation server that answers framework questions.
+
+This plugin ships none of that. It finds what the project already has, and the
+procedure - every source to check, and how to tell an installed-but-disabled
+plugin from an absent one - is
+`${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`. Follow it here, once,
+rather than re-deciding it inside each `Phase 4.x`.
+
+| Stack / layer | Plugin or skill found | How to read it | State |
+|---|---|---|---|
+| | | | |
+
+`State` is one of `enabled` - this session can invoke it;
+`installed, not enabled` - it is on disk and the user has been asked;
+`none found` - every source in that procedure was checked and it is not there.
+
+**A row is only `none found` once you can say where you looked.** List the
+sources you checked in `findings.md`, name the framework's official plugin if it
+has one, and carry on with the repository's own conventions as the only
+authority - not with generic advice presented as this project's convention.
 
 ### Information architecture
 
@@ -437,13 +469,16 @@ nothing more.
 #### Phase 4.1: <capability name>
 
 - [ ] Write the minimum production code that satisfies this capability's test.
-- [ ] Before writing this capability's code, read the **Development skills**
-      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`
-      lists for this stack, and record in `progress.md` what they changed.
-      **"Read it, it changed nothing" is a different fact from never having
-      opened it**, and only one of them can be checked later.
-      A stack with no row in that table has no reference here - say so rather
-      than applying one written for a different stack.
+- [ ] Before writing this capability's code, read what the **Development
+      plugins** table in Setup names for this stack - invoke the skill by its
+      `<plugin>:<skill>` name, or read its `SKILL.md` - and record in
+      `progress.md` what it changed. **"Read it, it changed nothing" is a
+      different fact from never having opened it**, and only one of them can be
+      checked later. A stack whose row says `none found` has no guidance here -
+      say so rather than applying a plugin written for a different stack. If the
+      table is empty because Phase 0 skipped it, fill it now from
+      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md` rather than
+      writing code without it.
 - [ ] If this capability renders UI, style it against the design system **built
       in Phase 1** - the spec named in Setup, as it actually exists on disk.
       **Minimum is measured against that spec, not against a blank page.**

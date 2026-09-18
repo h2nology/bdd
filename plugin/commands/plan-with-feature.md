@@ -114,8 +114,8 @@ directory** - never reopen the old one.
 
 Follow the `planning` skill, using the **BDD template set** (`assets/*-bdd.md`).
 It covers: the directory name, the Source table and fingerprint, Phase 0
-(harness check, the six commands, the design system, the baseline run), and how
-the queues are filled.
+(harness check, the six commands, the development plugins, the design system,
+the baseline run), and how the queues are filled.
 
 Three things this command must not skip, because they are what make the plan
 usable rather than decorative:
@@ -188,6 +188,8 @@ State, in the user's language:
 - Which plan `.current` now names, and - when it moved off an unfinished one -
   which plan that was.
 - The six commands, as resolved.
+- The development plugins the project has configured, and which rows came back
+  `none found` - that is the stack guidance Phase 4.x will not have.
 - The design system the plan will build against - which parts are `present` and
   which Phase 1 has to build - or why the feature needs none. Say which
   routes' layouts the **Page layout** table is waiting on, and that the design

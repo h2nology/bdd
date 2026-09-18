@@ -77,13 +77,16 @@ never made, or it was made and never written down.
 ### Phase 3: Implement
 
 - [ ] Make the change in the smallest steps that can each be checked.
-- [ ] Before writing code, read the **Development skills**
-      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`
-      lists for this stack, and record in `progress.md` what they changed.
-      **"Read it, it changed nothing" is a different fact from never having
-      opened it**, and only one of them can be checked later. A stack
-      with no row in that table has no reference here - say so rather than
-      applying one written for a different stack.
+- [ ] Before writing code, detect the **development plugins** this project has
+      configured - the plugin its scaffold installed, project-local skills, the
+      root `CLAUDE.md`, the documentation servers - by the procedure in
+      `${CLAUDE_PLUGIN_ROOT}/references/development-skills.md`. Read the ones
+      that apply to this stack, and record in `progress.md` which you found,
+      which you read and what they changed. **"Read it, it changed nothing" is a
+      different fact from never having opened it**, and only one of them can be
+      checked later. Found nothing - say where you looked, rather than applying
+      a plugin written for a different stack or generic advice dressed as this
+      project's convention.
 - [ ] Match the surrounding conventions, including the ones you disagree with.
 - [ ] Touch only what the task needs.
 - [ ] **If this task renders UI**, find what says how it should look before
